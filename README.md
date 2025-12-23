@@ -58,6 +58,11 @@ python analyze_cargo.py --filter-warnings --filter-paths src/core
 rustc analyze_cargo.rs -o analyze_cargo
 ```
 
+### build release
+```bash
+cargo build --release
+```
+
 ### Usage
 ```bash
 ./analyze_cargo
