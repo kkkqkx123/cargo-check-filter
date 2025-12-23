@@ -111,6 +111,7 @@ rustc analyze_cargo_errors.rs -o analyze_cargo_errors
 - 改进错误分类算法
 - 增强报告格式
 - 添加对其他 Cargo 输出格式的支持
+- 添加压缩版的发行版可执行文件(例如使用upx)
 
 ## 许可证
 

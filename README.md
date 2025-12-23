@@ -111,6 +111,7 @@ Both implementations are designed to have similar functionality. Feel free to co
 - Improving error categorization algorithms
 - Enhancing the report format
 - Adding support for additional Cargo output formats
+- Add the compressed version of the distribution executable (like upx)
 
 ## License
 
