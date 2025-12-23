@@ -1,0 +1,24 @@
+[package]
+name = "cargo-error-analyzer"
+version = "0.1.0"
+edition = "2021"
+
+# 最小化依赖，避免影响分发版压缩
+[dependencies]
+# 使用标准库，无需外部依赖
+
+[profile.release]
+lto = true
+panic = "abort"
+opt-level = "z"  # 最小化代码大小
+codegen-units = 1
+
+[profile.dev]
+opt-level = 0
+
+[lib]
+path = "lib.rs"
+
+[[bin]]
+name = "analyze_cargo_errors"
+path = "analyze_cargo_errors.rs"
