@@ -20,5 +20,5 @@ opt-level = 0
 path = "lib.rs"
 
 [[bin]]
-name = "analyze_cargo_errors"
-path = "analyze_cargo_errors.rs"
+name = "analyze_cargo"
+path = "analyze_cargo.rs"

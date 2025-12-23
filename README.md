@@ -24,7 +24,7 @@ This project contains cli tool written by two language (Python and Rust)  for an
 
 ### Usage
 ```bash
-python analyze_cargo_errors.py
+python analyze_cargo.py
 ```
 
 ### Options
@@ -34,17 +34,17 @@ python analyze_cargo_errors.py
 ### Examples
 ```bash
 # Default: analyze all errors and warnings
-python analyze_cargo_errors.py
+python analyze_cargo.py
 
 # Filter out warnings, only show errors
-python analyze_cargo_errors.py --filter-warnings
+python analyze_cargo.py --filter-warnings
 
 # Only show errors from specific paths
-python analyze_cargo_errors.py --filter-paths src/core
-python analyze_cargo_errors.py --filter-paths src/core src/query
+python analyze_cargo.py --filter-paths src/core
+python analyze_cargo.py --filter-paths src/core src/query
 
 # Combine filters
-python analyze_cargo_errors.py --filter-warnings --filter-paths src/core
+python analyze_cargo.py --filter-warnings --filter-paths src/core
 ```
 
 ## Rust Version
@@ -55,12 +55,12 @@ python analyze_cargo_errors.py --filter-warnings --filter-paths src/core
 
 ### Compilation
 ```bash
-rustc analyze_cargo_errors.rs -o analyze_cargo_errors
+rustc analyze_cargo.rs -o analyze_cargo
 ```
 
 ### Usage
 ```bash
-./analyze_cargo_errors
+./analyze_cargo
 ```
 
 ### Options
@@ -71,19 +71,19 @@ rustc analyze_cargo_errors.rs -o analyze_cargo_errors
 ### Examples
 ```bash
 # Default usage
-./analyze_cargo_errors
+./analyze_cargo
 
 # Specify output file
-./analyze_cargo_errors --output report.md
+./analyze_cargo --output report.md
 
 # Filter warnings only
-./analyze_cargo_errors --filter-warnings
+./analyze_cargo --filter-warnings
 
 # Filter by specific paths
-./analyze_cargo_errors --filter-paths src/main.rs,src/lib.rs
+./analyze_cargo --filter-paths src/main.rs,src/lib.rs
 
 # Combine filters
-./analyze_cargo_errors --filter-warnings --output errors_only.md
+./analyze_cargo --filter-warnings --output errors_only.md
 ```
 
 ## Report Output

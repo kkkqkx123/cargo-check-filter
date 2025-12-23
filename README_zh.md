@@ -24,7 +24,7 @@
 
 ### 使用方法
 ```bash
-python analyze_cargo_errors.py
+python analyze_cargo.py
 ```
 
 ### 选项
@@ -34,17 +34,17 @@ python analyze_cargo_errors.py
 ### 示例
 ```bash
 # 默认：分析所有错误和警告
-python analyze_cargo_errors.py
+python analyze_cargo.py
 
 # 过滤警告，仅显示错误
-python analyze_cargo_errors.py --filter-warnings
+python analyze_cargo.py --filter-warnings
 
 # 仅显示特定路径的错误
-python analyze_cargo_errors.py --filter-paths src/core
-python analyze_cargo_errors.py --filter-paths src/core src/query
+python analyze_cargo.py --filter-paths src/core
+python analyze_cargo.py --filter-paths src/core src/query
 
 # 组合过滤器
-python analyze_cargo_errors.py --filter-warnings --filter-paths src/core
+python analyze_cargo.py --filter-warnings --filter-paths src/core
 ```
 
 ## Rust 版本
@@ -55,12 +55,12 @@ python analyze_cargo_errors.py --filter-warnings --filter-paths src/core
 
 ### 编译
 ```bash
-rustc analyze_cargo_errors.rs -o analyze_cargo_errors
+rustc analyze_cargo.rs -o analyze_cargo
 ```
 
 ### 使用方法
 ```bash
-./analyze_cargo_errors
+./analyze_cargo
 ```
 
 ### 选项
@@ -71,19 +71,19 @@ rustc analyze_cargo_errors.rs -o analyze_cargo_errors
 ### 示例
 ```bash
 # 默认使用
-./analyze_cargo_errors
+./analyze_cargo
 
 # 指定输出文件
-./analyze_cargo_errors --output report.md
+./analyze_cargo --output report.md
 
 # 仅过滤警告
-./analyze_cargo_errors --filter-warnings
+./analyze_cargo --filter-warnings
 
 # 按特定路径过滤
-./analyze_cargo_errors --filter-paths src/main.rs,src/lib.rs
+./analyze_cargo --filter-paths src/main.rs,src/lib.rs
 
 # 组合过滤器
-./analyze_cargo_errors --filter-warnings --output errors_only.md
+./analyze_cargo --filter-warnings --output errors_only.md
 ```
 
 ## 报告输出
