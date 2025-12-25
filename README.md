@@ -1,6 +1,6 @@
 # Cargo Error Analysis Tool
 
-This project contains cli tool written by two language (Python and Rust)  for analyzing and categorizing Rust compilation errors and warnings. This tool automatically runs `cargo check`, categorizes the errors/warnings, and generates a detailed Markdown report.
+This project contains cli tool written by two language (Python and Rust)  for analyzing and categorizing Rust compilation errors and warnings. This tool automatically runs `cargo test --lib`, categorizes the errors/warnings, and generates a detailed Markdown report.
 
 ## Release Information (build by rust)
 
@@ -9,7 +9,7 @@ This project contains cli tool written by two language (Python and Rust)  for an
 
 ## Features
 
-- **Automatic Analysis**: Runs `cargo check` and parses the output
+- **Automatic Analysis**: Runs `cargo test --lib` and parses the output
 - **Categorization**: Groups similar errors and warnings together
 - **Statistics**: Provides detailed statistics on error types and affected files
 - **Filtering**: Filter by warnings/errors or specific file paths
