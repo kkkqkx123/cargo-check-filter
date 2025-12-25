@@ -69,19 +69,20 @@ def should_include_error(file_path: str, error_type: str, args, base_dir: str) -
     return True
 
 
-def run_cargo_check() -> str:
-    """Execute cargo check command and return output"""
+def run_cargo_test() -> str:
+    """Execute cargo test --lib command with short message format and return output"""
     try:
         # Use PowerShell compatible command on Windows
+        # Run cargo test --lib with short message format to get parseable output
         result = subprocess.run(
-            ['cargo', 'check', '--message-format=short'],
+            ['cargo', 'test', '--lib', '--message-format=short'],
             capture_output=True,
             text=True,
             encoding='utf-8'
         )
         return result.stdout + result.stderr
     except Exception as e:
-        return f"Failed to execute cargo check: {e}"
+        return f"Failed to execute cargo test: {e}"
 
 
 def parse_error_line(line: str) -> Optional[Tuple[str, str, str, str, str]]:
@@ -93,7 +94,7 @@ def parse_error_line(line: str) -> Optional[Tuple[str, str, str, str, str]]:
     # Supports both warning and error[EXXXX] formats
     pattern = r'^([^:]+):(\d+):(\d+):\s*(\w+(?:\[E\d+\])?):\s*(.+)$'
     match = re.match(pattern, line.strip())
-    
+
     if match:
         file_path = match.group(1)
         line_num = match.group(2)
@@ -101,7 +102,7 @@ def parse_error_line(line: str) -> Optional[Tuple[str, str, str, str, str]]:
         error_type = match.group(4)
         error_desc = match.group(5)
         return file_path, line_num, col_num, error_type, error_desc
-    
+
     return None
 
 
@@ -141,26 +142,59 @@ def categorize_errors(output: str) -> Dict[str, Dict[str, List[Tuple[str, str, s
     Returns: {error_pattern: {file_path: [(line_num, col_num, original_desc)]}}
     """
     categorized: Dict[str, Dict[str, List[Tuple[str, str, str]]]] = defaultdict(lambda: defaultdict(list))
-    
-    for line in output.split('\n'):
-        if not line.strip():
+
+    # Parse the multi-line cargo output format
+    lines = output.split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if not line:
+            i += 1
             continue
-            
-        parsed = parse_error_line(line)
-        if parsed is None:
-            continue
-            
-        file_path, line_num, col_num, error_type, error_desc = parsed
-        
-        if file_path and error_type and error_desc:
-            # Extract error pattern while preserving meaningful details
-            error_pattern = extract_error_pattern(error_desc)
-            
-            # Create category key with error type
-            category_key = f"{error_type}: {error_pattern}"
-            
-            categorized[category_key][file_path].append((line_num, col_num, error_desc))
-    
+
+        # Check if this line starts with error/warning level
+        if line.startswith(('error:', 'warning:')):
+            # Extract error type and description
+            parts = line.split(':', 1)
+            if len(parts) >= 2:
+                error_type = parts[0].strip()
+                error_desc = parts[1].strip()
+
+                # Look for the next line with the arrow format pointing to the file location
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip()
+                    arrow_match = re.match(r'^\s*-->\s*([^:]+):(\d+):(\d+)\s*$', next_line)
+                    if arrow_match:
+                        file_path = arrow_match.group(1)
+                        line_num = arrow_match.group(2)
+                        col_num = arrow_match.group(3)
+
+                        if file_path and error_type and error_desc:
+                            # Extract error pattern while preserving meaningful details
+                            error_pattern = extract_error_pattern(error_desc)
+
+                            # Create category key with error type
+                            category_key = f"{error_type}: {error_pattern}"
+
+                            categorized[category_key][file_path].append((line_num, col_num, error_desc))
+
+        # Also try the old format in case cargo outputs in that format
+        else:
+            parsed = parse_error_line(line)
+            if parsed is not None:
+                file_path, line_num, col_num, error_type, error_desc = parsed
+
+                if file_path and error_type and error_desc:
+                    # Extract error pattern while preserving meaningful details
+                    error_pattern = extract_error_pattern(error_desc)
+
+                    # Create category key with error type
+                    category_key = f"{error_type}: {error_pattern}"
+
+                    categorized[category_key][file_path].append((line_num, col_num, error_desc))
+
+        i += 1
+
     return dict(categorized)
 
 
@@ -343,14 +377,14 @@ def main():
     """Main function"""
     args = parse_arguments()
     base_dir = os.getcwd()
-    
-    print("Running cargo check...")
-    output = run_cargo_check()
-    
+
+    print("Running cargo test --lib...")
+    output = run_cargo_test()
+
     if not output:
-        print("No output from cargo check")
+        print("No output from cargo test")
         return 0
-    
+
     print("Parsing errors...")
     categorized_errors = categorize_errors(output)
     

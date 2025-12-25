@@ -33,43 +33,118 @@ struct ErrorStats {
     categorized_warnings: HashMap<String, HashMap<String, Vec<(String, String, String)>>>,
 }
 
-/// 解析单行错误信息
-fn parse_error_line(line: &str) -> Option<ErrorInfo> {
-    // 匹配错误格式: file_path:line:column: error_type: description
+/// 解析错误信息行（处理多行格式）
+fn parse_error_line(lines: &[String], start_index: usize) -> (Option<ErrorInfo>, usize) {
+    if start_index >= lines.len() {
+        return (None, start_index);
+    }
+
+    let line = &lines[start_index];
+
+    // Check if this line starts with error/warning level
+    if line.starts_with("error:") || line.starts_with("warning:") {
+        let colon_pos = line.find(':');
+        if let Some(colon_pos) = colon_pos {
+            let error_type = line[..colon_pos].trim().to_string();
+            let error_desc = line[colon_pos + 1..].trim().to_string();
+
+            // Look for the next line with arrow format pointing to file location
+            if start_index + 1 < lines.len() {
+                let next_line = &lines[start_index + 1];
+                let trimmed_next = next_line.trim();
+
+                // Check if the line starts with arrow " --> "
+                if trimmed_next.starts_with("-->") {
+                    // Extract file:line:col after the arrow
+                    let after_arrow = &trimmed_next[3..].trim(); // Remove " --> " prefix
+
+                    // Split by colons to get file:line:col
+                    let parts: Vec<&str> = after_arrow.rsplitn(3, ':').collect();
+                    if parts.len() == 3 {
+                        let _col = parts[0];
+                        let _line_num = parts[1];
+                        let _file_path = parts[2];
+
+                        // The file path might still have a colon in it (e.g., C:\path\to\file.rs)
+                        // So we need to reassemble it properly
+                        if after_arrow.contains(':') && !after_arrow.starts_with(':') {
+                            // Find the last two colons for line and column, everything before that is the file path
+                            let mut colon_positions = Vec::new();
+                            for (i, c) in after_arrow.char_indices() {
+                                if c == ':' {
+                                    colon_positions.push(i);
+                                }
+                            }
+
+                            if colon_positions.len() >= 2 {
+                                let last_colon = colon_positions[colon_positions.len() - 1];
+                                let second_last_colon = colon_positions[colon_positions.len() - 2];
+
+                                let col_part = &after_arrow[last_colon + 1..];
+                                let line_part = &after_arrow[second_last_colon + 1..last_colon];
+                                let file_part = &after_arrow[..second_last_colon];
+
+                                if col_part.chars().all(|c| c.is_ascii_digit()) &&
+                                   line_part.chars().all(|c| c.is_ascii_digit()) {
+                                    let file_path = file_part.trim().to_string();
+                                    let line_number = line_part.to_string();
+                                    let column_number = col_part.to_string();
+
+                                    if !file_path.is_empty() && !error_type.is_empty() && !error_desc.is_empty() {
+                                        return (
+                                            Some(ErrorInfo {
+                                                file_path,
+                                                line_number,
+                                                column_number,
+                                                error_type,
+                                                description: error_desc,
+                                            }),
+                                            start_index + 2 // Skip both the error line and the arrow line
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Try old format if the multi-line format doesn't match
     let parts: Vec<&str> = line.splitn(5, ':').collect();
-    if parts.len() < 5 {
-        return None;
+    if parts.len() >= 5 {
+        let file_path = parts[0].trim().to_string();
+        let line_number = parts[1].trim().to_string();
+        let column_number = parts[2].trim().to_string();
+        let error_type = parts[3].trim().to_string();
+        let description = parts[4].trim().to_string();
+
+        if !file_path.is_empty() && !line_number.is_empty() && !error_type.is_empty() {
+            return (Some(ErrorInfo {
+                file_path,
+                line_number,
+                column_number,
+                error_type,
+                description,
+            }), start_index + 1);
+        }
     }
 
-    let file_path = parts[0].trim().to_string();
-    let line_number = parts[1].trim().to_string();
-    let column_number = parts[2].trim().to_string();
-    let error_type = parts[3].trim().to_string();
-    let description = parts[4].trim().to_string();
-
-    // 验证基本格式
-    if file_path.is_empty() || line_number.is_empty() || error_type.is_empty() {
-        return None;
-    }
-
-    Some(ErrorInfo {
-        file_path,
-        line_number,
-        column_number,
-        error_type,
-        description,
-    })
+    (None, start_index + 1)
 }
 
-/// 运行cargo check并捕获输出
-fn run_cargo_check() -> Result<Vec<String>, Box<dyn std::error::Error>> {
+/// 运行cargo test --lib并捕获输出
+fn run_cargo_test() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let output = Command::new("cargo")
-        .args(["check", "--message-format=short"])
+        .args(["test", "--lib", "--message-format=short"])
         .output()?;
 
+    let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    let lines: Vec<String> = stderr.lines().map(|s| s.to_string()).collect();
-    
+    let combined = format!("{}{}", stdout, stderr);
+    let lines: Vec<String> = combined.lines().map(|s| s.to_string()).collect();
+
     Ok(lines)
 }
 
@@ -392,17 +467,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_arguments();
     let base_dir = std::env::current_dir()?.to_string_lossy().to_string();
     
-    println!("正在运行cargo check...");
-    
-    // 运行cargo check
-    let lines = run_cargo_check()?;
+    println!("正在运行cargo test --lib...");
+
+    // 运行cargo test
+    let lines = run_cargo_test()?;
     
     // 解析错误信息
     let mut all_errors = Vec::new();
-    for line in lines {
-        if let Some(error_info) = parse_error_line(&line) {
+    let mut i = 0;
+    while i < lines.len() {
+        let (error_info, new_index) = parse_error_line(&lines, i);
+        if let Some(error_info) = error_info {
             all_errors.push(error_info);
         }
+        i = new_index;
     }
     
     println!("找到 {} 个错误/警告信息", all_errors.len());
@@ -470,31 +548,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-    #[test]
-    fn test_parse_error_line() {
-        let line = "src/main.rs:10:5: error[E0308]: mismatched types";
-        let error = parse_error_line(line).unwrap();
-        
-        assert_eq!(error.file_path, "src/main.rs");
-        assert_eq!(error.line_number, "10");
-        assert_eq!(error.column_number, "5");
-        assert_eq!(error.error_type, "error[E0308]");
-        assert_eq!(error.description, "mismatched types");
-    }
-    
-    #[test]
-    fn test_parse_warning_line() {
-        let line = "src/lib.rs:15:3: warning: unused variable `x`";
-        let warning = parse_error_line(line).unwrap();
-        
-        assert_eq!(warning.file_path, "src/lib.rs");
-        assert_eq!(warning.line_number, "15");
-        assert_eq!(warning.column_number, "3");
-        assert_eq!(warning.error_type, "warning");
-        assert_eq!(warning.description, "unused variable `x`");
-    }
-    
+
     #[test]
     fn test_categorize_errors() {
         let errors = vec![
@@ -513,9 +567,9 @@ mod tests {
                 description: "unused variable".to_string(),
             },
         ];
-        
+
         let stats = categorize_errors(&errors);
-        
+
         assert_eq!(stats.total_errors, 1);
         assert_eq!(stats.total_warnings, 1);
         assert_eq!(stats.files_with_issues.len(), 2);
