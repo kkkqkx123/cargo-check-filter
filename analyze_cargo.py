@@ -22,17 +22,17 @@ def parse_arguments():
         epilog='''
 Examples:
   # Default: analyze all errors and warnings
-  python analyze_cargo_errors.py
+  python analyze_cargo.py
   
   # Filter out warnings, only show errors
-  python analyze_cargo_errors.py --filter-warnings
+  python analyze_cargo.py --filter-warnings
   
   # Only show errors from specific paths
-  python analyze_cargo_errors.py --filter-paths src/core
-  python analyze_cargo_errors.py --filter-paths src/core src/query
+  python analyze_cargo.py --filter-paths src/core
+  python analyze_cargo.py --filter-paths src/core src/query
   
   # Combine filters
-  python analyze_cargo_errors.py --filter-warnings --filter-paths src/core
+  python analyze_cargo.py --filter-warnings --filter-paths src/core
         '''
     )
     parser.add_argument('--filter-warnings', action='store_true',

@@ -424,7 +424,7 @@ fn parse_arguments() -> Args {
 
 /// 显示帮助信息
 fn show_help() {
-    println!("用法: analyze_cargo_errors [选项]");
+    println!("用法: analyze_cargo [选项]");
     println!();
     println!("选项:");
     println!("  --help                 显示此帮助信息");
@@ -433,11 +433,11 @@ fn show_help() {
     println!("  --filter-paths <路径>  按文件路径过滤错误（逗号分隔）");
     println!();
     println!("示例:");
-    println!("  analyze_cargo_errors");
-    println!("  analyze_cargo_errors --output report.md");
-    println!("  analyze_cargo_errors --filter-warnings");
-    println!("  analyze_cargo_errors --filter-paths src/main.rs,src/lib.rs");
-    println!("  analyze_cargo_errors --filter-warnings --output errors_only.md");
+    println!("  analyze_cargo");
+    println!("  analyze_cargo --output report.md");
+    println!("  analyze_cargo --filter-warnings");
+    println!("  analyze_cargo --filter-paths src/main.rs,src/lib.rs");
+    println!("  analyze_cargo --filter-warnings --output errors_only.md");
 }
 
 /// 检查是否应该包含错误
