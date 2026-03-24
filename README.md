@@ -1,6 +1,6 @@
 # Cargo Error Analysis Tool
 
-This project contains cli tool written by two language (Python and Rust)  for analyzing and categorizing Rust compilation errors and warnings. This tool automatically runs `cargo test --lib`, categorizes the errors/warnings, and generates a detailed Markdown report.
+This project contains cli tool written by two language (Python and Rust)  for analyzing and categorizing Rust compilation errors and warnings. This tool automatically runs cargo commands, categorizes the errors/warnings, and generates a detailed Markdown report.
 
 ## Release Information (build by rust)
 
@@ -9,7 +9,10 @@ This project contains cli tool written by two language (Python and Rust)  for an
 
 ## Features
 
-- **Automatic Analysis**: Runs `cargo test --lib` and parses the output
+- **Multiple Analysis Modes**:
+  - Default: `cargo test --lib` - Analyze test-related errors
+  - Minimal: `cargo check` - Quick syntax and type checking
+  - Full: `cargo clippy --all-targets --all-features` - Comprehensive lint analysis
 - **Categorization**: Groups similar errors and warnings together
 - **Statistics**: Provides detailed statistics on error types and affected files
 - **Filtering**: Filter by warnings/errors or specific file paths
@@ -24,17 +27,14 @@ This project contains cli tool written by two language (Python and Rust)  for an
 
 ### Usage
 ```bash
+# Default mode: analyze all errors and warnings (cargo test --lib)
 python analyze_cargo.py
-```
 
-### Options
-- `--filter-warnings`: Filter out all warnings, only show errors
-- `--filter-paths [PATHS ...]`: Filter errors by file paths (absolute or relative paths)
+# Minimal mode: quick check (cargo check)
+python analyze_cargo.py --minimal
 
-### Examples
-```bash
-# Default: analyze all errors and warnings
-python analyze_cargo.py
+# Full mode: comprehensive analysis (cargo clippy --all-targets --all-features)
+python analyze_cargo.py --full
 
 # Filter out warnings, only show errors
 python analyze_cargo.py --filter-warnings
@@ -46,6 +46,12 @@ python analyze_cargo.py --filter-paths src/core src/query
 # Combine filters
 python analyze_cargo.py --filter-warnings --filter-paths src/core
 ```
+
+### Options
+- `--minimal`: Minimal mode - run `cargo check` instead of `cargo test --lib`
+- `--full`: Full mode - run `cargo clippy --all-targets --all-features` for comprehensive analysis
+- `--filter-warnings`: Filter out all warnings, only show errors
+- `--filter-paths [PATHS ...]`: Filter errors by file paths (absolute or relative paths)
 
 ## Rust Version
 
@@ -65,18 +71,14 @@ cargo build --release
 
 ### Usage
 ```bash
+# Default mode: analyze all errors and warnings (cargo test --lib)
 ./analyze_cargo
-```
 
-### Options
-- `--output <file>`: Specify output file path (default: cargo_errors_report.md)
-- `--filter-warnings`: Filter warnings, only show errors
-- `--filter-paths <paths>`: Filter errors by file paths (comma-separated)
+# Minimal mode: quick check (cargo check)
+./analyze_cargo --minimal
 
-### Examples
-```bash
-# Default usage
-./analyze_cargo
+# Full mode: comprehensive analysis (cargo clippy --all-targets --all-features)
+./analyze_cargo --full
 
 # Specify output file
 ./analyze_cargo --output report.md
@@ -90,6 +92,13 @@ cargo build --release
 # Combine filters
 ./analyze_cargo --filter-warnings --output errors_only.md
 ```
+
+### Options
+- `--output <file>`: Specify output file path (default: cargo_errors_report.md)
+- `--minimal`: Minimal mode - run `cargo check` instead of `cargo test --lib`
+- `--full`: Full mode - run `cargo clippy --all-targets --all-features` for comprehensive analysis
+- `--filter-warnings`: Filter warnings, only show errors
+- `--filter-paths <paths>`: Filter errors by file paths (comma-separated)
 
 ## Report Output
 

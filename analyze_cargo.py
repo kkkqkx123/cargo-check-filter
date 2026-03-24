@@ -21,16 +21,22 @@ def parse_arguments():
         description='Cargo Check Error Analysis Tool',
         epilog='''
 Examples:
-  # Default: analyze all errors and warnings
+  # Default: analyze all errors and warnings (cargo test --lib)
   python analyze_cargo.py
-  
+
+  # Minimal mode: run cargo check only
+  python analyze_cargo.py --minimal
+
+  # Full mode: run cargo clippy with all targets and features
+  python analyze_cargo.py --full
+
   # Filter out warnings, only show errors
   python analyze_cargo.py --filter-warnings
-  
+
   # Only show errors from specific paths
   python analyze_cargo.py --filter-paths src/core
   python analyze_cargo.py --filter-paths src/core src/query
-  
+
   # Combine filters
   python analyze_cargo.py --filter-warnings --filter-paths src/core
         '''
@@ -39,6 +45,10 @@ Examples:
                        help='Filter out all warnings, only show errors')
     parser.add_argument('--filter-paths', nargs='+',
                        help='Filter errors by file paths (absolute or relative paths)')
+    parser.add_argument('--minimal', action='store_true',
+                       help='Minimal mode: run cargo check instead of cargo test')
+    parser.add_argument('--full', action='store_true',
+                       help='Full mode: run cargo clippy --all-targets --all-features for comprehensive analysis')
     return parser.parse_args()
 
 
@@ -69,20 +79,39 @@ def should_include_error(file_path: str, error_type: str, args, base_dir: str) -
     return True
 
 
-def run_cargo_test() -> str:
-    """Execute cargo test --lib command with short message format and return output"""
+def run_cargo_command(args) -> str:
+    """Execute cargo command and return output based on mode"""
     try:
-        # Use PowerShell compatible command on Windows
-        # Run cargo test --lib with short message format to get parseable output
-        result = subprocess.run(
-            ['cargo', 'test', '--lib', '--message-format=short'],
-            capture_output=True,
-            text=True,
-            encoding='utf-8'
-        )
+        if args.full:
+            # Full mode: run cargo clippy with all targets and features
+            print("Running cargo clippy --all-targets --all-features...")
+            result = subprocess.run(
+                ['cargo', 'clippy', '--all-targets', '--all-features', '--message-format=short'],
+                capture_output=True,
+                text=True,
+                encoding='utf-8'
+            )
+        elif args.minimal:
+            # Minimal mode: run cargo check
+            print("Running cargo check...")
+            result = subprocess.run(
+                ['cargo', 'check', '--message-format=short'],
+                capture_output=True,
+                text=True,
+                encoding='utf-8'
+            )
+        else:
+            # Default mode: run cargo test --lib
+            print("Running cargo test --lib...")
+            result = subprocess.run(
+                ['cargo', 'test', '--lib', '--message-format=short'],
+                capture_output=True,
+                text=True,
+                encoding='utf-8'
+            )
         return result.stdout + result.stderr
     except Exception as e:
-        return f"Failed to execute cargo test: {e}"
+        return f"Failed to execute cargo command: {e}"
 
 
 def parse_error_line(line: str) -> Optional[Tuple[str, str, str, str, str]]:
@@ -378,11 +407,15 @@ def main():
     args = parse_arguments()
     base_dir = os.getcwd()
 
-    print("Running cargo test --lib...")
-    output = run_cargo_test()
+    # Check for conflicting options
+    if args.minimal and args.full:
+        print("Error: --minimal and --full options are mutually exclusive")
+        return 1
+
+    output = run_cargo_command(args)
 
     if not output:
-        print("No output from cargo test")
+        print("No output from cargo command")
         return 0
 
     print("Parsing errors...")

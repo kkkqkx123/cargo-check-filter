@@ -1,15 +1,18 @@
 # Cargo 错误分析工具
 
-该项目包含 Python 和 Rust 2个版本的命令行工具，用于分析和分类 Rust 编译错误和警告。该工具自动运行 `cargo test --lib`，对错误/警告进行分类，并生成详细的 Markdown 报告。
+该项目包含 Python 和 Rust 2 个版本的命令行工具，用于分析和分类 Rust 编译错误和警告。该工具自动运行 cargo 命令，对错误/警告进行分类，并生成详细的 Markdown 报告。
 
-## 发布版本信息 (使用rust构建)
+## 发布版本信息 (使用 rust 构建)
 
 - **Windows**: 为 Windows 用户提供预编译的发布包
 - **Unix (Linux/macOS)**: Unix 用户需要从源代码构建，使用提供的 Rust 或 Python 文件
 
 ## 功能特性
 
-- **自动分析**：运行 `cargo test --lib` 并解析输出
+- **多种分析模式**：
+  - 默认模式：`cargo test --lib` - 分析测试相关错误
+  - 最小模式：`cargo check` - 快速语法和类型检查
+  - 完整模式：`cargo clippy --all-targets --all-features` - 全面的 lint 分析
 - **分类整理**：将相似的错误和警告归类
 - **统计信息**：提供错误类型和受影响文件的详细统计数据
 - **过滤功能**：按警告/错误或特定文件路径进行过滤
@@ -24,17 +27,14 @@
 
 ### 使用方法
 ```bash
+# 默认模式：分析所有错误和警告 (cargo test --lib)
 python analyze_cargo.py
-```
 
-### 选项
-- `--filter-warnings`：过滤所有警告，仅显示错误
-- `--filter-paths [PATHS ...]`：按文件路径过滤错误（绝对或相对路径）
+# 最小模式：快速检查 (cargo check)
+python analyze_cargo.py --minimal
 
-### 示例
-```bash
-# 默认：分析所有错误和警告
-python analyze_cargo.py
+# 完整模式：全面分析 (cargo clippy --all-targets --all-features)
+python analyze_cargo.py --full
 
 # 过滤警告，仅显示错误
 python analyze_cargo.py --filter-warnings
@@ -46,6 +46,12 @@ python analyze_cargo.py --filter-paths src/core src/query
 # 组合过滤器
 python analyze_cargo.py --filter-warnings --filter-paths src/core
 ```
+
+### 选项
+- `--minimal`: 最小模式 - 运行 `cargo check` 而非 `cargo test --lib`
+- `--full`: 完整模式 - 运行 `cargo clippy --all-targets --all-features` 进行全面分析
+- `--filter-warnings`: 过滤所有警告，仅显示错误
+- `--filter-paths [PATHS ...]`: 按文件路径过滤错误（绝对或相对路径）
 
 ## Rust 版本
 
@@ -65,18 +71,14 @@ cargo build --release
 
 ### 使用方法
 ```bash
+# 默认模式：分析所有错误和警告 (cargo test --lib)
 ./analyze_cargo
-```
 
-### 选项
-- `--output <file>`：指定输出文件路径（默认：cargo_errors_report.md）
-- `--filter-warnings`：过滤警告，仅显示错误
-- `--filter-paths <paths>`：按文件路径过滤错误（逗号分隔）
+# 最小模式：快速检查 (cargo check)
+./analyze_cargo --minimal
 
-### 示例
-```bash
-# 默认使用
-./analyze_cargo
+# 完整模式：全面分析 (cargo clippy --all-targets --all-features)
+./analyze_cargo --full
 
 # 指定输出文件
 ./analyze_cargo --output report.md
@@ -90,6 +92,13 @@ cargo build --release
 # 组合过滤器
 ./analyze_cargo --filter-warnings --output errors_only.md
 ```
+
+### 选项
+- `--output <file>`: 指定输出文件路径（默认：cargo_errors_report.md）
+- `--minimal`: 最小模式 - 运行 `cargo check` 而非 `cargo test --lib`
+- `--full`: 完整模式 - 运行 `cargo clippy --all-targets --all-features` 进行全面分析
+- `--filter-warnings`: 过滤警告，仅显示错误
+- `--filter-paths <paths>`: 按文件路径过滤错误（逗号分隔）
 
 ## 报告输出
 
@@ -116,7 +125,7 @@ cargo build --release
 - 改进错误分类算法
 - 增强报告格式
 - 添加对其他 Cargo 输出格式的支持
-- 添加压缩版的发行版可执行文件(例如使用upx)
+- 添加压缩版的发行版可执行文件 (例如使用 upx)
 
 ## 许可证
 

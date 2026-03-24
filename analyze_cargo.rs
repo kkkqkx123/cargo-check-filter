@@ -1,5 +1,5 @@
-//! Cargo错误分析工具 - Rust版本
-//! 分析cargo check输出，生成详细的错误报告
+//! Cargo 错误分析工具 - Rust 版本
+//! 分析 cargo check 输出，生成详细的错误报告
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -134,11 +134,27 @@ fn parse_error_line(lines: &[String], start_index: usize) -> (Option<ErrorInfo>,
     (None, start_index + 1)
 }
 
-/// 运行cargo test --lib并捕获输出
-fn run_cargo_test() -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let output = Command::new("cargo")
-        .args(["test", "--lib", "--message-format=short"])
-        .output()?;
+/// 运行 cargo 命令并捕获输出（根据模式选择不同命令）
+fn run_cargo_command(args: &Args) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let output = if args.full {
+        // Full mode: run cargo clippy with all targets and features
+        println!("正在运行 cargo clippy --all-targets --all-features...");
+        Command::new("cargo")
+            .args(["clippy", "--all-targets", "--all-features", "--message-format=short"])
+            .output()?
+    } else if args.minimal {
+        // Minimal mode: run cargo check
+        println!("正在运行 cargo check...");
+        Command::new("cargo")
+            .args(["check", "--message-format=short"])
+            .output()?
+    } else {
+        // Default mode: run cargo test --lib
+        println!("正在运行 cargo test --lib...");
+        Command::new("cargo")
+            .args(["test", "--lib", "--message-format=short"])
+            .output()?
+    };
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -156,48 +172,48 @@ fn categorize_errors(errors: &[ErrorInfo]) -> ErrorStats {
 
     for error in errors {
         stats.files_with_issues.insert(error.file_path.clone());
-        
+
         let pattern_key = format!("{}: {}", error.error_type, error.description);
-        
+
         if error.error_type.starts_with("error") {
             stats.total_errors += 1;
             error_patterns.insert(pattern_key.clone());
-            
+
             // 错误类型分布
             *stats.error_type_distribution.entry(error.error_type.clone()).or_insert(0) += 1;
-            
+
             // 文件错误计数
             *stats.file_error_counts.entry(error.file_path.clone()).or_insert(0) += 1;
-            
+
             // 分类错误
             let file_errors = stats.categorized_errors
                 .entry(error.error_type.clone())
                 .or_insert_with(HashMap::new);
-            
+
             let error_list = file_errors
                 .entry(error.file_path.clone())
                 .or_insert_with(Vec::new);
-            
+
             error_list.push((error.line_number.clone(), error.column_number.clone(), error.description.clone()));
         } else if error.error_type.starts_with("warning") {
             stats.total_warnings += 1;
             warning_patterns.insert(pattern_key.clone());
-            
+
             // 警告类型分布
             *stats.warning_type_distribution.entry(error.error_type.clone()).or_insert(0) += 1;
-            
+
             // 文件警告计数
             *stats.file_warning_counts.entry(error.file_path.clone()).or_insert(0) += 1;
-            
+
             // 分类警告
             let file_warnings = stats.categorized_warnings
                 .entry(error.error_type.clone())
                 .or_insert_with(HashMap::new);
-            
+
             let warning_list = file_warnings
                 .entry(error.file_path.clone())
                 .or_insert_with(Vec::new);
-            
+
             warning_list.push((error.line_number.clone(), error.column_number.clone(), error.description.clone()));
         }
     }
@@ -208,13 +224,13 @@ fn categorize_errors(errors: &[ErrorInfo]) -> ErrorStats {
     stats
 }
 
-/// 生成Markdown报告
+/// 生成 Markdown 报告
 fn generate_markdown_report(stats: &ErrorStats, output_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut file = fs::File::create(output_path)?;
-    
+
     // 报告标题
     writeln!(file, "# Cargo Check Error Analysis Report\n")?;
-    
+
     // 摘要部分
     writeln!(file, "## Summary\n")?;
     writeln!(file, "- **Total Errors**: {}", stats.total_errors)?;
@@ -223,95 +239,95 @@ fn generate_markdown_report(stats: &ErrorStats, output_path: &str) -> Result<(),
     writeln!(file, "- **Unique Error Patterns**: {}", stats.unique_error_patterns)?;
     writeln!(file, "- **Unique Warning Patterns**: {}", stats.unique_warning_patterns)?;
     writeln!(file, "- **Files with Issues**: {}\n", stats.files_with_issues.len())?;
-    
+
     // 错误统计
     writeln!(file, "## Error Statistics\n")?;
     writeln!(file, "**Total Errors**: {}\n", stats.total_errors)?;
-    
+
     // 错误类型分布
     if !stats.error_type_distribution.is_empty() {
         writeln!(file, "### Error Type Breakdown\n")?;
         let mut error_types: Vec<(&String, &usize)> = stats.error_type_distribution.iter().collect();
         error_types.sort_by(|a, b| b.1.cmp(a.1));
-        
+
         for (error_type, count) in error_types {
             writeln!(file, "- **{}**: {} errors", error_type, count)?;
         }
         writeln!(file)?;
     }
-    
+
     // 文件错误排名
     if !stats.file_error_counts.is_empty() {
         writeln!(file, "### Files with Errors (Top 10)\n")?;
         let mut file_counts: Vec<(&String, &usize)> = stats.file_error_counts.iter().collect();
         file_counts.sort_by(|a, b| b.1.cmp(a.1));
-        
+
         for (file_path, count) in file_counts.iter().take(10) {
             writeln!(file, "- `{}`: {} errors", file_path, count)?;
         }
         writeln!(file)?;
     }
-    
+
     // 警告统计
     writeln!(file, "## Warning Statistics\n")?;
     writeln!(file, "**Total Warnings**: {}\n", stats.total_warnings)?;
-    
+
     // 警告类型分布
     if !stats.warning_type_distribution.is_empty() {
         writeln!(file, "### Warning Type Breakdown\n")?;
         let mut warning_types: Vec<(&String, &usize)> = stats.warning_type_distribution.iter().collect();
         warning_types.sort_by(|a, b| b.1.cmp(a.1));
-        
+
         for (warning_type, count) in warning_types {
             writeln!(file, "- **{}**: {} warnings", warning_type, count)?;
         }
         writeln!(file)?;
     }
-    
+
     // 文件警告排名
     if !stats.file_warning_counts.is_empty() {
         writeln!(file, "### Files with Warnings (Top 10)\n")?;
         let mut file_counts: Vec<(&String, &usize)> = stats.file_warning_counts.iter().collect();
         file_counts.sort_by(|a, b| b.1.cmp(a.1));
-        
+
         for (file_path, count) in file_counts.iter().take(10) {
             writeln!(file, "- `{}`: {} warnings", file_path, count)?;
         }
         writeln!(file)?;
     }
-    
+
     // 详细错误分类
     if !stats.categorized_errors.is_empty() {
         writeln!(file, "## Detailed Error Categorization\n")?;
-        
-        let mut error_categories: Vec<(&String, &HashMap<String, Vec<(String, String, String)>>)> = 
+
+        let mut error_categories: Vec<(&String, &HashMap<String, Vec<(String, String, String)>>)> =
             stats.categorized_errors.iter().collect();
         error_categories.sort_by(|a, b| {
             let count_a: usize = b.1.values().map(|v| v.len()).sum();
             let count_b: usize = a.1.values().map(|v| v.len()).sum();
             count_a.cmp(&count_b)
         });
-        
+
         for (error_type, files) in error_categories {
             let total_occurrences: usize = files.values().map(|v| v.len()).sum();
             let unique_files = files.len();
-            
+
             writeln!(file, "### {}: {}\n", error_type, files.values().next().unwrap()[0].2)?;
             writeln!(file, "**Total Occurrences**: {}  ", total_occurrences)?;
             writeln!(file, "**Unique Files**: {}\n", unique_files)?;
-            
+
             let mut file_entries: Vec<(&String, &Vec<(String, String, String)>)> = files.iter().collect();
             file_entries.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
-            
+
             for (file_path, errors) in file_entries {
                 writeln!(file, "#### `{}`: {} occurrences\n", file_path, errors.len())?;
-                
+
                 for (i, (line_num, _col_num, desc)) in errors.iter().enumerate() {
-                    if i < 3 { // 只显示前3个示例
+                    if i < 3 { // 只显示前 3 个示例
                         writeln!(file, "- Line {}: {}", line_num, desc)?;
                     }
                 }
-                
+
                 if errors.len() > 3 {
                     writeln!(file, "- ... {} more occurrences in this file", errors.len() - 3)?;
                 }
@@ -319,39 +335,39 @@ fn generate_markdown_report(stats: &ErrorStats, output_path: &str) -> Result<(),
             }
         }
     }
-    
+
     // 详细警告分类
     if !stats.categorized_warnings.is_empty() {
         writeln!(file, "## Detailed Warning Categorization\n")?;
-        
-        let mut warning_categories: Vec<(&String, &HashMap<String, Vec<(String, String, String)>>)> = 
+
+        let mut warning_categories: Vec<(&String, &HashMap<String, Vec<(String, String, String)>>)> =
             stats.categorized_warnings.iter().collect();
         warning_categories.sort_by(|a, b| {
             let count_a: usize = b.1.values().map(|v| v.len()).sum();
             let count_b: usize = a.1.values().map(|v| v.len()).sum();
             count_a.cmp(&count_b)
         });
-        
+
         for (warning_type, files) in warning_categories {
             let total_occurrences: usize = files.values().map(|v| v.len()).sum();
             let unique_files = files.len();
-            
+
             writeln!(file, "### {}: {}\n", warning_type, files.values().next().unwrap()[0].2)?;
             writeln!(file, "**Total Occurrences**: {}  ", total_occurrences)?;
             writeln!(file, "**Unique Files**: {}\n", unique_files)?;
-            
+
             let mut file_entries: Vec<(&String, &Vec<(String, String, String)>)> = files.iter().collect();
             file_entries.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
-            
+
             for (file_path, warnings) in file_entries {
                 writeln!(file, "#### `{}`: {} occurrences\n", file_path, warnings.len())?;
-                
+
                 for (i, (line_num, _col_num, desc)) in warnings.iter().enumerate() {
-                    if i < 3 { // 只显示前3个示例
+                    if i < 3 { // 只显示前 3 个示例
                         writeln!(file, "- Line {}: {}", line_num, desc)?;
                     }
                 }
-                
+
                 if warnings.len() > 3 {
                     writeln!(file, "- ... {} more occurrences in this file", warnings.len() - 3)?;
                 }
@@ -359,7 +375,7 @@ fn generate_markdown_report(stats: &ErrorStats, output_path: &str) -> Result<(),
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -369,6 +385,8 @@ struct Args {
     output: String,
     filter_warnings: bool,
     filter_paths: Vec<String>,
+    minimal: bool,
+    full: bool,
 }
 
 /// 解析命令行参数
@@ -377,6 +395,8 @@ fn parse_arguments() -> Args {
     let mut output_file = "cargo_errors_report.md".to_string();
     let mut filter_warnings = false;
     let mut filter_paths = Vec::new();
+    let mut minimal = false;
+    let mut full = false;
 
     let mut i = 1;
     while i < args.len() {
@@ -400,6 +420,12 @@ fn parse_arguments() -> Args {
                     i += 1;
                 }
             }
+            "--minimal" => {
+                minimal = true;
+            }
+            "--full" => {
+                full = true;
+            }
             "--help" => {
                 show_help();
                 std::process::exit(0);
@@ -419,6 +445,8 @@ fn parse_arguments() -> Args {
         output: output_file,
         filter_warnings,
         filter_paths,
+        minimal,
+        full,
     }
 }
 
@@ -431,9 +459,13 @@ fn show_help() {
     println!("  --output <文件>        指定输出文件路径（默认: cargo_errors_report.md）");
     println!("  --filter-warnings      过滤警告，仅显示错误");
     println!("  --filter-paths <路径>  按文件路径过滤错误（逗号分隔）");
+    println!("  --minimal              最小模式: 运行 cargo check 而非 cargo test");
+    println!("  --full                 完整模式: 运行 cargo clippy --all-targets --all-features");
     println!();
     println!("示例:");
-    println!("  analyze_cargo");
+    println!("  analyze_cargo                                    # 默认模式: cargo test --lib");
+    println!("  analyze_cargo --minimal                          # 最小模式: cargo check");
+    println!("  analyze_cargo --full                             # 完整模式: cargo clippy");
     println!("  analyze_cargo --output report.md");
     println!("  analyze_cargo --filter-warnings");
     println!("  analyze_cargo --filter-paths src/main.rs,src/lib.rs");
@@ -446,19 +478,19 @@ fn should_include_error(file_path: &str, error_type: &str, args: &Args, base_dir
     if args.filter_warnings && error_type.starts_with("warning") {
         return false;
     }
-    
+
     // 过滤路径
     if !args.filter_paths.is_empty() {
         let relative_path = file_path.replace(base_dir, "").trim_start_matches('\\').to_string();
         let include = args.filter_paths.iter().any(|filter_path| {
             relative_path.starts_with(filter_path) || file_path.contains(filter_path)
         });
-        
+
         if !include {
             return false;
         }
     }
-    
+
     true
 }
 
@@ -466,12 +498,16 @@ fn should_include_error(file_path: &str, error_type: &str, args: &Args, base_dir
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_arguments();
     let base_dir = std::env::current_dir()?.to_string_lossy().to_string();
-    
-    println!("正在运行cargo test --lib...");
 
-    // 运行cargo test
-    let lines = run_cargo_test()?;
-    
+    // 检查互斥选项
+    if args.minimal && args.full {
+        eprintln!("错误: --minimal 和 --full 选项不能同时使用");
+        std::process::exit(1);
+    }
+
+    // 运行 cargo 命令
+    let lines = run_cargo_command(&args)?;
+
     // 解析错误信息
     let mut all_errors = Vec::new();
     let mut i = 0;
@@ -482,9 +518,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         i = new_index;
     }
-    
+
     println!("找到 {} 个错误/警告信息", all_errors.len());
-    
+
     // 应用过滤器
     let mut filtered_errors = Vec::new();
     for error in all_errors {
@@ -492,21 +528,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             filtered_errors.push(error);
         }
     }
-    
+
     if filtered_errors.is_empty() {
         println!("应用过滤器后，没有错误/警告信息");
         return Ok(());
     }
-    
+
     println!("应用过滤器后，剩余 {} 个错误/警告信息", filtered_errors.len());
-    
+
     // 分类错误
     let stats = categorize_errors(&filtered_errors);
-    
+
     // 生成报告
-    println!("生成Markdown报告...");
+    println!("生成 Markdown 报告...");
     generate_markdown_report(&stats, &args.output)?;
-    
+
     println!("报告已生成: {}", args.output);
     println!();
     println!("统计摘要:");
@@ -516,7 +552,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  - 唯一错误模式: {}", stats.unique_error_patterns);
     println!("  - 唯一警告模式: {}", stats.unique_warning_patterns);
     println!("  - 涉及文件数: {}", stats.files_with_issues.len());
-    
+
     // 显示过滤器摘要
     if args.filter_warnings {
         println!("过滤器: 已过滤警告，仅显示错误");
@@ -524,24 +560,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if !args.filter_paths.is_empty() {
         println!("过滤器: 仅显示来自路径的错误: {}", args.filter_paths.join(", "));
     }
-    
-    // 显示前5个错误模式
+
+    // 显示前 5 个错误模式
     if !stats.categorized_errors.is_empty() {
-        println!("\n前5个错误模式:");
-        let mut error_categories: Vec<(&String, &HashMap<String, Vec<(String, String, String)>>)> = 
+        println!("\n前 5 个错误模式:");
+        let mut error_categories: Vec<(&String, &HashMap<String, Vec<(String, String, String)>>)> =
             stats.categorized_errors.iter().collect();
         error_categories.sort_by(|a, b| {
             let count_a: usize = b.1.values().map(|v| v.len()).sum();
             let count_b: usize = a.1.values().map(|v| v.len()).sum();
             count_a.cmp(&count_b)
         });
-        
+
         for (error_type, files) in error_categories.iter().take(5) {
             let count: usize = files.values().map(|v| v.len()).sum();
             println!("- {}: {} 次出现", error_type, count);
         }
     }
-    
+
     Ok(())
 }
 
