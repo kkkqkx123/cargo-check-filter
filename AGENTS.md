@@ -17,7 +17,7 @@ CLI Entry → Core Module → Plugin Module
 | `types.rs`         | Common data types (e.g., Issue, Location, AnalysisResult) |
 | `parser.rs`        | Output parsing interface                                  |
 | `analyzer.rs`      | Unified analyzer interface                                |
-| `reporter.rs`      | Report generation (Markdown/JSON/Text/HTML)               |
+| `reporter/*`       | Report generation (Markdown/JSON/Text/HTML)               |
 | `command.rs`       | Command construction and execution                        |
 | `base_analyzer.rs` | Generic analyzer implementation                           |
 

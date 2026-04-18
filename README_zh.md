@@ -1,108 +1,108 @@
-# Cargo 错误分析工具
+# Analyzer - 多语言构建工具错误分析器
 
-该项目包含 Python 和 Rust 2 个版本的命令行工具，用于分析和分类 Rust 编译错误和警告。该工具自动运行 cargo 命令，对错误/警告进行分类，并生成详细的 Markdown 报告。
-
-## 发布版本信息 (使用 rust 构建)
-
-- **Windows**: 为 Windows 用户提供预编译的发布包
-- **Unix (Linux/macOS)**: Unix 用户需要从源代码构建，使用提供的 Rust 或 Python 文件
+一款支持多种技术栈的多语言构建工具错误分析器，采用插件化架构，支持 Cargo、NPM、Maven、Gradle、Mypy、Go 和 Pytest 等工具。
 
 ## 功能特性
 
-- **多种分析模式**：
-  - 默认模式：`cargo test --lib` - 分析测试相关错误
-  - 最小模式：`cargo check` - 快速语法和类型检查
-  - 完整模式：`cargo clippy --all-targets --all-features` - 全面的 lint 分析
-- **分类整理**：将相似的错误和警告归类
-- **统计信息**：提供错误类型和受影响文件的详细统计数据
-- **过滤功能**：按警告/错误或特定文件路径进行过滤
-- **Markdown 报告**：生成综合报告，格式为 Markdown
-- **跨平台**：提供 Python 和 Rust 两种实现
+- **多语言支持**：分析来自各种构建工具的错误
+  - Rust/Cargo: `cargo check`、`cargo clippy`、`cargo test`
+  - Python/Mypy: `mypy`、`mypy --strict`
+  - Node.js/NPM: `npm lint`、`npm type-check`、`npm audit`
+  - Java/Maven: `mvn compile`、`mvn test`
+  - Java/Gradle: `gradle compileJava`、`gradle test`
+  - Go: `go build`、`go test`、`go vet`
+  - Python/Pytest: `pytest`
+- **插件化架构**：可轻松扩展支持新工具
+- **多种报告格式**：Markdown、JSON、HTML
+- **灵活过滤**：按警告或特定文件路径进行过滤
+- **配置支持**：通过 `.analyzer.toml` 自定义配置
 
-## Python 版本
+## 安装
 
-### 安装
-- Python 3.6 或更高版本
-- 无需额外依赖
+### 从源码构建
 
-### 使用方法
-```bash
-# 默认模式：分析所有错误和警告 (cargo test --lib)
-python analyze_cargo.py
-
-# 最小模式：快速检查 (cargo check)
-python analyze_cargo.py --minimal
-
-# 完整模式：全面分析 (cargo clippy --all-targets --all-features)
-python analyze_cargo.py --full
-
-# 过滤警告，仅显示错误
-python analyze_cargo.py --filter-warnings
-
-# 仅显示特定路径的错误
-python analyze_cargo.py --filter-paths src/core
-python analyze_cargo.py --filter-paths src/core src/query
-
-# 组合过滤器
-python analyze_cargo.py --filter-warnings --filter-paths src/core
-```
-
-### 选项
-- `--minimal`: 最小模式 - 运行 `cargo check` 而非 `cargo test --lib`
-- `--full`: 完整模式 - 运行 `cargo clippy --all-targets --all-features` 进行全面分析
-- `--filter-warnings`: 过滤所有警告，仅显示错误
-- `--filter-paths [PATHS ...]`: 按文件路径过滤错误（绝对或相对路径）
-
-## Rust 版本
-
-### 安装
-- 已安装 Rust 工具链
-- 兼容稳定版 Rust
-
-### 编译
-```bash
-rustc analyze_cargo.rs -o analyze_cargo
-```
-
-### 构建发行版
 ```bash
 cargo build --release
 ```
 
-### 使用方法
+编译后的二进制文件位于 `target/release/analyzer`。
+
+### 预构建版本
+
+为 Windows 用户提供预编译的发行版包。
+
+## 使用方法
+
 ```bash
-# 默认模式：分析所有错误和警告 (cargo test --lib)
-./analyze_cargo
+# 基本用法
+analyzer <tech-stack> <subcommand> [options]
 
-# 最小模式：快速检查 (cargo check)
-./analyze_cargo --minimal
+# 分析 Rust 项目
+analyzer cargo check
+analyzer cargo clippy
+analyzer cargo test
 
-# 完整模式：全面分析 (cargo clippy --all-targets --all-features)
-./analyze_cargo --full
+# 分析 Python/Mypy 项目
+analyzer mypy check
+analyzer mypy --strict
 
-# 指定输出文件
-./analyze_cargo --output report.md
+# 分析 Node.js 项目
+analyzer npm lint
+analyzer npm type-check
+analyzer npm audit
 
-# 仅过滤警告
-./analyze_cargo --filter-warnings
+# 分析 Java/Maven 项目
+analyzer maven compile
+analyzer maven test
 
-# 按特定路径过滤
-./analyze_cargo --filter-paths src/main.rs,src/lib.rs
+# 分析 Java/Gradle 项目
+analyzer gradle compile
+analyzer gradle test
 
-# 组合过滤器
-./analyze_cargo --filter-warnings --output errors_only.md
+# 分析 Go 项目
+analyzer go build
+analyzer go test
+analyzer go vet
+
+# 分析 Python/Pytest
+analyzer pytest
 ```
 
 ### 选项
-- `--output <file>`: 指定输出文件路径（默认：cargo_errors_report.md）
-- `--minimal`: 最小模式 - 运行 `cargo check` 而非 `cargo test --lib`
-- `--full`: 完整模式 - 运行 `cargo clippy --all-targets --all-features` 进行全面分析
-- `--filter-warnings`: 过滤警告，仅显示错误
-- `--filter-paths <paths>`: 按文件路径过滤错误（逗号分隔）
+
+- `--filter-warnings`：过滤所有警告，仅显示错误
+- `--filter-paths <paths>`：按文件路径过滤错误（逗号分隔）
+- `--output <file>`：指定输出文件路径（默认：analysis_report.md）
+
+## 配置
+
+在项目根目录创建 `.analyzer.toml` 来自定义行为：
+
+```toml
+version = "1.0"
+
+[global]
+default_format = "markdown"
+filter_warnings = false
+
+[commands.type-check]
+exec = "npm run typecheck"
+description = "运行 TypeScript 类型检查器"
+tech_stacks = ["npm", "pnpm", "yarn"]
+
+[tech_stack.npm]
+test_framework = "jest"
+```
 
 ## 报告输出
 
-该工具生成一个综合的 Markdown 报告（`cargo_errors_report.md`），包含：
+该工具支持多种格式的综合报告：
+
+- **Markdown**：人类可读的统计和分类报告
+- **JSON**：机器可读格式，适合 CI/CD 集成
+- **HTML**：用于网页查看的样式化 HTML 报告
+
+报告包含：
 
 - 摘要统计
 - 错误和警告类型分解
@@ -110,22 +110,41 @@ cargo build --release
 - 详细分类和示例
 - 每个错误的行号和描述
 
+## 架构设计
+
+```
+CLI 入口 → 核心模块 → 插件模块
+```
+
+### 核心模块 (core/)
+
+| 组件               | 描述                                            |
+| ------------------ | ----------------------------------------------- |
+| `types.rs`         | 通用数据类型（Issue、Location、AnalysisResult） |
+| `parser.rs`        | 输出解析接口                                    |
+| `analyzer.rs`      | 统一分析器接口                                  |
+| `reporter/*`       | 报告生成（Markdown/JSON/HTML）                  |
+| `command.rs`       | 命令构建和执行                                  |
+| `base_analyzer.rs` | 通用分析器实现                                  |
+
+### 插件模块 (plugins/)
+
+| 插件   | 支持的命令                    |
+| ------ | ----------------------------- |
+| Cargo  | `check`、`clippy`、`test`     |
+| Mypy   | `mypy`、`mypy --strict`       |
+| NPM    | `lint`、`type-check`、`audit` |
+| Maven  | `compile`、`test`             |
+| Gradle | `compileJava`、`test`         |
+| Go     | `build`、`test`、`vet`        |
+| Pytest | `pytest`                      |
+
 ## 使用场景
 
 - **代码质量评估**：识别代码库中的重复错误模式
 - **重构规划**：重点关注错误/警告最多的文件
-- **团队培训**：与团队成员分享常见错误模式
 - **CI/CD 集成**：构建管道中的自动错误报告
-
-## 贡献
-
-两种实现都旨在具有相似的功能。欢迎通过以下方式贡献：
-
-- 添加新的过滤选项
-- 改进错误分类算法
-- 增强报告格式
-- 添加对其他 Cargo 输出格式的支持
-- 添加压缩版的发行版可执行文件 (例如使用 upx)
+- **团队培训**：与团队成员分享常见错误模式
 
 ## 许可证
 

@@ -1,131 +1,149 @@
-# Cargo Error Analysis Tool
+# Analyzer - Multi-language Build Tool Error Analyzer
 
-This project contains cli tool written by two language (Python and Rust)  for analyzing and categorizing Rust compilation errors and warnings. This tool automatically runs cargo commands, categorizes the errors/warnings, and generates a detailed Markdown report.
-
-## Release Information (build by rust)
-
-- **Windows**: Pre-compiled release packages are provided for Windows users
-- **Unix (Linux/macOS)**: Unix users need to build from source using the provided Rust or Python files
+A multilingual build tool error analyzer with a plugin-based architecture, supporting technology stacks such as Cargo, NPM, Maven, Gradle, Mypy, Go, and Pytest.
 
 ## Features
 
-- **Multiple Analysis Modes**:
-  - Default: `cargo test --lib` - Analyze test-related errors
-  - Minimal: `cargo check` - Quick syntax and type checking
-  - Full: `cargo clippy --all-targets --all-features` - Comprehensive lint analysis
-- **Categorization**: Groups similar errors and warnings together
-- **Statistics**: Provides detailed statistics on error types and affected files
-- **Filtering**: Filter by warnings/errors or specific file paths
-- **Markdown Reports**: Generates comprehensive reports in Markdown format
-- **Cross-platform**: Available in both Python and Rust implementations
+- **Multi-language Support**: Analyze errors from various build tools
+  - Rust/Cargo: `cargo check`, `cargo clippy`, `cargo test`
+  - Python/Mypy: `mypy`, `mypy --strict`
+  - Node.js/NPM: `npm lint`, `npm type-check`, `npm audit`
+  - Java/Maven: `mvn compile`, `mvn test`
+  - Java/Gradle: `gradle compileJava`, `gradle test`
+  - Go: `go build`, `go test`, `go vet`
+  - Python/Pytest: `pytest`
+- **Plugin-based Architecture**: Easily extendable for new tools
+- **Multiple Report Formats**: Markdown, JSON, HTML
+- **Flexible Filtering**: Filter by warnings or specific file paths
+- **Configuration Support**: `.analyzer.toml` for custom configurations
 
-## Python Version
+## Installation
 
-### Installation
-- Python 3.6 or higher
-- No additional dependencies required
+### From Source
 
-### Usage
-```bash
-# Default mode: analyze all errors and warnings (cargo test --lib)
-python analyze_cargo.py
-
-# Minimal mode: quick check (cargo check)
-python analyze_cargo.py --minimal
-
-# Full mode: comprehensive analysis (cargo clippy --all-targets --all-features)
-python analyze_cargo.py --full
-
-# Filter out warnings, only show errors
-python analyze_cargo.py --filter-warnings
-
-# Only show errors from specific paths
-python analyze_cargo.py --filter-paths src/core
-python analyze_cargo.py --filter-paths src/core src/query
-
-# Combine filters
-python analyze_cargo.py --filter-warnings --filter-paths src/core
-```
-
-### Options
-- `--minimal`: Minimal mode - run `cargo check` instead of `cargo test --lib`
-- `--full`: Full mode - run `cargo clippy --all-targets --all-features` for comprehensive analysis
-- `--filter-warnings`: Filter out all warnings, only show errors
-- `--filter-paths [PATHS ...]`: Filter errors by file paths (absolute or relative paths)
-
-## Rust Version
-
-### Installation
-- Rust toolchain installed
-- Compatible with stable Rust
-
-### Compilation
-```bash
-rustc analyze_cargo.rs -o analyze_cargo
-```
-
-### build release
 ```bash
 cargo build --release
 ```
 
-### Usage
+The compiled binary will be at `target/release/analyzer`.
+
+### Pre-built
+
+Pre-compiled release packages are provided for Windows users.
+
+## Usage
+
 ```bash
-# Default mode: analyze all errors and warnings (cargo test --lib)
-./analyze_cargo
+# Basic usage
+analyzer <tech-stack> <subcommand> [options]
 
-# Minimal mode: quick check (cargo check)
-./analyze_cargo --minimal
+# Analyze Rust project
+analyzer cargo check
+analyzer cargo clippy
+analyzer cargo test
 
-# Full mode: comprehensive analysis (cargo clippy --all-targets --all-features)
-./analyze_cargo --full
+# Analyze Python/Mypy project
+analyzer mypy check
+analyzer mypy --strict
 
-# Specify output file
-./analyze_cargo --output report.md
+# Analyze Node.js project
+analyzer npm lint
+analyzer npm type-check
+analyzer npm audit
 
-# Filter warnings only
-./analyze_cargo --filter-warnings
+# Analyze Java/Maven project
+analyzer maven compile
+analyzer maven test
 
-# Filter by specific paths
-./analyze_cargo --filter-paths src/main.rs,src/lib.rs
+# Analyze Java/Gradle project
+analyzer gradle compile
+analyzer gradle test
 
-# Combine filters
-./analyze_cargo --filter-warnings --output errors_only.md
+# Analyze Go project
+analyzer go build
+analyzer go test
+analyzer go vet
+
+# Analyze Python/Pytest
+analyzer pytest
 ```
 
 ### Options
-- `--output <file>`: Specify output file path (default: cargo_errors_report.md)
-- `--minimal`: Minimal mode - run `cargo check` instead of `cargo test --lib`
-- `--full`: Full mode - run `cargo clippy --all-targets --all-features` for comprehensive analysis
-- `--filter-warnings`: Filter warnings, only show errors
+
+- `--filter-warnings`: Filter out all warnings, only show errors
 - `--filter-paths <paths>`: Filter errors by file paths (comma-separated)
+- `--output <file>`: Specify output file path (default: analysis_report.md)
+
+## Configuration
+
+Create `.analyzer.toml` in your project root to customize behavior:
+
+```toml
+version = "1.0"
+
+[global]
+default_format = "markdown"
+filter_warnings = false
+
+[commands.type-check]
+exec = "npm run typecheck"
+description = "Run TypeScript type checker"
+tech_stacks = ["npm", "pnpm", "yarn"]
+
+[tech_stack.npm]
+test_framework = "jest"
+```
 
 ## Report Output
 
-The tool generates a comprehensive Markdown report (`cargo_errors_report.md`) containing:
+The tool generates comprehensive reports in multiple formats:
 
+- **Markdown**: Human-readable reports with statistics and categorization
+- **JSON**: Machine-readable format for CI/CD integration
+- **HTML**: Styled HTML reports for web viewing
+
+Reports include:
 - Summary statistics
 - Error and warning type breakdown
 - Top files with issues
 - Detailed categorization with examples
 - Line numbers and descriptions for each error
 
+## Architecture
+
+```
+CLI Entry → Core Module → Plugin Module
+```
+
+### Core Module (core/)
+
+| Component          | Description                                            |
+|--------------------|--------------------------------------------------------|
+| `types.rs`         | Common data types (Issue, Location, AnalysisResult)   |
+| `parser.rs`        | Output parsing interface                               |
+| `analyzer.rs`      | Unified analyzer interface                             |
+| `reporter/*`       | Report generation (Markdown/JSON/HTML)                |
+| `command.rs`       | Command construction and execution                    |
+| `base_analyzer.rs` | Generic analyzer implementation                        |
+
+### Plugin Module (plugins/)
+
+| Plugin   | Supported Commands                        |
+|----------|------------------------------------------|
+| Cargo    | `check`, `clippy`, `test`                 |
+| Mypy     | `mypy`, `mypy --strict`                  |
+| NPM      | `lint`, `type-check`, `audit`            |
+| Maven    | `compile`, `test`                        |
+| Gradle   | `compileJava`, `test`                    |
+| Go       | `build`, `test`, `vet`                   |
+| Pytest   | `pytest`                                 |
+
 ## Use Cases
 
 - **Code Quality Assessment**: Identify recurring error patterns across your codebase
 - **Refactoring Planning**: Focus on files with the most errors/warnings
-- **Team Onboarding**: Share common error patterns with team members
 - **CI/CD Integration**: Automated error reporting in build pipelines
-
-## Contributing
-
-Both implementations are designed to have similar functionality. Feel free to contribute by:
-
-- Adding new filtering options
-- Improving error categorization algorithms
-- Enhancing the report format
-- Adding support for additional Cargo output formats
-- Add the compressed version of the distribution executable (like upx)
+- **Team Onboarding**: Share common error patterns with team members
 
 ## License
 
