@@ -27,15 +27,6 @@
 | 83 | 14 | Error | Unsupported operand types for + ("None" and "int")  [operator] |
 | 83 | 14 | Info | Left operand is of type "Optional[int]" |
 
-### setup.py
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 1 | 1 | Error | Library stubs not installed for "setuptools"  [import-untyped] |
-| 1 | 1 | Info | Hint: "python3 -m pip install types-setuptools" |
-| 1 | 1 | Info | (or run "mypy --install-types" to install all missing stub packages) |
-| 1 | 1 | Info | See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports |
-
 ### src\main.py
 
 | Line | Column | Level | Message |
@@ -52,10 +43,19 @@
 | 96 | 14 | Error | Incompatible types in assignment (expression has type "int", variable has type "str")  [assignment] |
 | 99 | 11 | Error | Name "undefined_variable" is not defined  [name-defined] |
 
+### setup.py
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 1 | 1 | Error | Library stubs not installed for "setuptools"  [import-untyped] |
+| 1 | 1 | Info | Hint: "python3 -m pip install types-setuptools" |
+| 1 | 1 | Info | (or run "mypy --install-types" to install all missing stub packages) |
+| 1 | 1 | Info | See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports |
+
 ## Raw Output
 
 View raw command output: [samples/mypy_strict.txt](samples/mypy_strict.txt)
 
 ---
 
-*Report generated at: 2026-04-18 22:24:38*
+*Report generated at: 2026-04-18 22:41:19*

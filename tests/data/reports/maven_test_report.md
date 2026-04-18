@@ -28,4 +28,4 @@ View raw command output: [samples/maven_test_sample.txt](samples/maven_test_samp
 
 ---
 
-*Report generated at: 2026-04-18 22:24:38*
+*Report generated at: 2026-04-18 22:41:19*

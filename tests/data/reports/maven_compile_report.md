@@ -29,12 +29,6 @@
 | - | - | Error | Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.10.1:compile (default-compile) on project maven-test-project: Compilation failure: Compilation failure: |
 | - | - | Error | -> [Help 1] |
 
-### D:\project\test\fixtures\maven-project\src\main\java\com\example\App.java
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 18 | 9 | Warning | [unchecked] unchecked conversion |
-
 ### D:\project\test\fixtures\maven-project\src\main\java\com\example\Utils.java
 
 | Line | Column | Level | Message |
@@ -43,6 +37,12 @@
 | 19 | 26 | Warning | [deprecation] getYear() in Date has been deprecated |
 | 20 | 27 | Warning | [deprecation] getMonth() in Date has been deprecated |
 | 21 | 25 | Warning | [deprecation] getDate() in Date has been deprecated |
+
+### D:\project\test\fixtures\maven-project\src\main\java\com\example\App.java
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 18 | 9 | Warning | [unchecked] unchecked conversion |
 
 ### D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java
 
@@ -61,4 +61,4 @@ View raw command output: [samples/maven_compile_sample.txt](samples/maven_compil
 
 ---
 
-*Report generated at: 2026-04-18 22:24:38*
+*Report generated at: 2026-04-18 22:41:19*

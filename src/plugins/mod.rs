@@ -2,6 +2,7 @@
 //! Analyzer implementations containing various technology stacks
 
 pub mod cargo;
+pub mod go;
 pub mod gradle;
 pub mod maven;
 pub mod mypy;
@@ -38,6 +39,9 @@ pub fn create_registry() -> PluginRegistry {
 
     // Registering the Pytest Analyzer
     registry.register(Box::new(pytest::PytestAnalyzer::new()));
+
+    // Registering the Go Analyzer
+    registry.register(Box::new(go::GoAnalyzer::new()));
 
     registry
 }

@@ -1,0 +1,9 @@
+# command-line-arguments
+./cmd/myapp/main.go:18:14: Printf format %d has arg "hello" of wrong type string
+./cmd/myapp/main.go:21:10: return value of os.Setenv is not checked
+
+# example.com/myproject/pkg/utils
+pkg/utils/math.go:20:16: return value of os.Open is not checked
+
+# example.com/myproject/internal/config
+internal/config/config.go:15:15: return value of os.Setenv is not checked

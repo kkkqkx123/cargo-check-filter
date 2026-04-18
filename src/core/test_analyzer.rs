@@ -65,6 +65,14 @@ pub struct TestOptions {
     pub test: Option<String>,
     /// Running Documentation Tests Only
     pub doc_only: bool,
+    /// Package path (for Go: ./..., ./pkg/...)
+    pub package: Option<String>,
+    /// Test timeout in seconds
+    pub timeout: Option<u64>,
+    /// Enable race detector
+    pub race: bool,
+    /// Enable coverage reporting
+    pub coverage: bool,
     /// Other parameters
     pub extra_args: Vec<String>,
 }

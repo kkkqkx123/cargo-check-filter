@@ -1,0 +1,11 @@
+# example.com/myproject/cmd/myapp
+./main.go:15:2: undefined: unusedVar
+./main.go:18:14: cannot use "hello" (type string) as type int in argument to fmt.Printf
+./main.go:21:10: os.Setenv call has possible formatting directive %s
+./main.go:23:2: cfg declared but not used
+
+# example.com/myproject/pkg/utils
+pkg/utils/math.go:20:16: undefined: os
+
+# example.com/myproject/internal/config
+internal/config/config.go:15:15: os.Setenv call has possible formatting directive %v

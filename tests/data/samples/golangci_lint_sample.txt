@@ -1,0 +1,7 @@
+cmd/myapp/main.go:15:2: `unusedVar` is unused (deadcode)
+cmd/myapp/main.go:18:14: Printf format %d has arg "hello" of wrong type string (govet)
+cmd/myapp/main.go:21:10: Error return value of `os.Setenv` is not checked (errcheck)
+cmd/myapp/main.go:23:2: `cfg` is unused (deadcode)
+pkg/utils/math.go:20:16: Error return value of `os.Open` is not checked (errcheck)
+internal/config/config.go:15:15: Error return value of `os.Setenv` is not checked (errcheck)
+internal/config/config.go:26:10: ST1005: error strings should not be capitalized (staticcheck)
