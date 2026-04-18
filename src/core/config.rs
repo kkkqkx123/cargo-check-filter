@@ -1,5 +1,6 @@
 //! 配置系统
-//! 支持多层级配置：内置默认 < 全局 < 用户 < 项目
+//! 支持多层级配置：内置默认 < 二进制目录 < 项目
+//! 注意：不使用任何用户目录配置，避免配置分散
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -104,23 +105,20 @@ impl Config {
     }
 
     /// 加载配置（按优先级合并所有层级）
+    /// 优先级：内置默认 < 二进制目录 < 项目
+    /// 注意：不使用用户目录配置
     pub fn load(project_path: &Path) -> Result<Self, ConfigError> {
         let mut config = Self::default();
 
         // 1. 加载内置默认值
         config.merge(Self::embedded_defaults());
 
-        // 2. 加载全局配置（与二进制文件同目录）
-        if let Some(global_config) = Self::load_from_binary_dir()? {
-            config.merge(global_config);
+        // 2. 加载二进制目录配置
+        if let Some(binary_dir_config) = Self::load_from_binary_dir()? {
+            config.merge(binary_dir_config);
         }
 
-        // 3. 加载用户配置
-        if let Some(user_config) = Self::load_from_user_dir()? {
-            config.merge(user_config);
-        }
-
-        // 4. 加载项目级配置（最高优先级）
+        // 3. 加载项目级配置（最高优先级）
         if let Some(project_config) = Self::load_from_project(project_path)? {
             config.merge(project_config);
         }
@@ -265,15 +263,6 @@ impl Config {
             .ok_or_else(|| ConfigError::IoError("Failed to get binary directory".to_string()))?;
 
         let config_path = binary_dir.join("analyzer.toml");
-        Self::load_from_file(&config_path)
-    }
-
-    /// 从用户目录加载配置
-    fn load_from_user_dir() -> Result<Option<Self>, ConfigError> {
-        let home_dir = dirs::home_dir()
-            .ok_or_else(|| ConfigError::IoError("Failed to get home directory".to_string()))?;
-
-        let config_path = home_dir.join(".analyzer.toml");
         Self::load_from_file(&config_path)
     }
 
