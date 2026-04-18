@@ -2,7 +2,7 @@
 //! 支持多种输出格式
 
 use std::path::Path;
-use super::types::{AnalysisResult, ReportFormat, IssueLevel};
+use super::types::{AnalysisResult, ReportFormat, IssueLevel, TestAnalysisResult, TestStatus};
 
 /// 报告生成错误
 #[derive(Debug)]
@@ -32,6 +32,12 @@ impl From<std::io::Error> for ReporterError {
 pub trait Reporter: Send + Sync {
     /// 生成报告内容
     fn generate(&self, result: &AnalysisResult) -> Result<String, ReporterError>;
+
+    /// 生成测试报告内容
+    fn generate_test_report(&self, result: &TestAnalysisResult) -> Result<String, ReporterError> {
+        // 默认实现：调用普通报告生成
+        self.generate(&result.compile_result)
+    }
 
     /// 获取报告格式
     fn format(&self) -> ReportFormat;
@@ -132,6 +138,79 @@ impl Reporter for MarkdownReporter {
 
                 report.push('\n');
             }
+        }
+
+        Ok(report)
+    }
+
+    fn generate_test_report(&self, result: &TestAnalysisResult) -> Result<String, ReporterError> {
+        let mut report = String::new();
+
+        // 标题
+        report.push_str("# Test Analysis Report\n\n");
+
+        // 测试摘要
+        if let Some(ref summary) = result.test_summary {
+            report.push_str("## Test Summary\n\n");
+            report.push_str(&format!("- **Total Tests**: {}\n", summary.total));
+            report.push_str(&format!("- **Passed**: ✅ {}\n", summary.passed));
+            report.push_str(&format!("- **Failed**: ❌ {}\n", summary.failed));
+            report.push_str(&format!("- **Ignored**: 🔕 {}\n", summary.ignored));
+            if summary.measured > 0 {
+                report.push_str(&format!("- **Measured**: {}\n", summary.measured));
+            }
+            if summary.filtered > 0 {
+                report.push_str(&format!("- **Filtered**: {}\n", summary.filtered));
+            }
+            if let Some(time) = summary.execution_time {
+                report.push_str(&format!("- **Execution Time**: {:.2}s\n", time));
+            }
+            report.push('\n');
+        }
+
+        // 失败的测试详情
+        if !result.failed_tests.is_empty() {
+            report.push_str("## Failed Tests\n\n");
+            for test in &result.failed_tests {
+                report.push_str(&format!("### `{}`\n\n", test.name));
+
+                if let Some(ref location) = test.location {
+                    report.push_str(&format!(
+                        "**Location**: `{}:{}`\n\n",
+                        location.file_path,
+                        location
+                            .line_number
+                            .map(|n| n.to_string())
+                            .unwrap_or_default()
+                    ));
+                }
+
+                if let Some(ref details) = test.failure_details {
+                    report.push_str("**Failure Details**:\n");
+                    report.push_str("```\n");
+                    report.push_str(details);
+                    report.push_str("\n```\n\n");
+                }
+            }
+        }
+
+        // 被忽略的测试
+        if !result.ignored_tests.is_empty() {
+            report.push_str("## Ignored Tests\n\n");
+            for test in &result.ignored_tests {
+                let reason = match &test.status {
+                    TestStatus::Ignored(Some(r)) => format!(" ({})",                                                                                                                                                                                                                                                 r),
+                    _ => String::new(),
+                };
+                report.push_str(&format!("- `{}`{}\n", test.name, reason));
+            }
+            report.push('\n');
+        }
+
+        // 编译问题（如果有）
+        if result.compile_result.total_issues > 0 {
+            report.push_str("## Compile Issues\n\n");
+            report.push_str(&self.generate(&result.compile_result)?);
         }
 
         Ok(report)

@@ -4,6 +4,7 @@
 use std::path::Path;
 use super::types::{AnalysisResult, AnalyzeOptions};
 use super::parser::OutputParser;
+use super::config::Config;
 
 /// 分析器错误类型
 #[derive(Debug)]
@@ -50,6 +51,17 @@ pub trait BuildAnalyzer: Send + Sync {
 
     /// 获取解析器
     fn parser(&self) -> &dyn OutputParser;
+
+    /// 设置配置（用于配置驱动模式）
+    fn set_config(&mut self, config: Config) {
+        // 默认空实现，向后兼容
+        let _ = config;
+    }
+
+    /// 获取配置（如果已设置）
+    fn config(&self) -> Option<&Config> {
+        None
+    }
 }
 
 /// 插件注册表

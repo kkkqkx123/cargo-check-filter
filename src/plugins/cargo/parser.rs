@@ -1,7 +1,10 @@
 //! Cargo 输出解析器
 //! 解析 cargo check/clippy/test 的输出
 
-use crate::core::{BaseParser, Issue, IssueLevel, Location, OutputParser};
+use crate::core::{
+    BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, TestCase,
+    TestOutputParser, TestStatus, TestSummary,
+};
 
 pub struct CargoParser {
     base: BaseParser,
@@ -155,6 +158,162 @@ impl OutputParser for CargoParser {
 
     fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
         self.parse_multiline_error(lines, start_index)
+    }
+}
+
+impl TestOutputParser for CargoParser {
+    fn parse_test_output(&self, output: &str) -> ParsedTestOutput {
+        let mut result = ParsedTestOutput::new();
+
+        // 1. 复用现有逻辑解析编译问题
+        result.compile_issues = self.parse(output);
+
+        // 2. 解析测试执行结果
+        let lines: Vec<&str> = output.lines().collect();
+        let mut i = 0;
+        let mut in_failures_section = false;
+        let mut current_failure: Option<(String, Vec<String>)> = None;
+
+        while i < lines.len() {
+            let line = lines[i];
+
+            // 解析测试用例行: "test <name> ... <result>"
+            if let Some(test_case) = self.parse_test_case_line(line) {
+                match test_case.status {
+                    TestStatus::Passed => result.passed_tests.push(test_case),
+                    TestStatus::Failed => {
+                        // 稍后填充失败详情
+                        result.failed_tests.push(test_case);
+                    }
+                    TestStatus::Ignored(_) => result.ignored_tests.push(test_case),
+                }
+                i += 1;
+                continue;
+            }
+
+            // 识别 failures 区块开始
+            if line == "failures:" {
+                in_failures_section = true;
+                i += 1;
+                continue;
+            }
+
+            // 在 failures 区块中解析失败详情
+            if in_failures_section {
+                if line.starts_with("---- ") && line.contains("stdout ----") {
+                    // 开始新的失败详情
+                    let test_name = line[5..line.find(" stdout ----").unwrap_or(line.len())]
+                        .to_string();
+                    current_failure = Some((test_name, Vec::new()));
+                } else if line.trim().is_empty() && current_failure.is_some() {
+                    // 空行表示当前失败详情结束
+                    if let Some((name, details)) = current_failure.take() {
+                        // 找到对应的测试用例并填充详情
+                        if let Some(test) = result.failed_tests.iter_mut().find(|t| t.name == name) {
+                            test.failure_details = Some(details.join("\n"));
+                            // 尝试从详情中解析位置
+                            test.location = self.parse_panic_location(&details.join("\n"));
+                        }
+                    }
+                } else if let Some((_, ref mut details)) = current_failure {
+                    details.push(line.to_string());
+                }
+
+                // failures 区块结束标记
+                if line.starts_with("test result:") {
+                    in_failures_section = false;
+                }
+            }
+
+            // 解析测试结果汇总
+            if line.starts_with("test result:") {
+                result.test_summary = self.parse_test_summary(line);
+            }
+
+            i += 1;
+        }
+
+        result
+    }
+}
+
+impl CargoParser {
+    /// 解析单个测试用例行
+    fn parse_test_case_line(&self, line: &str) -> Option<TestCase> {
+        // 匹配: "test <name> ... ok/FAILED/ignored"
+        let re = regex::Regex::new(
+            r"^test\s+(\S+)\s+\.\.\.\s+(ok|FAILED|ignored)(?:\s*\(([^)]+)\))?",
+        )
+        .ok()?;
+
+        let caps = re.captures(line)?;
+
+        let name = caps.get(1)?.as_str().to_string();
+        let result_str = caps.get(2)?.as_str();
+        let extra = caps.get(3).map(|m| m.as_str());
+
+        let status = match result_str {
+            "ok" => TestStatus::Passed,
+            "FAILED" => TestStatus::Failed,
+            "ignored" => TestStatus::Ignored(extra.map(|s| s.to_string())),
+            _ => return None,
+        };
+
+        // 尝试从 extra 解析执行时间
+        let execution_time = extra.and_then(|e| {
+            if e.ends_with("s") {
+                e[..e.len() - 1].parse().ok()
+            } else {
+                None
+            }
+        });
+
+        Some(TestCase {
+            name,
+            status,
+            location: None,
+            failure_details: None,
+            execution_time,
+        })
+    }
+
+    /// 从 panic 信息中解析位置
+    fn parse_panic_location(&self, detail: &str) -> Option<Location> {
+        let re = regex::Regex::new(r"panicked at\s+(\S+):(\d+):(\d+)").ok()?;
+        let caps = re.captures(detail)?;
+
+        Some(
+            Location::new(caps.get(1)?.as_str().to_string())
+                .with_line(caps.get(2)?.as_str().parse().ok()?)
+                .with_column(caps.get(3)?.as_str().parse().ok()?),
+        )
+    }
+
+    /// 解析测试结果汇总
+    fn parse_test_summary(&self, line: &str) -> Option<TestSummary> {
+        // 匹配: "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
+        let re = regex::Regex::new(
+            r"test result:\s+(ok|FAILED)\.\s+(\d+)\s+passed;\s+(\d+)\s+failed;\s+(\d+)\s+ignored;\s+(\d+)\s+measured;\s+(\d+)\s+filtered out",
+        )
+        .ok()?;
+
+        let caps = re.captures(line)?;
+
+        let passed: usize = caps.get(2)?.as_str().parse().ok()?;
+        let failed: usize = caps.get(3)?.as_str().parse().ok()?;
+        let ignored: usize = caps.get(4)?.as_str().parse().ok()?;
+        let measured: usize = caps.get(5)?.as_str().parse().ok()?;
+        let filtered: usize = caps.get(6)?.as_str().parse().ok()?;
+
+        Some(TestSummary {
+            total: passed + failed + ignored,
+            passed,
+            failed,
+            ignored,
+            measured,
+            filtered,
+            execution_time: None,
+        })
     }
 }
 

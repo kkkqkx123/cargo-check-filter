@@ -156,6 +156,93 @@ impl AnalysisResult {
     }
 }
 
+/// 测试结果状态
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TestStatus {
+    Passed,
+    Failed,
+    Ignored(Option<String>),
+}
+
+/// 测试用例信息
+#[derive(Debug, Clone)]
+pub struct TestCase {
+    pub name: String,
+    pub status: TestStatus,
+    pub location: Option<Location>,
+    pub failure_details: Option<String>,
+    pub execution_time: Option<f64>,
+}
+
+impl TestCase {
+    pub fn new(name: impl Into<String>, status: TestStatus) -> Self {
+        Self {
+            name: name.into(),
+            status,
+            location: None,
+            failure_details: None,
+            execution_time: None,
+        }
+    }
+
+    pub fn with_location(mut self, location: Location) -> Self {
+        self.location = Some(location);
+        self
+    }
+
+    pub fn with_failure_details(mut self, details: impl Into<String>) -> Self {
+        self.failure_details = Some(details.into());
+        self
+    }
+
+    pub fn with_execution_time(mut self, time: f64) -> Self {
+        self.execution_time = Some(time);
+        self
+    }
+}
+
+/// 测试摘要
+#[derive(Debug, Clone, Default)]
+pub struct TestSummary {
+    pub total: usize,
+    pub passed: usize,
+    pub failed: usize,
+    pub ignored: usize,
+    pub measured: usize,
+    pub filtered: usize,
+    pub execution_time: Option<f64>,
+}
+
+/// 扩展 AnalysisResult 支持测试信息
+#[derive(Debug, Default)]
+pub struct TestAnalysisResult {
+    /// 编译阶段的问题
+    pub compile_result: AnalysisResult,
+    /// 测试摘要
+    pub test_summary: Option<TestSummary>,
+    /// 失败的测试用例
+    pub failed_tests: Vec<TestCase>,
+    /// 通过的测试用例
+    pub passed_tests: Vec<TestCase>,
+    /// 被忽略的测试用例
+    pub ignored_tests: Vec<TestCase>,
+    /// 是否有测试输出
+    pub has_test_output: bool,
+}
+
+impl TestAnalysisResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn from_compile_result(compile_result: AnalysisResult) -> Self {
+        Self {
+            compile_result,
+            ..Default::default()
+        }
+    }
+}
+
 /// 技术栈类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TechStack {
@@ -203,8 +290,10 @@ impl std::str::FromStr for TechStack {
 }
 
 /// 子命令类型
+/// 支持预定义命令和动态自定义命令
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SubCommand {
+    // 预定义命令 - 保持向后兼容
     // Cargo 子命令
     Check,        // cargo check
     Clippy,       // cargo clippy
@@ -228,10 +317,13 @@ pub enum SubCommand {
     GoBuild,    // go build
     GoVet,      // go vet
     GoLint,     // golangci-lint
+
+    // 动态自定义命令
+    Custom(String),
 }
 
 impl SubCommand {
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &str {
         match self {
             SubCommand::Check => "check",
             SubCommand::Clippy => "clippy",
@@ -247,11 +339,12 @@ impl SubCommand {
             SubCommand::GoBuild => "build",
             SubCommand::GoVet => "vet",
             SubCommand::GoLint => "lint",
+            SubCommand::Custom(name) => name.as_str(),
         }
     }
 
     /// 获取该子命令的描述
-    pub fn description(&self) -> &'static str {
+    pub fn description(&self) -> &str {
         match self {
             SubCommand::Check => "Fast syntax and type checking",
             SubCommand::Clippy => "Run Clippy linter",
@@ -267,7 +360,18 @@ impl SubCommand {
             SubCommand::GoBuild => "Build the project",
             SubCommand::GoVet => "Run go vet",
             SubCommand::GoLint => "Run golangci-lint",
+            SubCommand::Custom(_) => "Custom command",
         }
+    }
+
+    /// 创建自定义命令
+    pub fn custom(name: impl Into<String>) -> Self {
+        SubCommand::Custom(name.into())
+    }
+
+    /// 检查是否是自定义命令
+    pub fn is_custom(&self) -> bool {
+        matches!(self, SubCommand::Custom(_))
     }
 }
 
@@ -287,7 +391,15 @@ impl std::str::FromStr for SubCommand {
             "check-strict" => Ok(SubCommand::MypyCheckStrict),
             "build" => Ok(SubCommand::GoBuild),
             "vet" => Ok(SubCommand::GoVet),
-            _ => Err(format!("Unknown subcommand: {}", s)),
+            _ => {
+                // 支持动态自定义命令
+                // 验证命令名格式（只允许字母、数字、连字符、下划线）
+                if s.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+                    Ok(SubCommand::Custom(s.to_string()))
+                } else {
+                    Err(format!("Invalid subcommand name: {}", s))
+                }
+            }
         }
     }
 }

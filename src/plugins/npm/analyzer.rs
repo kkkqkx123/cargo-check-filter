@@ -5,10 +5,20 @@ use std::path::Path;
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    SubCommand,
+    ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
 };
 
 use super::parser::NpmParser;
+
+/// Type-check 命令的候选名称（按优先级排序）
+const TYPE_CHECK_ALIASES: &[&str] = &["type-check", "typecheck", "check-types", "check-type"];
+
+/// Lint 命令的候选名称（按优先级排序）
+const LINT_ALIASES: &[&str] = &["lint", "eslint", "lint:check"];
+
+/// Test 命令的候选名称（按优先级排序）
+/// 注意：这些是 package.json scripts 中的名称，不是测试框架名称
+const TEST_ALIASES: &[&str] = &["test", "test:unit", "test:e2e", "unit-test"];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PackageManager {
@@ -51,16 +61,16 @@ impl PackageManager {
 
         match options.subcommand {
             Some(SubCommand::Lint) => {
-                builder = builder.arg("run").arg("lint");
+                builder = builder.arg("run").arg(LINT_ALIASES[0]);
             }
             Some(SubCommand::TypeCheck) => {
-                builder = builder.arg("run").arg("type-check");
+                builder = builder.arg("run").arg(TYPE_CHECK_ALIASES[0]);
             }
             Some(SubCommand::Audit) => {
                 builder = builder.arg("audit");
             }
             _ => {
-                builder = builder.arg("run").arg("lint");
+                builder = builder.arg("run").arg(LINT_ALIASES[0]);
             }
         }
 
@@ -72,16 +82,16 @@ impl PackageManager {
 
         match options.subcommand {
             Some(SubCommand::Lint) => {
-                builder = builder.arg("lint");
+                builder = builder.arg(LINT_ALIASES[0]);
             }
             Some(SubCommand::TypeCheck) => {
-                builder = builder.arg("type-check");
+                builder = builder.arg(TYPE_CHECK_ALIASES[0]);
             }
             Some(SubCommand::Audit) => {
                 builder = builder.arg("audit");
             }
             _ => {
-                builder = builder.arg("lint");
+                builder = builder.arg(LINT_ALIASES[0]);
             }
         }
 
@@ -93,16 +103,16 @@ impl PackageManager {
 
         match options.subcommand {
             Some(SubCommand::Lint) => {
-                builder = builder.arg("lint");
+                builder = builder.arg(LINT_ALIASES[0]);
             }
             Some(SubCommand::TypeCheck) => {
-                builder = builder.arg("type-check");
+                builder = builder.arg(TYPE_CHECK_ALIASES[0]);
             }
             Some(SubCommand::Audit) => {
                 builder = builder.arg("audit");
             }
             _ => {
-                builder = builder.arg("lint");
+                builder = builder.arg(LINT_ALIASES[0]);
             }
         }
 
@@ -165,6 +175,35 @@ impl NpmAnalyzer {
 
         filtered
     }
+
+    /// 创建测试命令
+    fn create_test_command(&self, options: &TestOptions) -> CommandBuilder {
+        let script_name = Self::find_script_name(TEST_ALIASES);
+        
+        let mut builder = match self.package_manager {
+            PackageManager::Npm => {
+                CommandBuilder::new("npm").arg("run").arg(script_name)
+            }
+            PackageManager::Pnpm => {
+                CommandBuilder::new("pnpm").arg(script_name)
+            }
+            PackageManager::Yarn => {
+                CommandBuilder::new("yarn").arg(script_name)
+            }
+        };
+
+        // 添加测试过滤器（测试名称模式）
+        if let Some(ref filter) = options.filter {
+            builder = builder.arg(filter);
+        }
+
+        builder
+    }
+
+    /// 查找脚本名称（从候选列表中返回第一个）
+    fn find_script_name<'a>(candidates: &'a [&str]) -> &'a str {
+        candidates.first().copied().unwrap_or(candidates[0])
+    }
 }
 
 impl BuildAnalyzer for NpmAnalyzer {
@@ -198,5 +237,30 @@ impl BuildAnalyzer for NpmAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+}
+
+impl TestAnalyzer for NpmAnalyzer {
+    fn supports_test(&self) -> bool {
+        true
+    }
+
+    fn run_tests(&self, options: &TestOptions) -> Result<ParsedTestOutput, TestAnalyzerError> {
+        let builder = self.create_test_command(options);
+        let output = builder
+            .execute()
+            .map_err(|e| TestAnalyzerError::CommandFailed(e.to_string()))?;
+
+        // 使用 TestOutputParser 解析输出
+        let parsed = self
+            .test_parser()
+            .ok_or(TestAnalyzerError::NotSupported)?
+            .parse_test_output(&output);
+
+        Ok(parsed)
+    }
+
+    fn test_parser(&self) -> Option<&dyn TestOutputParser> {
+        Some(&self.parser)
     }
 }

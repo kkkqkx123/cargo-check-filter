@@ -5,7 +5,7 @@ use std::path::Path;
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    SubCommand,
+    ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
 };
 
 use super::parser::CargoParser;
@@ -46,6 +46,36 @@ impl CargoAnalyzer {
         }
 
         builder.arg("--message-format=short")
+    }
+
+    /// 创建测试命令
+    fn create_test_command(&self, options: &TestOptions) -> CommandBuilder {
+        let mut builder = CommandBuilder::new("cargo").arg("test");
+
+        if options.lib_only {
+            builder = builder.arg("--lib");
+        }
+
+        if let Some(ref bin) = options.bin {
+            builder = builder.arg("--bin").arg(bin);
+        }
+
+        if let Some(ref test) = options.test {
+            builder = builder.arg("--test").arg(test);
+        }
+
+        if options.doc_only {
+            builder = builder.arg("--doc");
+        }
+
+        if let Some(ref filter) = options.filter {
+            builder = builder.arg(filter);
+        }
+
+        // 添加 --nocapture 以获取完整输出
+        builder = builder.arg("--").arg("--nocapture");
+
+        builder
     }
 
     fn filter_issues(&self, result: AnalysisResult, options: &AnalyzeOptions) -> AnalysisResult {
@@ -113,5 +143,30 @@ impl BuildAnalyzer for CargoAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+}
+
+impl TestAnalyzer for CargoAnalyzer {
+    fn supports_test(&self) -> bool {
+        true
+    }
+
+    fn run_tests(&self, options: &TestOptions) -> Result<ParsedTestOutput, TestAnalyzerError> {
+        let builder = self.create_test_command(options);
+        let output = builder
+            .execute()
+            .map_err(|e| TestAnalyzerError::CommandFailed(e.to_string()))?;
+
+        // 使用 TestOutputParser 解析输出
+        let parsed = self
+            .test_parser()
+            .ok_or(TestAnalyzerError::NotSupported)?
+            .parse_test_output(&output);
+
+        Ok(parsed)
+    }
+
+    fn test_parser(&self) -> Option<&dyn TestOutputParser> {
+        Some(&self.parser)
     }
 }
