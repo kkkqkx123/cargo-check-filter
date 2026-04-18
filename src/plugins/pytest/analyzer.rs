@@ -1,8 +1,6 @@
 //! Pytest Analyzer
 //! Run pytest and parse the output
 
-use std::path::Path;
-
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
     ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
@@ -125,38 +123,6 @@ impl BuildAnalyzer for PytestAnalyzer {
         vec!["pytest", "py.test", "python-test"]
     }
 
-    fn is_applicable(&self, project_path: &Path) -> bool {
-        // Check for Python project indicators
-        let has_python_project = project_path.join("requirements.txt").exists()
-            || project_path.join("pyproject.toml").exists()
-            || project_path.join("setup.py").exists()
-            || project_path.join("setup.cfg").exists()
-            || project_path.join("Pipfile").exists();
-
-        // Check for test files or pytest configuration
-        let has_test_files = project_path.join("tests").exists()
-            || project_path.join("test").exists()
-            || project_path.read_dir().map(|mut entries| {
-                entries.any(|e| {
-                    if let Ok(entry) = e {
-                        let name = entry.file_name();
-                        let name_str = name.to_string_lossy();
-                        name_str.starts_with("test_") && name_str.ends_with(".py")
-                            || name_str.ends_with("_test.py")
-                    } else {
-                        false
-                    }
-                })
-            }).unwrap_or(false);
-
-        let has_pytest_config = project_path.join("pytest.ini").exists()
-            || project_path.join("pyproject.toml").exists()
-            || project_path.join("tox.ini").exists()
-            || project_path.join("setup.cfg").exists();
-
-        has_python_project && (has_test_files || has_pytest_config)
-    }
-
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
         // For pytest, "analyze" means running tests and reporting results
         let builder = self.create_command_builder(options);
@@ -237,13 +203,5 @@ mod tests {
         assert!(commands.contains(&"pytest"));
         assert!(commands.contains(&"py.test"));
         assert!(commands.contains(&"python-test"));
-    }
-
-    #[test]
-    fn test_is_applicable_with_requirements() {
-        let analyzer = PytestAnalyzer::new();
-        // This test would need a temporary directory with the right files
-        // For now, we just verify the logic exists
-        assert!(!analyzer.is_applicable(Path::new("/nonexistent/path")));
     }
 }

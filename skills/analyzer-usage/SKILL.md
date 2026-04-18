@@ -19,7 +19,7 @@ analyzer <tech-stack> <subcommand> [options]
 | Tech Stack      | Commands                      |
 | --------------- | ----------------------------- |
 | Cargo (Rust)    | `check`, `clippy`, `test`     |
-| Mypy (Python)   | `mypy`, `mypy --strict`       |
+| Mypy (Python)   | `check`, `check-strict`       |
 | NPM (Node.js)   | `lint`, `type-check`, `audit` |
 | Maven (Java)    | `compile`, `test`             |
 | Gradle (Java)   | `compileJava`, `test`         |
@@ -36,7 +36,7 @@ analyzer cargo test
 
 # Analyze Python/Mypy project
 analyzer mypy check
-analyzer mypy --strict
+analyzer mypy check-strict
 
 # Analyze Node.js project
 analyzer npm lint

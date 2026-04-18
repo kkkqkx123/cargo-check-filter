@@ -1,8 +1,6 @@
 //! Go Analyzer
 //! Run go build, go vet, go test, golangci-lint and parse the output
 
-use std::path::Path;
-
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
     ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
@@ -129,30 +127,6 @@ impl BuildAnalyzer for GoAnalyzer {
         vec!["go", "golang"]
     }
 
-    fn is_applicable(&self, project_path: &Path) -> bool {
-        // Check for go.mod file
-        if project_path.join("go.mod").exists() {
-            return true;
-        }
-
-        // Check for any .go files in the directory
-        if let Ok(entries) = std::fs::read_dir(project_path) {
-            for entry in entries.flatten() {
-                if let Ok(metadata) = entry.metadata() {
-                    if metadata.is_file() {
-                        if let Some(ext) = entry.path().extension() {
-                            if ext == "go" {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        false
-    }
-
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
         let builder = self.create_command_builder(options);
         let output = builder.execute()?;
@@ -198,7 +172,6 @@ impl TestAnalyzer for GoAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
 
     #[test]
     fn test_go_analyzer_name() {
@@ -215,27 +188,10 @@ mod tests {
     }
 
     #[test]
-    fn test_go_analyzer_is_applicable_with_go_mod() {
-        // This test requires a temporary directory with go.mod
-        // For now, just test the logic without actual file system
-        let analyzer = GoAnalyzer::new();
-
-        // Create a temporary directory for testing
-        let temp_dir = std::env::temp_dir().join("go_analyzer_test");
-        let _ = std::fs::create_dir_all(&temp_dir);
-
-        // Test without go.mod (should return false for empty dir)
-        assert!(!analyzer.is_applicable(&temp_dir));
-
-        // Clean up
-        let _ = std::fs::remove_dir_all(&temp_dir);
-    }
-
-    #[test]
     fn test_create_go_build_command() {
         let analyzer = GoAnalyzer::new();
         let options = AnalyzeOptions::default();
-        let builder = analyzer.create_command_builder(&options);
+        let _builder = analyzer.create_command_builder(&options);
 
         // Verify the command is created (we can't easily inspect the builder internals)
         // But we can verify it doesn't panic

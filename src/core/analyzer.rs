@@ -1,7 +1,6 @@
 //! Analyzer trait definition
 //! defines the interface to the build tool analyzer
 
-use std::path::Path;
 use std::time::Duration;
 use super::types::{AnalysisResult, AnalyzeOptions};
 use super::parser::OutputParser;
@@ -45,9 +44,6 @@ pub trait BuildAnalyzer: Send + Sync {
 
     /// Get supported command aliases
     fn supported_commands(&self) -> Vec<&str>;
-
-    /// Check the current directory for this analyzer
-    fn is_applicable(&self, project_path: &Path) -> bool;
 
     /// Run Analysis Command
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError>;
@@ -93,15 +89,6 @@ impl PluginRegistry {
                     || a.supported_commands().contains(&command)
             })
             .map(|b| b.as_ref())
-    }
-
-    /// Analyzers applicable to automated testing programs
-    pub fn detect(&self, path: &Path) -> Vec<&dyn BuildAnalyzer> {
-        self.analyzers
-            .iter()
-            .filter(|a| a.is_applicable(path))
-            .map(|b| b.as_ref())
-            .collect()
     }
 
     /// List all registered analyzers

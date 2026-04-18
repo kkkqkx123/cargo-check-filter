@@ -9,7 +9,6 @@ pub mod mypy;
 pub mod npm;
 pub mod pytest;
 
-use std::path::Path;
 use crate::core::PluginRegistry;
 
 /// Create and configure the plug-in registry
@@ -44,14 +43,4 @@ pub fn create_registry() -> PluginRegistry {
     registry.register(Box::new(go::GoAnalyzer::new()));
 
     registry
-}
-
-/// Automated testing of project types
-pub fn detect_project(path: &Path) -> Vec<String> {
-    let registry = create_registry();
-    registry
-        .detect(path)
-        .into_iter()
-        .map(|a| a.name().to_string())
-        .collect()
 }

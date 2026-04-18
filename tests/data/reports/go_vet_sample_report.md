@@ -12,18 +12,18 @@
 
 ## Issue Details (Grouped by File)
 
-### pkg/utils/math.go
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 20 | 16 | Warning | return value of os.Open is not checked |
-
 ### ./cmd/myapp/main.go
 
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
 | 18 | 14 | Warning | Printf format %d has arg "hello" of wrong type string |
 | 21 | 10 | Warning | return value of os.Setenv is not checked |
+
+### pkg/utils/math.go
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 20 | 16 | Warning | return value of os.Open is not checked |
 
 ### internal/config/config.go
 
@@ -37,4 +37,4 @@ View raw command output: [samples/go_vet_sample.txt](samples/go_vet_sample.txt)
 
 ---
 
-*Report generated at: 2026-04-18 22:41:07*
+*Report generated at: 2026-04-18 23:58:49*

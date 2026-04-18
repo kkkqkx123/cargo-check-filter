@@ -1,8 +1,6 @@
 //! Gradle Analyzer
 //! Run gradle compile/test and parse the output
 
-use std::path::Path;
-
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
     SubCommand,
@@ -89,13 +87,6 @@ impl BuildAnalyzer for GradleAnalyzer {
 
     fn supported_commands(&self) -> Vec<&str> {
         vec!["gradle", "gradlew", "java"]
-    }
-
-    fn is_applicable(&self, project_path: &Path) -> bool {
-        project_path.join("build.gradle").exists()
-            || project_path.join("build.gradle.kts").exists()
-            || project_path.join("settings.gradle").exists()
-            || project_path.join("settings.gradle.kts").exists()
     }
 
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {

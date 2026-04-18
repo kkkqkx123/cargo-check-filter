@@ -12,6 +12,19 @@
 
 ## Issue Details (Grouped by File)
 
+### pkg/utils/math.go
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 20 | 16 | Warning | Error return value of `os.Open` is not checked |
+
+### internal/config/config.go
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 15 | 15 | Warning | Error return value of `os.Setenv` is not checked |
+| 26 | 10 | Warning | error strings should not be capitalized |
+
 ### cmd/myapp/main.go
 
 | Line | Column | Level | Message |
@@ -21,23 +34,10 @@
 | 21 | 10 | Warning | Error return value of `os.Setenv` is not checked |
 | 23 | 2 | Warning | `cfg` is unused |
 
-### internal/config/config.go
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 15 | 15 | Warning | Error return value of `os.Setenv` is not checked |
-| 26 | 10 | Warning | error strings should not be capitalized |
-
-### pkg/utils/math.go
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 20 | 16 | Warning | Error return value of `os.Open` is not checked |
-
 ## Raw Output
 
 View raw command output: [samples/golangci_lint_sample.txt](samples/golangci_lint_sample.txt)
 
 ---
 
-*Report generated at: 2026-04-18 22:41:07*
+*Report generated at: 2026-04-18 23:58:49*

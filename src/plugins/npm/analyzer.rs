@@ -219,10 +219,6 @@ impl BuildAnalyzer for NpmAnalyzer {
         }
     }
 
-    fn is_applicable(&self, project_path: &Path) -> bool {
-        project_path.join("package.json").exists()
-    }
-
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
         let builder = self.package_manager.build_command(options);
         let output = builder.execute()?;

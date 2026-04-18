@@ -1,8 +1,8 @@
 //! Analyzer - Multilingual Build Tool Error Analyzer
 //!
-//! 用法: analyzer <tech-stack> <subcommand> [options]
+//! Usage: analyzer <tech-stack> <subcommand> [options]
 //!
-//! Example.
+//! Examples:
 //!   analyzer cargo check
 //!   analyzer cargo clippy-all
 //!   analyzer cargo test --filter-warnings
@@ -41,17 +41,7 @@ fn main() {
         }
     };
 
-    // Check for applicability
-    let current_dir = env::current_dir().expect("Failed to get current directory");
-    if !analyzer.is_applicable(&current_dir) {
-        eprintln!(
-            "Error: '{}' is not applicable to this project",
-            tech_stack
-        );
-        std::process::exit(1);
-    }
-
-    // operational analysis
+    // Run analysis
     let subcommand_name = options.subcommand.as_ref()
         .map(|s| s.as_str())
         .unwrap_or("default");

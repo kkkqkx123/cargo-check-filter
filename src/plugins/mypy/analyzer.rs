@@ -1,8 +1,6 @@
 //! Mypy Analyzer
 //Run mypy and parse the output. Run mypy and parse the output
 
-use std::path::Path;
-
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
     SubCommand,
@@ -79,14 +77,6 @@ impl BuildAnalyzer for MypyAnalyzer {
 
     fn supported_commands(&self) -> Vec<&str> {
         vec!["mypy", "python"]
-    }
-
-    fn is_applicable(&self, project_path: &Path) -> bool {
-        project_path.join("requirements.txt").exists()
-            || project_path.join("pyproject.toml").exists()
-            || project_path.join("setup.py").exists()
-            || project_path.join("setup.cfg").exists()
-            || project_path.join("Pipfile").exists()
     }
 
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {

@@ -1,8 +1,6 @@
 //! Cargo Analyzer
 //Run cargo check/clippy/test and parse the output. Run cargo check/clippy/test and parse the output.
 
-use std::path::Path;
-
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
     ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
@@ -123,10 +121,6 @@ impl BuildAnalyzer for CargoAnalyzer {
 
     fn supported_commands(&self) -> Vec<&str> {
         vec!["cargo", "rust"]
-    }
-
-    fn is_applicable(&self, project_path: &Path) -> bool {
-        project_path.join("Cargo.toml").exists()
     }
 
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {

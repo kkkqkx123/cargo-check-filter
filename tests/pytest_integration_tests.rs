@@ -167,22 +167,17 @@ fn test_pytest_parser_specific_patterns() {
 fn test_pytest_analyzer_applicable() {
     use analyzer::plugins::pytest::analyzer::PytestAnalyzer;
     use analyzer::core::BuildAnalyzer;
-    use std::path::Path;
 
     let analyzer = PytestAnalyzer::new();
 
     // Test with python-project fixture
     let project_path = python_project_path();
-    let is_applicable = analyzer.is_applicable(&project_path);
 
     println!("Python project path: {}", project_path.display());
-    println!("Is applicable: {}", is_applicable);
 
-    // The python-project should be applicable (has requirements.txt and test files)
-    assert!(is_applicable, "Expected python-project to be applicable for pytest analyzer");
-
-    // Test with non-existent path
-    assert!(!analyzer.is_applicable(Path::new("/nonexistent/path")));
+    // The analyzer should have correct name and commands
+    assert_eq!(analyzer.name(), "pytest");
+    assert!(analyzer.supported_commands().contains(&"pytest"));
 }
 
 #[test]

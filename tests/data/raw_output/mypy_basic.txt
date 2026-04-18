@@ -23,6 +23,7 @@ src\utils.py:96:20: error: Argument 1 to "append" of "list" has incompatible typ
 src\utils.py:100:14: error: Unsupported operand types for + ("None" and "int")  [operator]
 src\utils.py:100:14: note: Left operand is of type "Optional[int]"
 tests\test_utils.py:3:1: error: Cannot find implementation or library stub for module named "pytest"  [import-not-found]
+tests\test_utils.py:3:1: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
 tests\test_utils.py:7:1: error: Function is missing a return type annotation  [no-untyped-def]
 tests\test_utils.py:7:1: note: Use "-> None" if function does not return a value
 tests\test_utils.py:14:1: error: Function is missing a return type annotation  [no-untyped-def]

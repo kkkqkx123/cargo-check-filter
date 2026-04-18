@@ -1,8 +1,6 @@
 //! Maven Analyzer
 //! Run mvn compile/test and parse the output
 
-use std::path::Path;
-
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
     SubCommand,
@@ -89,10 +87,6 @@ impl BuildAnalyzer for MavenAnalyzer {
 
     fn supported_commands(&self) -> Vec<&str> {
         vec!["maven", "mvn", "java"]
-    }
-
-    fn is_applicable(&self, project_path: &Path) -> bool {
-        project_path.join("pom.xml").exists()
     }
 
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
