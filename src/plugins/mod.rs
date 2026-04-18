@@ -2,6 +2,7 @@
 //! 包含各种技术栈的分析器实现
 
 pub mod cargo;
+pub mod maven;
 pub mod mypy;
 pub mod npm;
 
@@ -26,6 +27,9 @@ pub fn create_registry() -> PluginRegistry {
 
     // 注册 Yarn 分析器
     registry.register(Box::new(npm::NpmAnalyzer::yarn()));
+
+    // 注册 Maven 分析器
+    registry.register(Box::new(maven::MavenAnalyzer::new()));
 
     registry
 }

@@ -1,0 +1,58 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.example:maven-test-project >-------------------
+[INFO] Building Maven Test Project 1.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-resources-plugin:3.0.2:resources (default-resources) @ maven-test-project ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\project\test\fixtures\maven-project\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.10.1:compile (default-compile) @ maven-test-project ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to D:\project\test\fixtures\maven-project\target\classes
+[WARNING] D:\project\test\fixtures\maven-project\src\main\java\com\example\App.java:[18,9] warning: [unchecked] unchecked conversion
+[WARNING]   List rawList = new ArrayList();
+[WARNING]                 ^
+  required: List<E>
+  found:    ArrayList
+  where E is a type-variable:
+    E extends Object declared in interface List
+[WARNING] D:\project\test\fixtures\maven-project\src\main\java\com\example\Utils.java:[12,43] warning: [unchecked] unchecked conversion
+[WARNING]   private static java.util.List rawList = new java.util.ArrayList();
+[WARNING]                                           ^
+  required: List<E>
+  found:    ArrayList
+  where E is a type-variable:
+    E extends Object declared in interface List
+[WARNING] D:\project\test\fixtures\maven-project\src\main\java\com\example\Utils.java:[19,26] warning: [deprecation] getYear() in Date has been deprecated
+[WARNING]         int year = date.getYear();
+[WARNING]                         ^
+[WARNING] D:\project\test\fixtures\maven-project\src\main\java\com\example\Utils.java:[20,27] warning: [deprecation] getMonth() in Date has been deprecated
+[WARNING]         int month = date.getMonth();
+[WARNING]                          ^
+[WARNING] D:\project\test\fixtures\maven-project\src\main\java\com\example\Utils.java:[21,25] warning: [deprecation] getDate() in Date has been deprecated
+[WARNING]         int day = date.getDate();
+[WARNING]                        ^
+[ERROR] D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java:[5,1] error: class Broken is public, should be declared in a file named Broken.java
+[ERROR] D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java:[8,9] error: cannot find symbol
+[ERROR]   symbol:   variable undefinedVar
+[ERROR]   location: class com.example.Broken
+[ERROR] D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java:[12,16] error: cannot find symbol
+[ERROR]   symbol:   method undefinedMethod()
+[ERROR]   location: class com.example.Broken
+[INFO] -------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] -------------------------------------------------------------
+[INFO] Total time:  2.345 s
+[INFO] Finished at: 2026-04-18T19:00:00+08:00
+[INFO] -------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.10.1:compile (default-compile) on project maven-test-project: Compilation failure: Compilation failure: 
+[ERROR] D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java:[5,1] error: class Broken is public, should be declared in a file named Broken.java
+[ERROR] D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java:[8,9] error: cannot find symbol
+[ERROR] symbol:   variable undefinedVar
+[ERROR] location: class com.example.Broken
+[ERROR] D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java:[12,16] error: cannot find symbol
+[ERROR] symbol:   method undefinedMethod()
+[ERROR] location: class com.example.Broken
+[ERROR] -> [Help 1]

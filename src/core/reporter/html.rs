@@ -1,0 +1,178 @@
+//! HTML 报告生成器
+
+use super::{Reporter, ReporterError};
+use crate::core::types::{AnalysisResult, IssueLevel, ReportFormat};
+
+/// HTML 报告生成器
+pub struct HtmlReporter;
+
+impl HtmlReporter {
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// 检测报告类型并返回合适的标题
+    fn detect_report_type(&self, result: &AnalysisResult) -> (String, String) {
+        // 收集所有 issue 的消息用于判断类型
+        let all_messages: Vec<String> = result
+            .issues_by_file
+            .values()
+            .flatten()
+            .map(|i| i.message.to_lowercase())
+            .collect();
+
+        // 判断是否为安全审计报告
+        let is_security_audit = all_messages.iter().any(|m| {
+            m.contains("security vulnerability")
+                || m.contains("severity: high")
+                || m.contains("severity: critical")
+                || m.contains("npm audit")
+        });
+
+        if is_security_audit {
+            return (
+                "Security Audit Report".to_string(),
+                "Vulnerability Summary".to_string(),
+            );
+        }
+
+        // 判断是否为类型检查报告
+        let is_type_check = all_messages.iter().any(|m| {
+            m.contains("type")
+                || m.contains("typescript")
+                || m.contains("type mismatch")
+                || m.contains("expected")
+                || m.contains("mypy")
+        });
+
+        if is_type_check {
+            return (
+                "Type Check Report".to_string(),
+                "Type Issues Summary".to_string(),
+            );
+        }
+
+        // 判断是否为 Lint 报告
+        let is_lint = all_messages.iter().any(|m| {
+            m.contains("eslint") || m.contains("clippy") || m.contains("lint") || m.contains("style")
+        });
+
+        if is_lint {
+            return ("Lint Report".to_string(), "Lint Issues Summary".to_string());
+        }
+
+        // 默认为通用分析报告
+        (
+            "Analysis Report".to_string(),
+            "Summary".to_string(),
+        )
+    }
+}
+
+impl Default for HtmlReporter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Reporter for HtmlReporter {
+    fn generate(&self, result: &AnalysisResult) -> Result<String, ReporterError> {
+        let mut html = String::new();
+
+        // 检测报告类型
+        let (title, summary_title) = self.detect_report_type(result);
+
+        html.push_str("<!DOCTYPE html>\n");
+        html.push_str("<html>\n<head>\n");
+        html.push_str("<meta charset=\"UTF-8\">\n");
+        html.push_str(&format!("<title>{}</title>\n", title));
+        html.push_str("<style>\n");
+        html.push_str("body { font-family: Arial, sans-serif; margin: 40px; }\n");
+        html.push_str("h1 { color: #333; }\n");
+        html.push_str(".error { color: #d32f2f; }\n");
+        html.push_str(".warning { color: #f57c00; }\n");
+        html.push_str(".info { color: #1976d2; }\n");
+        html.push_str("table { border-collapse: collapse; width: 100%; margin: 20px 0; }\n");
+        html.push_str("th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }\n");
+        html.push_str("th { background-color: #f5f5f5; }\n");
+        html.push_str("</style>\n");
+        html.push_str("</head>\n<body>\n");
+
+        html.push_str(&format!("<h1>{}</h1>\n", title));
+
+        // 摘要
+        html.push_str(&format!("<h2>{}</h2>\n", summary_title));
+        
+        if result.total_issues == 0 {
+            html.push_str("<p>&#x2705; No issues found.</p>\n");
+        } else {
+            html.push_str("<ul>\n");
+            html.push_str(&format!("<li><strong>Total:</strong> {}</li>\n", result.total_issues));
+            
+            // 按严重程度排序
+            let level_order = [IssueLevel::Error, IssueLevel::Warning, IssueLevel::Info, IssueLevel::Hint];
+            for level in &level_order {
+                if let Some(count) = result.issues_by_level.get(level) {
+                    let (class, icon) = match level {
+                        IssueLevel::Error => ("error", "&#x274C;"),
+                        IssueLevel::Warning => ("warning", "&#x26A0;"),
+                        IssueLevel::Info => ("info", "&#x2139;"),
+                        IssueLevel::Hint => ("info", "&#x1F4A1;"),
+                    };
+                    html.push_str(&format!(
+                        "<li class=\"{}\"><strong>{} {}:</strong> {}</li>\n",
+                        class, icon, level, count
+                    ));
+                }
+            }
+            html.push_str(&format!("<li><strong>Categories:</strong> {}</li>\n", result.unique_patterns.len()));
+            html.push_str(&format!("<li><strong>Files Affected:</strong> {}</li>\n", result.issues_by_file.len()));
+            html.push_str("</ul>\n");
+
+            // 详细表格
+            html.push_str("<h2>Details</h2>\n");
+            html.push_str("<table>\n");
+            html.push_str("<tr><th>Severity</th><th>File</th><th>Position</th><th>Description</th></tr>\n");
+
+            for issues in result.issues_by_file.values() {
+                for issue in issues {
+                    let level_class = match issue.level {
+                        IssueLevel::Error => "error",
+                        IssueLevel::Warning => "warning",
+                        _ => "info",
+                    };
+
+                    let location = match (issue.location.line_number, issue.location.column_number) {
+                        (Some(line), Some(col)) => format!("line {}, col {}", line, col),
+                        (Some(line), None) => format!("line {}", line),
+                        _ => "-".to_string(),
+                    };
+
+                    let code_display = issue.code.as_ref()
+                        .map(|c| format!(" [{}]", c))
+                        .unwrap_or_default();
+
+                    html.push_str(&format!(
+                        "<tr><td class=\"{}\">{}{}</td><td>{}</td><td>{}</td><td>{}</td></tr>\n",
+                        level_class,
+                        issue.level,
+                        code_display,
+                        issue.location.file_path,
+                        location,
+                        issue.message
+                    ));
+                }
+            }
+
+            html.push_str("</table>\n");
+        }
+        
+        html.push_str("</body>\n</html>");
+
+        Ok(html)
+    }
+
+    fn format(&self) -> ReportFormat {
+        ReportFormat::Html
+    }
+}

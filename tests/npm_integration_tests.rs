@@ -1,16 +1,16 @@
-//! NPM 集成测试
-//! 执行实际的 npm 命令，验证解析逻辑与实际输出格式是否一致
+//! NPM Integration Tests
+//! Execute actual npm commands, verify parsing logic matches actual output format
 
 use std::path::PathBuf;
 
 mod common;
-use common::{fixtures_dir, is_command_available, output_dir, resolve_command, run_command, save_output};
+use common::{fixtures_dir, is_command_available, raw_output_dir, resolve_command, run_command, save_raw_output, generate_report};
 
 fn npm_project_path() -> PathBuf {
     fixtures_dir().join("npm-project")
 }
 
-/// 运行 npm install 安装依赖
+/// Run npm install to install dependencies
 fn ensure_npm_deps() -> Result<(), String> {
     if !is_command_available("npm") {
         return Err("npm is not available in PATH".to_string());
@@ -35,6 +35,9 @@ fn ensure_npm_deps() -> Result<(), String> {
 
 #[test]
 fn test_npm_eslint_output() {
+    use analyzer::plugins::npm::parser::NpmParser;
+    use analyzer::core::OutputParser;
+
     if let Err(e) = ensure_npm_deps() {
         println!("Skipping test: {}", e);
         return;
@@ -42,7 +45,7 @@ fn test_npm_eslint_output() {
 
     let project_path = npm_project_path();
 
-    // 首先尝试使用 npx eslint
+    // First try using npx eslint
     let output = match run_command(
         "npx",
         &["eslint", "src/**/*.ts", "--format", "compact"],
@@ -51,7 +54,7 @@ fn test_npm_eslint_output() {
         Ok(output) => output,
         Err(e) => {
             println!("npx eslint failed: {}, trying npm run lint...", e);
-            // 回退到 npm run lint
+            // Fallback to npm run lint
             match run_command("npm", &["run", "lint"], &project_path) {
                 Ok(output) => output,
                 Err(e2) => {
@@ -61,14 +64,25 @@ fn test_npm_eslint_output() {
         }
     };
 
-    // 保存输出
-    save_output("npm_eslint", &output);
+    // Save raw output
+    save_raw_output("npm_eslint", &output);
+
+    // Parse and generate report
+    let parser = NpmParser::new();
+    let issues = parser.parse(&output);
+    generate_report(
+        "npm_eslint",
+        "ESLint",
+        "npx eslint src/**/*.ts --format compact",
+        &issues,
+        Some("raw_output/npm_eslint.txt")
+    );
 
     println!("=== NPM ESLint Output ===");
     println!("{}", output);
 
-    // 验证输出中包含 ESLint 格式的问题
-    // ESLint compact 格式: filepath:line:col: level message
+    // Verify output contains ESLint format issues
+    // ESLint compact format: filepath:line:col: level message
     let lines: Vec<&str> = output.lines().collect();
     let has_issue_lines = lines.iter().any(|line| {
         line.contains(":") && (line.contains("error") || line.contains("warning"))
@@ -85,6 +99,9 @@ fn test_npm_eslint_output() {
 
 #[test]
 fn test_npm_typecheck_output() {
+    use analyzer::plugins::npm::parser::NpmParser;
+    use analyzer::core::OutputParser;
+
     if let Err(e) = ensure_npm_deps() {
         println!("Skipping test: {}", e);
         return;
@@ -92,7 +109,7 @@ fn test_npm_typecheck_output() {
 
     let project_path = npm_project_path();
 
-    // 使用 npx tsc
+    // Use npx tsc
     let output = match run_command("npx", &["tsc", "--noEmit"], &project_path) {
         Ok(output) => output,
         Err(e) => {
@@ -106,13 +123,24 @@ fn test_npm_typecheck_output() {
         }
     };
 
-    // 保存输出
-    save_output("npm_typecheck", &output);
+    // Save raw output
+    save_raw_output("npm_typecheck", &output);
+
+    // Parse and generate report
+    let parser = NpmParser::new();
+    let issues = parser.parse(&output);
+    generate_report(
+        "npm_typecheck",
+        "TypeScript Type Check",
+        "npx tsc --noEmit",
+        &issues,
+        Some("raw_output/npm_typecheck.txt")
+    );
 
     println!("=== NPM TypeScript Type-Check Output ===");
     println!("{}", output);
 
-    // TypeScript 错误格式: file(line,col): error TSxxxx: message
+    // TypeScript error format: file(line,col): error TSxxxx: message
     let lines: Vec<&str> = output.lines().collect();
     let has_ts_errors = lines.iter().any(|line| {
         (line.contains("(") && line.contains(")") && line.contains("error"))
@@ -128,6 +156,9 @@ fn test_npm_typecheck_output() {
 
 #[test]
 fn test_npm_audit_output() {
+    use analyzer::plugins::npm::parser::NpmParser;
+    use analyzer::core::OutputParser;
+
     if !is_command_available("npm") {
         println!("Skipping test: npm is not available");
         return;
@@ -142,13 +173,24 @@ fn test_npm_audit_output() {
         }
     };
 
-    // 保存输出
-    save_output("npm_audit", &output);
+    // Save raw output
+    save_raw_output("npm_audit", &output);
+
+    // Parse and generate report
+    let parser = NpmParser::new();
+    let issues = parser.parse(&output);
+    generate_report(
+        "npm_audit",
+        "NPM Audit",
+        "npm audit",
+        &issues,
+        Some("raw_output/npm_audit.txt")
+    );
 
     println!("=== NPM Audit Output ===");
     println!("{}", output);
 
-    // npm audit 输出包含漏洞信息
+    // npm audit output contains vulnerability info
     assert!(
         output.contains("found")
             || output.contains("vulnerabilities")
@@ -174,14 +216,14 @@ fn test_npm_ls_output() {
         }
     };
 
-    // 保存输出
-    save_output("npm_ls", &output);
+    // Save raw output
+    save_raw_output("npm_ls", &output);
 
     println!("=== NPM List Output ===");
     println!("{}", output);
 }
 
-/// 验证 ESLint 输出格式
+/// Validate ESLint output format
 fn validate_eslint_output(content: &str) {
     println!("Validating ESLint output format...");
     let issue_lines: Vec<&str> = content
@@ -192,7 +234,7 @@ fn validate_eslint_output(content: &str) {
     println!("  Found {} issue lines", issue_lines.len());
 
     for line in &issue_lines {
-        // ESLint compact 格式: filepath:line:col: level message
+        // ESLint compact format: filepath:line:col: level message
         let parts: Vec<&str> = line.splitn(4, ':').collect();
         if parts.len() >= 3 {
             println!("  ✓ Valid format: {}", line);
@@ -200,7 +242,7 @@ fn validate_eslint_output(content: &str) {
     }
 }
 
-/// 验证 TypeScript 输出格式
+/// Validate TypeScript output format
 fn validate_typescript_output(content: &str) {
     println!("Validating TypeScript output format...");
     let issue_lines: Vec<&str> = content
@@ -213,8 +255,8 @@ fn validate_typescript_output(content: &str) {
 
 #[test]
 fn test_validate_npm_outputs() {
-    // 读取并验证已保存的 npm 输出文件
-    let output_dir = output_dir();
+    // Read and validate saved npm output files
+    let output_dir = raw_output_dir();
 
     for entry in std::fs::read_dir(&output_dir).expect("Failed to read output directory") {
         if let Ok(entry) = entry {
@@ -237,7 +279,7 @@ fn test_validate_npm_outputs() {
 
 #[test]
 fn test_npm_command_resolution() {
-    // 测试命令解析功能
+    // Test command resolution functionality
     println!("Testing npm command resolution...");
     
     if let Some(npm_path) = resolve_command("npm") {

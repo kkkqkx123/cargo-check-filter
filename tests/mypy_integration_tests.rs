@@ -1,17 +1,17 @@
-//! Mypy (Python) 集成测试
-//! 执行实际的 mypy 命令，验证解析逻辑与实际输出格式是否一致
+//! Mypy (Python) Integration Tests
+//! Execute actual mypy commands, verify parsing logic matches actual output format
 
 use std::path::PathBuf;
 use std::process::Command;
 
 mod common;
-use common::{fixtures_dir, is_command_available, output_dir, run_command, save_output};
+use common::{fixtures_dir, is_command_available, raw_output_dir, run_command, save_raw_output, generate_report};
 
 fn python_project_path() -> PathBuf {
     fixtures_dir().join("python-project")
 }
 
-/// 检查 mypy 是否可用
+/// Check if mypy is available
 fn ensure_mypy() -> Result<(), String> {
     if !is_command_available("mypy") {
         return Err("mypy is not installed. Please install it with: pip install mypy".to_string());
@@ -21,6 +21,9 @@ fn ensure_mypy() -> Result<(), String> {
 
 #[test]
 fn test_mypy_basic_output() {
+    use analyzer::plugins::mypy::parser::MypyParser;
+    use analyzer::core::OutputParser;
+
     if let Err(e) = ensure_mypy() {
         println!("Skipping test: {}", e);
         return;
@@ -35,14 +38,25 @@ fn test_mypy_basic_output() {
         }
     };
 
-    // 保存输出
-    save_output("mypy_basic", &output);
+    // Save raw output
+    save_raw_output("mypy_basic", &output);
+
+    // Parse and generate report
+    let parser = MypyParser::new();
+    let issues = parser.parse(&output);
+    generate_report(
+        "mypy_basic",
+        "Mypy Basic",
+        "mypy --show-column-numbers .",
+        &issues,
+        Some("raw_output/mypy_basic.txt")
+    );
 
     println!("=== Mypy Basic Output ===");
     println!("{}", output);
 
-    // 验证 mypy 输出格式
-    // 格式: file:line:col: level: message
+    // Verify mypy output format
+    // Format: file:line:col: level: message
     let lines: Vec<&str> = output.lines().collect();
     let has_mypy_errors = lines.iter().any(|line| {
         let parts: Vec<&str> = line.split(':').collect();
@@ -70,6 +84,9 @@ fn test_mypy_basic_output() {
 
 #[test]
 fn test_mypy_strict_output() {
+    use analyzer::plugins::mypy::parser::MypyParser;
+    use analyzer::core::OutputParser;
+
     if ensure_mypy().is_err() {
         println!("Skipping test: mypy is not available");
         return;
@@ -88,8 +105,19 @@ fn test_mypy_strict_output() {
         }
     };
 
-    // 保存输出
-    save_output("mypy_strict", &output);
+    // 保存原始输出
+    save_raw_output("mypy_strict", &output);
+
+    // 解析并生成报告
+    let parser = MypyParser::new();
+    let issues = parser.parse(&output);
+    generate_report(
+        "mypy_strict",
+        "Mypy Strict",
+        "mypy --strict --show-column-numbers .",
+        &issues,
+        Some("raw_output/mypy_strict.txt")
+    );
 
     println!("=== Mypy Strict Output ===");
     println!("{}", output);
@@ -107,6 +135,9 @@ fn test_mypy_strict_output() {
 
 #[test]
 fn test_mypy_specific_file() {
+    use analyzer::plugins::mypy::parser::MypyParser;
+    use analyzer::core::OutputParser;
+
     if ensure_mypy().is_err() {
         println!("Skipping test: mypy is not available");
         return;
@@ -122,8 +153,19 @@ fn test_mypy_specific_file() {
         }
     };
 
-    // 保存输出
-    save_output("mypy_specific_file", &output);
+    // 保存原始输出
+    save_raw_output("mypy_specific_file", &output);
+
+    // 解析并生成报告
+    let parser = MypyParser::new();
+    let issues = parser.parse(&output);
+    generate_report(
+        "mypy_specific_file",
+        "Mypy Specific File",
+        "mypy --show-column-numbers src/main.py",
+        &issues,
+        Some("raw_output/mypy_specific_file.txt")
+    );
 
     println!("=== Mypy Specific File Output ===");
     println!("{}", output);
@@ -138,6 +180,9 @@ fn test_mypy_specific_file() {
 
 #[test]
 fn test_mypy_with_ignore_missing_imports() {
+    use analyzer::plugins::mypy::parser::MypyParser;
+    use analyzer::core::OutputParser;
+
     if ensure_mypy().is_err() {
         println!("Skipping test: mypy is not available");
         return;
@@ -160,8 +205,19 @@ fn test_mypy_with_ignore_missing_imports() {
         }
     };
 
-    // 保存输出
-    save_output("mypy_ignore_imports", &output);
+    // 保存原始输出
+    save_raw_output("mypy_ignore_imports", &output);
+
+    // 解析并生成报告
+    let parser = MypyParser::new();
+    let issues = parser.parse(&output);
+    generate_report(
+        "mypy_ignore_imports",
+        "Mypy Ignore Imports",
+        "mypy --show-column-numbers --ignore-missing-imports .",
+        &issues,
+        Some("raw_output/mypy_ignore_imports.txt")
+    );
 
     println!("=== Mypy with --ignore-missing-imports Output ===");
     println!("{}", output);
@@ -193,7 +249,7 @@ fn validate_mypy_output(content: &str) {
 #[test]
 fn test_validate_mypy_outputs() {
     // 读取并验证已保存的 mypy 输出文件
-    let output_dir = output_dir();
+    let output_dir = raw_output_dir();
 
     for entry in std::fs::read_dir(&output_dir).expect("Failed to read output directory") {
         if let Ok(entry) = entry {

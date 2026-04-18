@@ -1,0 +1,54 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.example:maven-test-project >-------------------
+[INFO] Building Maven Test Project 1.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-resources-plugin:3.0.2:resources (default-resources) @ maven-test-project ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\project\test\fixtures\maven-project\src\main\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.10.1:compile (default-compile) @ maven-test-project ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to D:\project\test\fixtures\maven-project\target\classes
+[INFO] 
+[INFO] --- maven-resources-plugin:3.0.2:testResources (default-test-resources) @ maven-test-project ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory D:\project\test\fixtures\maven-project\src\test\resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.10.1:testCompile (default-testCompile) @ maven-test-project ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to D:\project\test\fixtures\maven-project\target\test-classes
+[INFO] 
+[INFO] --- maven-surefire-plugin:3.0.0-M9:test (default-test) @ maven-test-project ---
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.example.AppTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.045 s - in com.example.AppTest
+[INFO] Running com.example.UtilsTest
+[ERROR] Tests run: 4, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.023 s <<< FAILURE! - in com.example.UtilsTest
+[ERROR] testFormatDate(com.example.UtilsTest)  Time elapsed: 0.012 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <true> but was: <false>
+	at com.example.UtilsTest.testFormatDate(UtilsTest.java:17)
+[ERROR] 
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   UtilsTest.testFormatDate:17 expected: <true> but was: <false>
+[INFO] 
+[ERROR] Tests run: 9, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] -------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] -------------------------------------------------------------
+[INFO] Total time:  5.678 s
+[INFO] Finished at: 2026-04-18T19:00:00+08:00
+[INFO] -------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.0.0-M9:test (default-test) on project maven-test-project: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\project\test\fixtures\maven-project\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvm.dump [date].dumpstream.
+[ERROR] -> [Help 1]

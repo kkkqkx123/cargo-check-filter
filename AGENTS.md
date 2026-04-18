@@ -50,6 +50,7 @@ User Input → CLI Parsing → Plugin Selection → Command Execution → Output
 - `IoError` - I/O error
 - `NotApplicable` - Analyzer not applicable
 
----
+## Language
 
-**Advantages**: Plugin-based, type-safe, unified error handling, multi-format output support
+Always use English in code, comments, logging, error info or other string literal. Use Chinese in docs (except code block)
+**Never use any Chinese in any code files or code block.**
