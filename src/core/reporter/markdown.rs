@@ -1,9 +1,9 @@
-//! Markdown 报告生成器
+//! Markdown Report Generator
 
 use super::{Reporter, ReporterError};
 use crate::core::types::{AnalysisResult, IssueLevel, ReportFormat, TestAnalysisResult, TestStatus};
 
-/// Markdown 报告生成器
+/// Markdown Report Generator
 pub struct MarkdownReporter;
 
 impl MarkdownReporter {
@@ -11,9 +11,9 @@ impl MarkdownReporter {
         Self
     }
 
-    /// 检测报告类型并返回合适的标题
+    /// Detects the report type and returns the appropriate title
     fn detect_report_type(&self, result: &AnalysisResult) -> (String, String) {
-        // 收集所有 issue 的消息用于判断类型
+        // Collect all issue messages for type determination
         let all_messages: Vec<String> = result
             .issues_by_file
             .values()
@@ -21,7 +21,7 @@ impl MarkdownReporter {
             .map(|i| i.message.to_lowercase())
             .collect();
 
-        // 判断是否为安全审计报告
+        // Determining whether a security audit report
         let is_security_audit = all_messages.iter().any(|m| {
             m.contains("security vulnerability")
                 || m.contains("severity: high")
@@ -36,7 +36,7 @@ impl MarkdownReporter {
             );
         }
 
-        // 判断是否为类型检查报告
+        // Determining whether a type check report
         let is_type_check = all_messages.iter().any(|m| {
             m.contains("type")
                 || m.contains("typescript")
@@ -52,7 +52,7 @@ impl MarkdownReporter {
             );
         }
 
-        // 判断是否为 Lint 报告
+        // Determining if a Lint Report
         let is_lint = all_messages.iter().any(|m| {
             m.contains("eslint") || m.contains("clippy") || m.contains("lint") || m.contains("style")
         });
@@ -61,7 +61,7 @@ impl MarkdownReporter {
             return ("Lint Report".to_string(), "Lint Issues Summary".to_string());
         }
 
-        // 默认为通用分析报告
+        // Defaults to a generic analysis report
         (
             "Analysis Report".to_string(),
             "Issues Summary".to_string(),
@@ -79,11 +79,11 @@ impl Reporter for MarkdownReporter {
     fn generate(&self, result: &AnalysisResult) -> Result<String, ReporterError> {
         let mut report = String::new();
 
-        // 检测报告类型并设置合适的标题
+        // Detect the report type and set the appropriate title
         let (title, summary_title) = self.detect_report_type(result);
         report.push_str(&format!("# {}\n\n", title));
 
-        // 摘要
+        // summaries
         report.push_str(&format!("## {}\n\n", summary_title));
         
         if result.total_issues == 0 {
@@ -93,7 +93,7 @@ impl Reporter for MarkdownReporter {
         
         report.push_str(&format!("- **Total**: {}\n", result.total_issues));
 
-        // 按级别统计，按严重程度排序
+        // Statistics by level, sorted by severity
         let level_order = [IssueLevel::Error, IssueLevel::Warning, IssueLevel::Info, IssueLevel::Hint];
         for level in &level_order {
             if let Some(count) = result.issues_by_level.get(level) {
@@ -110,7 +110,7 @@ impl Reporter for MarkdownReporter {
         report.push_str(&format!("- **Categories**: {}\n", result.unique_patterns.len()));
         report.push_str(&format!("- **Files Affected**: {}\n\n", result.issues_by_file.len()));
 
-        // 按类型统计
+        // Statistics by type
         if !result.issues_by_type.is_empty() {
             report.push_str("## Breakdown by Category\n\n");
             let mut types: Vec<_> = result.issues_by_type.iter().collect();
@@ -122,7 +122,7 @@ impl Reporter for MarkdownReporter {
             report.push('\n');
         }
 
-        // 按文件统计
+        // Statistics by document
         if !result.issues_by_file.is_empty() {
             report.push_str("## Details by File\n\n");
             let mut files: Vec<_> = result.issues_by_file.iter().collect();
@@ -166,7 +166,7 @@ impl Reporter for MarkdownReporter {
     fn generate_test_report(&self, result: &TestAnalysisResult) -> Result<String, ReporterError> {
         let mut report = String::new();
 
-        // 根据测试结果选择标题
+        // Selection of titles based on test results
         let all_passed = result.failed_tests.is_empty() && result.compile_result.total_issues == 0;
         if all_passed {
             report.push_str("# ✅ Test Report - All Passed\n\n");
@@ -174,11 +174,11 @@ impl Reporter for MarkdownReporter {
             report.push_str("# ❌ Test Report - Issues Found\n\n");
         }
 
-        // 测试摘要
+        // Test Summary
         if let Some(ref summary) = result.test_summary {
             report.push_str("## Summary\n\n");
             
-            // 计算通过率
+            // Calculating the pass rate
             let pass_rate = if summary.total > 0 {
                 (summary.passed as f64 / summary.total as f64) * 100.0
             } else {
@@ -205,7 +205,7 @@ impl Reporter for MarkdownReporter {
             report.push('\n');
         }
 
-        // 失败的测试详情
+        // Failed Test Details
         if !result.failed_tests.is_empty() {
             report.push_str(&format!("## Failed Tests ({} item(s))\n\n", result.failed_tests.len()));
             for (idx, test) in result.failed_tests.iter().enumerate() {
@@ -231,7 +231,7 @@ impl Reporter for MarkdownReporter {
             }
         }
 
-        // 被忽略的测试
+        // Neglected Tests
         if !result.ignored_tests.is_empty() {
             report.push_str(&format!("## Ignored Tests ({} item(s))\n\n", result.ignored_tests.len()));
             for test in &result.ignored_tests {
@@ -244,7 +244,7 @@ impl Reporter for MarkdownReporter {
             report.push('\n');
         }
 
-        // 编译问题（如果有）
+        // Compilation issues (if any)
         if result.compile_result.total_issues > 0 {
             report.push_str("## Build Issues\n\n");
             report.push_str("The following issues were found during compilation:\n\n");

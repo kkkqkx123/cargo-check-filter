@@ -1,5 +1,5 @@
 //! Maven 插件
-//! 提供对 Java/Maven 项目的分析支持
+//! Provides support for analyzing Java/Maven projects
 
 pub mod parser;
 pub mod analyzer;

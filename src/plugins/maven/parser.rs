@@ -1,5 +1,5 @@
-//! Maven 输出解析器
-//! 解析 Maven compile/test 的输出
+//! Maven Output Parser
+//Parsing the output of Maven compile/test Parsing the output of Maven compile/test
 
 use crate::core::{BaseParser, Issue, IssueLevel, Location, OutputParser};
 
@@ -14,13 +14,13 @@ impl MavenParser {
         }
     }
 
-    /// 解析 Maven 编译错误/警告行
+    /// Parsing Maven Compile Error/Warning Lines
     /// 格式: [ERROR] /path/to/File.java:[10,5] error: message
     /// 格式: [WARNING] /path/to/File.java:[20,10] warning: message
     fn parse_maven_issue_line(&self, line: &str) -> Option<Issue> {
         let trimmed = line.trim();
 
-        // 检查是否是错误/警告行
+        // Check for error/warning lines
         let level = if trimmed.starts_with("[ERROR]") {
             IssueLevel::Error
         } else if trimmed.starts_with("[WARNING]") {
@@ -29,22 +29,22 @@ impl MavenParser {
             return None;
         };
 
-        // 移除 [ERROR] 或 [WARNING] 前缀
+        // Remove the [ERROR] or [WARNING] prefix.
         let content = if trimmed.starts_with("[ERROR]") {
             trimmed[7..].trim()
         } else {
             trimmed[9..].trim()
         };
 
-        // 解析文件路径和位置
+        // Parsing file paths and locations
         // 格式: /path/to/File.java:[10,5] error: message
         if let Some(location_end) = content.find(']') {
             let location_part = &content[..location_end];
             let rest = &content[location_end + 1..].trim();
 
-            // 解析文件路径和行列号
+            // Parsing file paths and line numbers
             if let Some((file_path, line_num, col_num)) = self.parse_java_location(location_part) {
-                // 解析消息（移除 "error:" 或 "warning:" 前缀）
+                // Parsing messages (removing the "error:" or "warning:" prefix)
                 let message = self.extract_message(rest);
 
                 let location = Location::new(file_path)
@@ -55,7 +55,7 @@ impl MavenParser {
             }
         }
 
-        // 尝试解析没有行列号的格式
+        // Trying to parse a format without line numbers
         // 格式: [ERROR] message
         if !content.contains(':') || content.starts_with("Failed to execute goal") {
             let location = Location::new("pom.xml");
@@ -65,17 +65,17 @@ impl MavenParser {
         None
     }
 
-    /// 解析 Java 文件位置
-    /// 格式: /path/to/File.java:[10,5] 或 /path/to/File.java:10
+    /// Parsing Java File Locations
+    /// Format: /path/to/File.java:[10,5] or /path/to/File.java:10
     fn parse_java_location(&self, location_str: &str) -> Option<(String, u32, u32)> {
-        // 查找 '[' 的位置（行号列号的开始）
+        // Find the position of '[' (beginning of the row and column numbers)
         if let Some(bracket_start) = location_str.rfind('[') {
             let file_path = location_str[..bracket_start].trim();
-            // 移除末尾的冒号（如果有）
+            // Remove the colon at the end (if any)
             let file_path = file_path.trim_end_matches(':');
-            let coords = &location_str[bracket_start + 1..]; // 跳过 "["
+            let coords = &location_str[bracket_start + 1..]; // Skip "["
 
-            // 解析行号和列号，格式: 10,5] 或 10]
+            // Parses row and column numbers, format: 10,5] or 10].
             let coords = coords.trim_end_matches(']');
             let parts: Vec<&str> = coords.split(',').collect();
             if parts.len() >= 1 {
@@ -89,7 +89,7 @@ impl MavenParser {
             }
         }
 
-        // 尝试简单格式: path:line
+        // Try the simple format: path:line
         if let Some(colon_pos) = location_str.rfind(':') {
             let file_path = &location_str[..colon_pos];
             let line_str = &location_str[colon_pos + 1..];
@@ -101,9 +101,9 @@ impl MavenParser {
         None
     }
 
-    /// 提取消息内容
+    /// Extract message content
     fn extract_message(&self, rest: &str) -> String {
-        // 移除 "error:" 或 "warning:" 前缀
+        // Remove the "error:" or "warning:" prefix.
         let msg = rest
             .trim_start_matches("error:")
             .trim_start_matches("warning:")
@@ -113,7 +113,7 @@ impl MavenParser {
         msg.to_string()
     }
 
-    /// 解析多行错误（收集错误详情）
+    /// Parsing multi-line errors (collecting error details)
     fn parse_multiline_issue(
         &self,
         lines: &[String],
@@ -125,16 +125,16 @@ impl MavenParser {
 
         let line = &lines[start_index];
 
-        // 首先尝试解析单行格式
+        // First try parsing the one-line format
         if let Some(issue) = self.parse_maven_issue_line(line) {
             return (Some(issue), start_index + 1);
         }
 
-        // 检查是否是符号错误的多行格式
-        // 符号:   变量 x
+        // Checking for mis-symbolized multi-line formatting
+        // Symbol: variable x
         // 位置: 类 com.example.MyClass
-        if line.trim().starts_with("符号:") || line.trim().starts_with("位置:") {
-            // 向上查找错误行
+        if line.trim().starts_with("Sign: (1)") || line.trim().starts_with("Position: (1)") {
+            // Look up the error line
             for i in (0..start_index).rev() {
                 if let Some(issue) = self.parse_maven_issue_line(&lines[i]) {
                     return (Some(issue), start_index + 1);

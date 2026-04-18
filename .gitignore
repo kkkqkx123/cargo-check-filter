@@ -3,3 +3,4 @@ target
 **.pdb
 **.lock
 .mypy_cache
+.translator

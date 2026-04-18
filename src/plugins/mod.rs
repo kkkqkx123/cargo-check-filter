@@ -1,5 +1,5 @@
-//! 插件模块
-//! 包含各种技术栈的分析器实现
+//! plug-in module
+//! Analyzer implementations containing various technology stacks
 
 pub mod cargo;
 pub mod maven;
@@ -9,32 +9,32 @@ pub mod npm;
 use std::path::Path;
 use crate::core::PluginRegistry;
 
-/// 创建并配置插件注册表
+/// Create and configure the plug-in registry
 pub fn create_registry() -> PluginRegistry {
     let mut registry = PluginRegistry::new();
 
-    // 注册 Cargo 分析器
+    // Register Cargo Analyzer
     registry.register(Box::new(cargo::CargoAnalyzer::new()));
 
-    // 注册 Mypy 分析器
+    // Register Mypy Analyzer
     registry.register(Box::new(mypy::MypyAnalyzer::new()));
 
-    // 注册 NPM 分析器
+    // Register NPM Analyzer
     registry.register(Box::new(npm::NpmAnalyzer::npm()));
 
-    // 注册 PNPM 分析器
+    // Register PNPM Analyzer
     registry.register(Box::new(npm::NpmAnalyzer::pnpm()));
 
-    // 注册 Yarn 分析器
+    // Registering the Yarn Analyzer
     registry.register(Box::new(npm::NpmAnalyzer::yarn()));
 
-    // 注册 Maven 分析器
+    // Registering the Maven Analyzer
     registry.register(Box::new(maven::MavenAnalyzer::new()));
 
     registry
 }
 
-/// 自动检测项目类型
+/// Automated testing of project types
 pub fn detect_project(path: &Path) -> Vec<String> {
     let registry = create_registry();
     registry

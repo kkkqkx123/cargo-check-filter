@@ -1,17 +1,17 @@
-//! 基础分析器实现
-//! 提供通用的分析器逻辑，减少重复代码
+//! Implementation of the Basic Analyzer
+//Provide general analyzer logic to reduce duplicate code
 
 use super::analyzer::{AnalyzerError, BuildAnalyzer};
 use super::types::{AnalysisResult, AnalyzeOptions, IssueLevel};
 use super::command::CommandBuilder;
 
-/// 基础分析器 trait
-/// 提供通用的命令执行和结果过滤逻辑
+/// Basic Analyzer Trait
+/// Provide general command execution and result filtering logic
 pub trait BaseBuildAnalyzer: BuildAnalyzer {
-    /// 构建命令
+    /// Build command
     fn build_command(&self, options: &AnalyzeOptions) -> Vec<String>;
 
-    /// 运行命令（默认实现）
+    /// Run the command (default implementation)
     fn run_command(&self, cmd: &[String]) -> Result<String, AnalyzerError> {
         let program = &cmd[0];
         let args = &cmd[1..];
@@ -29,7 +29,7 @@ pub trait BaseBuildAnalyzer: BuildAnalyzer {
         Ok(format!("{}{}", stdout, stderr))
     }
 
-    /// 过滤问题（默认实现）
+    /// Filtering Issues (Default Implementation)
     fn filter_issues(&self, result: AnalysisResult, options: &AnalyzeOptions) -> AnalysisResult {
         if !options.filter_warnings && options.filter_paths.is_empty() {
             return result;
@@ -60,7 +60,7 @@ pub trait BaseBuildAnalyzer: BuildAnalyzer {
         filtered
     }
 
-    /// 执行分析（默认实现）
+    /// Perform analysis (default implementation)
     fn execute_analysis(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
         let cmd = self.build_command(options);
         let output = self.run_command(&cmd)?;
@@ -74,17 +74,17 @@ pub trait BaseBuildAnalyzer: BuildAnalyzer {
     }
 }
 
-/// 使用 CommandBuilder 的分析器 trait
+/// Using the Analyzer trait with CommandBuilder
 pub trait CommandBuilderAnalyzer: BuildAnalyzer {
-    /// 创建命令构建器
+    /// Create a command builder
     fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder;
 
-    /// 运行命令（使用 CommandBuilder）
+    /// Run the command (using CommandBuilder)
     fn run_command_with_builder(&self, builder: &CommandBuilder) -> Result<String, AnalyzerError> {
         builder.execute()
     }
 
-    /// 过滤问题（默认实现）
+    /// Filtering Issues (Default Implementation)
     fn filter_issues(&self, result: AnalysisResult, options: &AnalyzeOptions) -> AnalysisResult {
         if !options.filter_warnings && options.filter_paths.is_empty() {
             return result;
@@ -115,7 +115,7 @@ pub trait CommandBuilderAnalyzer: BuildAnalyzer {
         filtered
     }
 
-    /// 执行分析（使用 CommandBuilder）
+    /// Perform analysis (using CommandBuilder)
     fn execute_analysis_with_builder(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
         let builder = self.create_command_builder(options);
         let output = self.run_command_with_builder(&builder)?;

@@ -1,5 +1,5 @@
-//! Cargo 输出解析器
-//! 解析 cargo check/clippy/test 的输出
+//! Cargo Output Parser
+//Parsing the output of cargo check/clippy/test Parsing output from cargo check/clippy/test
 
 use crate::core::{
     BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, TestCase,
@@ -165,10 +165,10 @@ impl TestOutputParser for CargoParser {
     fn parse_test_output(&self, output: &str) -> ParsedTestOutput {
         let mut result = ParsedTestOutput::new();
 
-        // 1. 复用现有逻辑解析编译问题
+        // 1. Reuse of existing logic to resolve compilation issues
         result.compile_issues = self.parse(output);
 
-        // 2. 解析测试执行结果
+        // 2. Parsing test execution results
         let lines: Vec<&str> = output.lines().collect();
         let mut i = 0;
         let mut in_failures_section = false;
@@ -177,12 +177,12 @@ impl TestOutputParser for CargoParser {
         while i < lines.len() {
             let line = lines[i];
 
-            // 解析测试用例行: "test <name> ... <result>"
+            // Parsing test case line: "test <name> ... <result>"
             if let Some(test_case) = self.parse_test_case_line(line) {
                 match test_case.status {
                     TestStatus::Passed => result.passed_tests.push(test_case),
                     TestStatus::Failed => {
-                        // 稍后填充失败详情
+                        // Failure to fill in later details
                         result.failed_tests.push(test_case);
                     }
                     TestStatus::Ignored(_) => result.ignored_tests.push(test_case),
@@ -191,27 +191,27 @@ impl TestOutputParser for CargoParser {
                 continue;
             }
 
-            // 识别 failures 区块开始
+            // Identify failures block start
             if line == "failures:" {
                 in_failures_section = true;
                 i += 1;
                 continue;
             }
 
-            // 在 failures 区块中解析失败详情
+            // Parsing failure details in the failures block
             if in_failures_section {
                 if line.starts_with("---- ") && line.contains("stdout ----") {
-                    // 开始新的失败详情
+                    // Starting a new failure details
                     let test_name = line[5..line.find(" stdout ----").unwrap_or(line.len())]
                         .to_string();
                     current_failure = Some((test_name, Vec::new()));
                 } else if line.trim().is_empty() && current_failure.is_some() {
-                    // 空行表示当前失败详情结束
+                    // A blank line indicates the end of the current failure details
                     if let Some((name, details)) = current_failure.take() {
-                        // 找到对应的测试用例并填充详情
+                        // Find the corresponding test case and populate the details
                         if let Some(test) = result.failed_tests.iter_mut().find(|t| t.name == name) {
                             test.failure_details = Some(details.join("\n"));
-                            // 尝试从详情中解析位置
+                            // Try to parse the location from the details
                             test.location = self.parse_panic_location(&details.join("\n"));
                         }
                     }
@@ -219,13 +219,13 @@ impl TestOutputParser for CargoParser {
                     details.push(line.to_string());
                 }
 
-                // failures 区块结束标记
+                // failures Block end marker
                 if line.starts_with("test result:") {
                     in_failures_section = false;
                 }
             }
 
-            // 解析测试结果汇总
+            // Summary of Parsing Test Results
             if line.starts_with("test result:") {
                 result.test_summary = self.parse_test_summary(line);
             }
@@ -238,7 +238,7 @@ impl TestOutputParser for CargoParser {
 }
 
 impl CargoParser {
-    /// 解析单个测试用例行
+    /// Parsing individual test case lines
     fn parse_test_case_line(&self, line: &str) -> Option<TestCase> {
         // 匹配: "test <name> ... ok/FAILED/ignored"
         let re = regex::Regex::new(
@@ -259,7 +259,7 @@ impl CargoParser {
             _ => return None,
         };
 
-        // 尝试从 extra 解析执行时间
+        // Try to parse the execution time from extra
         let execution_time = extra.and_then(|e| {
             if e.ends_with("s") {
                 e[..e.len() - 1].parse().ok()
@@ -277,7 +277,7 @@ impl CargoParser {
         })
     }
 
-    /// 从 panic 信息中解析位置
+    /// Parsing the location from a panic message
     fn parse_panic_location(&self, detail: &str) -> Option<Location> {
         let re = regex::Regex::new(r"panicked at\s+(\S+):(\d+):(\d+)").ok()?;
         let caps = re.captures(detail)?;
@@ -289,7 +289,7 @@ impl CargoParser {
         )
     }
 
-    /// 解析测试结果汇总
+    /// Summary of Parsing Test Results
     fn parse_test_summary(&self, line: &str) -> Option<TestSummary> {
         // 匹配: "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
         let re = regex::Regex::new(

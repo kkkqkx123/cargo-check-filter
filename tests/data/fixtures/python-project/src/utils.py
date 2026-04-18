@@ -1,60 +1,60 @@
-# 工具函数模块
+# tool function module
 
 from typing import Tuple, Union, Callable
 import json
 
 
 def parse_json(data: str) -> dict:
-    """解析JSON - 返回类型不够精确"""
+    """Parsing JSON - Insufficiently precise return types"""
     return json.loads(data)
 
 
 def divide(a: float, b: float) -> float:
-    """除法函数 - 可能的除零错误"""
+    """Division Functions - Possible Division by Zero Errors"""
     return a / b
 
 
 def format_name(first: str, last: str, middle: str = "") -> str:
-    """格式化姓名"""
+    """Formatting names"""
     if middle:
         return f"{first} {middle} {last}"
     return f"{first} {last}"
 
 
 def flexible_function(*args, **kwargs):
-    """完全缺少类型注解的函数"""
+    """Functions missing type annotations altogether"""
     return args, kwargs
 
 
 def union_type_example(value: Union[str, int]) -> str:
-    """使用Union类型"""
+    """Using the Union type"""
     if isinstance(value, str):
         return value.upper()
     return str(value)
 
 
 def tuple_unpacking() -> Tuple[int, str, float]:
-    """返回元组"""
+    """Return tuple"""
     return 1, "test", 3.14
 
 
 def callback_example(fn: Callable[[int], str], value: int) -> str:
-    """使用Callable类型"""
+    """Using the Callable type"""
     return fn(value)
 
 
-# 类继承中的类型问题
+# Type issues in class inheritance
 class BaseHandler:
     def handle(self, data: str) -> str:
         return data.lower()
 
 
 class DerivedHandler(BaseHandler):
-    def handle(self, data) -> str:  # 参数缺少类型注解
+    def handle(self, data) -> str:  # Parameters missing type annotations
         return data.upper()
 
 
-# 泛型使用
+# Generalized Usage
 from typing import TypeVar, Generic
 
 T = TypeVar('T')
@@ -67,18 +67,18 @@ class Container(Generic[T]):
     def get(self) -> T:
         return self.value
     
-    def set(self, value) -> None:  # 参数缺少类型
+    def set(self, value) -> None:  # Parameters missing type
         self.value = value
 
 
-# 类型推断问题
+# type inference problem
 def inferred_issues():
-    """类型推断相关的问题"""
+    """Issues related to type inference"""
     numbers = [1, 2, 3]
-    # 下面的代码在运行时可能出错，但mypy可以捕获
+    # The following code may be wrong at runtime, but mypy can catch it
     numbers.append("four")  # error: Argument 1 to "append" of "list" has incompatible type
     
-    # 字典类型问题
+    # Dictionary type issues
     mapping = {"a": 1, "b": 2}
     result = mapping.get("c") + 10  # error: Unsupported operand types
     

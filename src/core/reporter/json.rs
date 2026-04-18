@@ -1,9 +1,9 @@
-//! JSON 报告生成器
+//! JSON Report Generator
 
 use super::{Reporter, ReporterError};
 use crate::core::types::{AnalysisResult, ReportFormat};
 
-/// JSON 报告生成器
+/// JSON Report Generator
 pub struct JsonReporter;
 
 impl JsonReporter {
@@ -23,14 +23,14 @@ impl Reporter for JsonReporter {
         let mut json = String::new();
         json.push_str("{\n");
         
-        // 元数据
+        // metadata
         json.push_str("  \"metadata\": {\n");
         json.push_str(&format!("    \"total\": {},\n", result.total_issues));
         json.push_str(&format!("    \"categories\": {},\n", result.unique_patterns.len()));
         json.push_str(&format!("    \"files_affected\": {}\n", result.issues_by_file.len()));
         json.push_str("  },\n");
 
-        // 按级别统计
+        // Statistics by level
         json.push_str("  \"summary_by_level\": {\n");
         let level_order = ["error", "warning", "info", "hint"];
         let mut first = true;
@@ -45,7 +45,7 @@ impl Reporter for JsonReporter {
         }
         json.push_str("\n  },\n");
 
-        // 按类别统计
+        // Statistics by category
         if !result.issues_by_type.is_empty() {
             json.push_str("  \"summary_by_category\": {\n");
             let mut types: Vec<_> = result.issues_by_type.iter().collect();
@@ -57,7 +57,7 @@ impl Reporter for JsonReporter {
             json.push_str("  },\n");
         }
 
-        // 详细问题列表
+        // Detailed list of questions
         json.push_str("  \"items\": [\n");
         let all_issues: Vec<_> = result.issues_by_file.values().flatten().collect();
         for (i, issue) in all_issues.iter().enumerate() {

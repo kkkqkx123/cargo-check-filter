@@ -1,9 +1,9 @@
-//! HTML 报告生成器
+//! HTML Report Generator
 
 use super::{Reporter, ReporterError};
 use crate::core::types::{AnalysisResult, IssueLevel, ReportFormat};
 
-/// HTML 报告生成器
+/// HTML Report Generator
 pub struct HtmlReporter;
 
 impl HtmlReporter {
@@ -11,9 +11,9 @@ impl HtmlReporter {
         Self
     }
 
-    /// 检测报告类型并返回合适的标题
+    /// Detects the report type and returns the appropriate title
     fn detect_report_type(&self, result: &AnalysisResult) -> (String, String) {
-        // 收集所有 issue 的消息用于判断类型
+        // Collect all issue messages for type determination
         let all_messages: Vec<String> = result
             .issues_by_file
             .values()
@@ -21,7 +21,7 @@ impl HtmlReporter {
             .map(|i| i.message.to_lowercase())
             .collect();
 
-        // 判断是否为安全审计报告
+        // Determining whether a security audit report
         let is_security_audit = all_messages.iter().any(|m| {
             m.contains("security vulnerability")
                 || m.contains("severity: high")
@@ -36,7 +36,7 @@ impl HtmlReporter {
             );
         }
 
-        // 判断是否为类型检查报告
+        // Determining whether a type check report
         let is_type_check = all_messages.iter().any(|m| {
             m.contains("type")
                 || m.contains("typescript")
@@ -52,7 +52,7 @@ impl HtmlReporter {
             );
         }
 
-        // 判断是否为 Lint 报告
+        // Determining if a Lint Report
         let is_lint = all_messages.iter().any(|m| {
             m.contains("eslint") || m.contains("clippy") || m.contains("lint") || m.contains("style")
         });
@@ -61,7 +61,7 @@ impl HtmlReporter {
             return ("Lint Report".to_string(), "Lint Issues Summary".to_string());
         }
 
-        // 默认为通用分析报告
+        // Defaults to a generic analysis report
         (
             "Analysis Report".to_string(),
             "Summary".to_string(),
@@ -79,7 +79,7 @@ impl Reporter for HtmlReporter {
     fn generate(&self, result: &AnalysisResult) -> Result<String, ReporterError> {
         let mut html = String::new();
 
-        // 检测报告类型
+        // Type of test report
         let (title, summary_title) = self.detect_report_type(result);
 
         html.push_str("<!DOCTYPE html>\n");
@@ -100,7 +100,7 @@ impl Reporter for HtmlReporter {
 
         html.push_str(&format!("<h1>{}</h1>\n", title));
 
-        // 摘要
+        // summaries
         html.push_str(&format!("<h2>{}</h2>\n", summary_title));
         
         if result.total_issues == 0 {
@@ -109,7 +109,7 @@ impl Reporter for HtmlReporter {
             html.push_str("<ul>\n");
             html.push_str(&format!("<li><strong>Total:</strong> {}</li>\n", result.total_issues));
             
-            // 按严重程度排序
+            // Sort by severity
             let level_order = [IssueLevel::Error, IssueLevel::Warning, IssueLevel::Info, IssueLevel::Hint];
             for level in &level_order {
                 if let Some(count) = result.issues_by_level.get(level) {
@@ -129,7 +129,7 @@ impl Reporter for HtmlReporter {
             html.push_str(&format!("<li><strong>Files Affected:</strong> {}</li>\n", result.issues_by_file.len()));
             html.push_str("</ul>\n");
 
-            // 详细表格
+            // Detailed tables
             html.push_str("<h2>Details</h2>\n");
             html.push_str("<table>\n");
             html.push_str("<tr><th>Severity</th><th>File</th><th>Position</th><th>Description</th></tr>\n");

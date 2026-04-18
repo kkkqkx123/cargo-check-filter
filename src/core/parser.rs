@@ -1,23 +1,23 @@
-//! 解析器 trait 定义
-//! 定义了解析命令输出的接口
+//! Parser trait definition
+//! defines the interface for parsing command output
 
 use super::types::{Issue, IssueLevel, Location};
 
-/// 输出解析器 trait
-/// 实现此 trait 以支持新的技术栈输出格式
+/// Output parser trait
+/// Implement this trait to support the new technology stack output format
 pub trait OutputParser: Send + Sync {
-    /// 解析命令输出，提取所有问题信息
+    /// Parses command output to extract all problem information
     fn parse(&self, output: &str) -> Vec<Issue>;
 
-    /// 检查某行是否为问题起始行
+    /// Check if a row is the starting row of the problem
     fn is_issue_start(&self, line: &str) -> bool;
 
-    /// 解析单行问题信息
-    /// 返回解析出的 Issue 和消耗的文本行数
+    /// Parsing one-line question information
+    /// Returns the parsed Issue and the number of lines of text consumed.
     fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize);
 }
 
-/// 基础解析器实现，提供通用的辅助方法
+/// Base parser implementation providing generic helper methods
 pub struct BaseParser;
 
 impl BaseParser {
@@ -25,8 +25,8 @@ impl BaseParser {
         Self
     }
 
-    /// 从路径字符串中提取文件路径、行号和列号
-    /// 支持格式：path/to/file.rs:10:5
+    /// Extracting file paths, line numbers and column numbers from path strings
+    /// Supported formats: path/to/file.rs:10:5
     pub fn parse_location(&self, location_str: &str) -> Option<Location> {
         let parts: Vec<&str> = location_str.rsplitn(3, ':').collect();
 
@@ -45,7 +45,7 @@ impl BaseParser {
         }
     }
 
-    /// 检测问题级别
+    /// Detection problem level
     pub fn detect_level(&self, text: &str) -> Option<IssueLevel> {
         let lower = text.to_lowercase();
         if lower.contains("error") {
@@ -63,7 +63,7 @@ impl BaseParser {
         }
     }
 
-    /// 提取错误代码（如 E0308 或 TS1234）
+    /// Extract the error code (e.g. E0308 or TS1234)
     pub fn extract_error_code(&self, text: &str) -> Option<String> {
         if let Some(start) = text.find('[') {
             if let Some(end) = text.find(']') {
@@ -81,7 +81,7 @@ impl BaseParser {
         None
     }
 
-    /// 解析标准格式：file:line:col: level: message
+    /// Parsing standard format: file:line:col: level: message
     pub fn parse_standard_format(&self, line: &str) -> Option<Issue> {
         let trimmed = line.trim();
         if trimmed.is_empty() {
@@ -181,7 +181,7 @@ impl BaseParser {
         None
     }
 
-    /// 从文本中提取消息（移除规则名等后缀）
+    /// Extracting messages from text (removing suffixes such as rule names)
     pub fn extract_message(&self, text: &str) -> String {
         let parts: Vec<&str> = text.split_whitespace().collect();
         if parts.len() > 1 {
@@ -194,7 +194,7 @@ impl BaseParser {
         text.to_string()
     }
 
-    /// 查找文件路径（向上查找非空行）
+    /// Find file paths (look up non-empty lines)
     pub fn find_file_path(&self, lines: &[String], current_index: usize) -> String {
         for i in (0..current_index).rev() {
             let prev_line = &lines[i];

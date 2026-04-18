@@ -1,5 +1,5 @@
-//! Mypy 输出解析器
-//! 解析 mypy 的输出
+//! Mypy Output Parser
+//! Parsing the output of mypy
 
 use crate::core::{BaseParser, Issue, IssueLevel, OutputParser};
 

@@ -1,8 +1,8 @@
-//! Analyzer - 多语言构建工具错误分析器
+//! Analyzer - Multilingual Build Tool Error Analyzer
 //!
 //! 用法: analyzer <tech-stack> <subcommand> [options]
 //!
-//! 示例:
+//! Example.
 //!   analyzer cargo check
 //!   analyzer cargo clippy-all
 //!   analyzer cargo test --filter-warnings
@@ -25,13 +25,13 @@ fn main() {
         std::process::exit(1);
     }
 
-    // 解析参数
+    // parameterization
     let (tech_stack, options) = parse_arguments(&args);
 
-    // 创建插件注册表
+    // Creating a plug-in registry
     let registry = plugins::create_registry();
 
-    // 获取对应的分析器
+    // Get the corresponding analyzer
     let analyzer = match registry.get(&tech_stack) {
         Some(a) => a,
         None => {
@@ -41,7 +41,7 @@ fn main() {
         }
     };
 
-    // 检查是否适用
+    // Check for applicability
     let current_dir = env::current_dir().expect("Failed to get current directory");
     if !analyzer.is_applicable(&current_dir) {
         eprintln!(
@@ -51,7 +51,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    // 运行分析
+    // operational analysis
     let subcommand_name = options.subcommand.as_ref()
         .map(|s| s.as_str())
         .unwrap_or("default");
@@ -62,7 +62,7 @@ fn main() {
             println!("\nAnalysis complete!");
             println!("Total issues: {}", result.total_issues);
 
-            // 生成报告
+            // Generating reports
             let reporter = ReporterFactory::create(ReportFormat::Markdown);
             let report = match reporter.generate(&result) {
                 Ok(r) => r,
@@ -72,7 +72,7 @@ fn main() {
                 }
             };
 
-            // 输出报告
+            // output report
             let output_path = options
                 .output_file
                 .as_deref()
@@ -85,7 +85,7 @@ fn main() {
 
             println!("Report written to: {}", output_path);
 
-            // 打印摘要
+            // Print summary
             print_summary(&result);
         }
         Err(e) => {
@@ -134,7 +134,7 @@ fn parse_arguments(args: &[String]) -> (String, AnalyzeOptions) {
                     if tech_stack.is_empty() {
                         tech_stack = arg.to_string();
                     } else if subcommand.is_none() {
-                        // 解析子命令
+                        // Parse subcommand
                         match arg.parse::<SubCommand>() {
                             Ok(cmd) => subcommand = Some(cmd),
                             Err(_) => {
@@ -156,7 +156,7 @@ fn parse_arguments(args: &[String]) -> (String, AnalyzeOptions) {
         std::process::exit(1);
     }
 
-    // 如果没有指定子命令，使用默认值
+    // If no subcommand is specified, the default value is used
     if subcommand.is_none() {
         subcommand = Some(get_default_subcommand(&tech_stack));
     }
@@ -165,7 +165,7 @@ fn parse_arguments(args: &[String]) -> (String, AnalyzeOptions) {
     (tech_stack, options)
 }
 
-/// 根据技术栈获取默认子命令
+/// Get default subcommands based on tech stack
 fn get_default_subcommand(tech_stack: &str) -> SubCommand {
     match tech_stack.to_lowercase().as_str() {
         "cargo" | "rust" => SubCommand::Check,

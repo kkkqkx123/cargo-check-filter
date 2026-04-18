@@ -1,5 +1,5 @@
-//! 核心模块
-//! 提供所有技术栈通用的 trait 和类型
+//! Core Module
+//! Provide traits and types that are common to all technology stacks
 
 pub mod types;
 pub mod parser;

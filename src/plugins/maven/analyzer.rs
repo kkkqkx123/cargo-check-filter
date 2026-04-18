@@ -1,5 +1,5 @@
-//! Maven 分析器
-//! 运行 mvn compile/test 并解析输出
+//! Maven Analyzer
+//! Run mvn compile/test and parse the output
 
 use std::path::Path;
 
@@ -21,7 +21,7 @@ impl MavenAnalyzer {
         }
     }
 
-    /// 创建命令构建器
+    /// Creating a command builder
     fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder {
         let mut builder = CommandBuilder::new("mvn");
 
@@ -33,12 +33,12 @@ impl MavenAnalyzer {
                 builder = builder.arg("test");
             }
             _ => {
-                // 默认执行 compile
+                // By default, compile
                 builder = builder.arg("compile");
             }
         }
 
-        // 添加 -q 参数减少输出噪音，但保留错误信息
+        // Adding the -q parameter reduces output noise, but preserves error messages
         builder = builder.arg("-q");
 
         builder

@@ -1,11 +1,11 @@
-//! Analyzer - 多语言构建工具错误分析器
+//! Analyzer - Multilingual Build Tool Error Analyzer
 //!
-//! 库接口，用于集成测试和外部调用
+//! Library interface for integration testing and external calls
 
 pub mod core;
 pub mod plugins;
 
-// 重新导出常用类型
+// Re-export common types
 pub use core::{
     AnalyzeOptions, AnalyzerError, BaseParser, BuildAnalyzer,
     CommandBuilder, Issue, IssueLevel, Location, OutputParser, ReportFormat, SubCommand,

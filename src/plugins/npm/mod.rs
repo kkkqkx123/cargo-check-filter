@@ -1,5 +1,5 @@
-//! NPM 插件
-//! 提供对 Node.js/npm/pnpm/yarn 项目的分析支持
+//! NPM Plugin
+//! Provide support for analyzing Node.js/npm/pnpm/yarn projects
 
 pub mod parser;
 pub mod analyzer;

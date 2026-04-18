@@ -1,5 +1,5 @@
-//! NPM/Node.js 分析器
-//! 运行 npm/pnpm/yarn 命令并解析输出
+//! NPM/Node.js Analyzer
+//! Run the npm/pnpm/yarn command and parse the output
 
 use std::path::Path;
 
@@ -10,14 +10,14 @@ use crate::core::{
 
 use super::parser::NpmParser;
 
-/// Type-check 命令的候选名称（按优先级排序）
+/// Candidate names for the Type-check command (in order of priority)
 const TYPE_CHECK_ALIASES: &[&str] = &["type-check", "typecheck", "check-types", "check-type"];
 
-/// Lint 命令的候选名称（按优先级排序）
+/// Candidate names for Lint commands (in order of priority)
 const LINT_ALIASES: &[&str] = &["lint", "eslint", "lint:check"];
 
-/// Test 命令的候选名称（按优先级排序）
-/// 注意：这些是 package.json scripts 中的名称，不是测试框架名称
+/// Candidate names for the Test command (in order of priority)
+/// Note: These are the names in the package.json scripts, not the test framework names.
 const TEST_ALIASES: &[&str] = &["test", "test:unit", "test:e2e", "unit-test"];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -176,7 +176,7 @@ impl NpmAnalyzer {
         filtered
     }
 
-    /// 创建测试命令
+    /// Creating a test command
     fn create_test_command(&self, options: &TestOptions) -> CommandBuilder {
         let script_name = Self::find_script_name(TEST_ALIASES);
         
@@ -192,7 +192,7 @@ impl NpmAnalyzer {
             }
         };
 
-        // 添加测试过滤器（测试名称模式）
+        // Adding test filters (test name mode)
         if let Some(ref filter) = options.filter {
             builder = builder.arg(filter);
         }
@@ -200,7 +200,7 @@ impl NpmAnalyzer {
         builder
     }
 
-    /// 查找脚本名称（从候选列表中返回第一个）
+    /// Find Script Name (returns the first one from the candidate list)
     fn find_script_name<'a>(candidates: &'a [&str]) -> &'a str {
         candidates.first().copied().unwrap_or(candidates[0])
     }
@@ -251,7 +251,7 @@ impl TestAnalyzer for NpmAnalyzer {
             .execute()
             .map_err(|e| TestAnalyzerError::CommandFailed(e.to_string()))?;
 
-        // 使用 TestOutputParser 解析输出
+        // Parsing Output with TestOutputParser
         let parsed = self
             .test_parser()
             .ok_or(TestAnalyzerError::NotSupported)?

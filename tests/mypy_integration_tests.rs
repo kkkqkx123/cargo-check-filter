@@ -71,7 +71,7 @@ fn test_mypy_basic_output() {
         println!("! Unexpected mypy output format");
     }
 
-    // 验证输出格式符合解析器预期
+    // Verify output format matches parser expectations
     for line in &lines {
         if line.contains(":") && (line.contains("error:") || line.contains("warning:")) {
             let parts: Vec<&str> = line.splitn(5, ':').collect();
@@ -105,10 +105,10 @@ fn test_mypy_strict_output() {
         }
     };
 
-    // 保存原始输出
+    // Save raw output
     save_raw_output("mypy_strict", &output);
 
-    // 解析并生成报告
+    // Parse and generate report
     let parser = MypyParser::new();
     let issues = parser.parse(&output);
     generate_report(
@@ -122,12 +122,12 @@ fn test_mypy_strict_output() {
     println!("=== Mypy Strict Output ===");
     println!("{}", output);
 
-    // 严格模式下应该有更多错误
+    // Strict mode should have more errors
     let error_count = output.lines().filter(|line| line.contains("error:")).count();
 
     println!("Found {} error lines", error_count);
 
-    // 验证输出包含统计信息
+    // Verify output contains summary info
     if output.contains("Found") && output.contains("error") {
         println!("✓ Found mypy summary line");
     }
@@ -153,10 +153,10 @@ fn test_mypy_specific_file() {
         }
     };
 
-    // 保存原始输出
+    // Saving the original output
     save_raw_output("mypy_specific_file", &output);
 
-    // 解析并生成报告
+    // Parses and generates reports
     let parser = MypyParser::new();
     let issues = parser.parse(&output);
     generate_report(
@@ -170,7 +170,7 @@ fn test_mypy_specific_file() {
     println!("=== Mypy Specific File Output ===");
     println!("{}", output);
 
-    // 验证特定文件的输出格式
+    // Verify the output format of a specific file
     for line in output.lines() {
         if line.contains("main.py") && line.contains(":") {
             println!("  Issue in main.py: {}", line);
@@ -205,10 +205,10 @@ fn test_mypy_with_ignore_missing_imports() {
         }
     };
 
-    // 保存原始输出
+    // Saving the original output
     save_raw_output("mypy_ignore_imports", &output);
 
-    // 解析并生成报告
+    // Parses and generates reports
     let parser = MypyParser::new();
     let issues = parser.parse(&output);
     generate_report(
@@ -223,7 +223,7 @@ fn test_mypy_with_ignore_missing_imports() {
     println!("{}", output);
 }
 
-/// 验证 mypy 输出格式
+/// Verify mypy output format
 fn validate_mypy_output(content: &str) {
     println!("Validating mypy output format...");
     let issue_lines: Vec<&str> = content
@@ -248,7 +248,7 @@ fn validate_mypy_output(content: &str) {
 
 #[test]
 fn test_validate_mypy_outputs() {
-    // 读取并验证已保存的 mypy 输出文件
+    // Read and validate saved mypy output files
     let output_dir = raw_output_dir();
 
     for entry in std::fs::read_dir(&output_dir).expect("Failed to read output directory") {

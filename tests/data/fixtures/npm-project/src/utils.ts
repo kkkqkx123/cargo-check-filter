@@ -1,16 +1,16 @@
-// 工具函数模块 - 包含各种代码质量问题
+// Tool Functions Module - contains various code quality issues
 
-// 未使用的导入
+// Unused imports
 import { readFileSync } from 'fs';
 
-// 类型定义
+// type definition
 interface User {
     id: number;
     name: string;
     email: string;
 }
 
-// 缺少返回类型的函数
+// Functions with missing return types
 export function createUser(data: any) {
     return {
         id: Math.random(),
@@ -18,15 +18,15 @@ export function createUser(data: any) {
     } as User;
 }
 
-// 使用any类型
+// Using the any type
 export function processUsers(users: any[]): any[] {
     return users.filter(u => u.active);
 }
 
-// 未使用的变量
+// Unused variables
 const API_URL = "https://api.example.com";
 
-// 嵌套过深的函数
+// deeply nested function
 export function complexFunction(input: number): number {
     if (input > 0) {
         if (input < 100) {
@@ -38,7 +38,7 @@ export function complexFunction(input: number): number {
     return input;
 }
 
-// 类型不安全的代码
+// Type-unsafe code
 export const unsafeOperation = (x: any, y: any) => {
     return x + y;
 };

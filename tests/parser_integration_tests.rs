@@ -8,7 +8,7 @@ use std::path::PathBuf;
 mod common;
 use common::{samples_dir, generate_report};
 
-// 从 src 导入解析器
+// Importing the parser from src
 use analyzer::core::{IssueLevel, OutputParser};
 use analyzer::plugins::mypy::parser::MypyParser;
 use analyzer::plugins::npm::parser::NpmParser;
@@ -57,19 +57,19 @@ fn test_mypy_parser_basic() {
     let parser = MypyParser::new();
     let issues = parser.parse(&content);
 
-    // 验证解析出了 Issue
+    // Validation parses an Issue
     assert!(!issues.is_empty(), "Should parse at least one issue from mypy output");
 
-    // 验证至少有一个错误
+    // Verify that there is at least one error
     let (errors, warnings, _) = count_issues_by_level(&issues);
     assert!(errors > 0, "Should have at least one error, got {} errors", errors);
 
-    // 验证第一个 Issue 的结构
+    // Verify the structure of the first Issue
     let first_issue = &issues[0];
     assert_issue_valid(first_issue, ".py");
     assert!(matches!(first_issue.level, IssueLevel::Error | IssueLevel::Warning));
 
-    // 验证包含特定错误
+    // Validation Contains Specific Errors
     let has_type_error = issues.iter().any(|i| {
         i.message.contains("Unsupported operand types")
             || i.message.contains("Incompatible types")
@@ -77,7 +77,7 @@ fn test_mypy_parser_basic() {
     });
     assert!(has_type_error, "Should have type-related errors");
 
-    // 生成报告
+    // Generating reports
     generate_report(
         "mypy_basic",
         "Mypy Basic",
@@ -98,15 +98,15 @@ fn test_mypy_parser_specific_file() {
 
     assert!(!issues.is_empty(), "Should parse issues from specific file output");
 
-    // 验证至少有一些 Issue 来自 main.py（也可能来自其他文件如 utils.py）
+    // Verify that at least some of the Issues come from main.py (and possibly from other files like utils.py)
     let has_main_py = issues.iter().any(|i| i.location.file_path.contains("main.py"));
     assert!(has_main_py, "Should have issues from main.py");
 
-    // 验证所有 Issue 都是 Python 文件
+    // Verify that all Issues are Python files
     let all_py_files = issues.iter().all(|i| i.location.file_path.ends_with(".py"));
     assert!(all_py_files, "All issues should be from .py files");
 
-    // 生成报告
+    // Generating reports
     generate_report(
         "mypy_specific_file",
         "Mypy Specific File",
@@ -124,14 +124,14 @@ fn test_mypy_parser_strict() {
     let parser = MypyParser::new();
     let issues = parser.parse(&content);
 
-    // strict 模式下应该有更多错误
+    // There should be more errors in strict mode
     assert!(
         issues.len() >= 3,
         "Strict mode should have at least 3 issues, got {}",
         issues.len()
     );
 
-    // 生成报告
+    // Generating reports
     generate_report(
         "mypy_strict",
         "Mypy Strict",
@@ -149,13 +149,13 @@ fn test_eslint_parser_output() {
     let parser = NpmParser::new();
     let issues = parser.parse(&content);
 
-    // 验证解析出了 Issue
+    // Validation parses an Issue
     assert!(
         !issues.is_empty(),
         "Should parse at least one issue from ESLint output"
     );
 
-    // 验证错误和警告的数量
+    // Number of validation errors and warnings
     let (errors, warnings, _) = count_issues_by_level(&issues);
     assert!(
         errors + warnings >= 3,
@@ -164,11 +164,11 @@ fn test_eslint_parser_output() {
         warnings
     );
 
-    // 验证 Issue 结构
+    // Validating the Issue Structure
     let first_issue = &issues[0];
     assert_issue_valid(first_issue, ".ts");
 
-    // 验证文件路径正确提取
+    // Verify that the file path is extracted correctly
     let has_index_ts = issues.iter().any(|i| i.location.file_path.contains("index.ts"));
     let has_utils_ts = issues.iter().any(|i| i.location.file_path.contains("utils.ts"));
     assert!(
@@ -176,7 +176,7 @@ fn test_eslint_parser_output() {
         "Should have issues from index.ts or utils.ts"
     );
 
-    // 验证行号和列号
+    // Validating row and column numbers
     let issue_with_location = issues.iter().find(|i| {
         i.location.line_number.is_some() && i.location.column_number.is_some()
     });
@@ -185,7 +185,7 @@ fn test_eslint_parser_output() {
         "At least one issue should have both line and column numbers"
     );
 
-    // 生成报告
+    // Generating reports
     generate_report(
         "npm_eslint",
         "ESLint",
@@ -208,13 +208,13 @@ fn test_typescript_parser_output() {
     let parser = NpmParser::new();
     let issues = parser.parse(&content);
 
-    // 验证解析出了 Issue
+    // Validation parses an Issue
     assert!(
         !issues.is_empty(),
         "Should parse at least one issue from TypeScript output"
     );
 
-    // TypeScript 输出应该全是错误
+    // TypeScript output should be full of errors
     let (errors, _, _) = count_issues_by_level(&issues);
     assert!(
         errors >= 3,
@@ -222,7 +222,7 @@ fn test_typescript_parser_output() {
         errors
     );
 
-    // 验证包含 TS 错误代码（格式可能是 TSxxxx 或 [TSxxxx]）
+    // Verification contains a TS error code (may be in the format TSxxxx or [TSxxxx])
     let has_ts_code = issues.iter().any(|i: &analyzer::core::Issue| {
         i.code.as_ref().map(|c: &String| {
             c.starts_with("TS") || c.starts_with("[TS")
@@ -231,11 +231,11 @@ fn test_typescript_parser_output() {
     assert!(has_ts_code, "Should have TypeScript error codes (TSxxxx), got codes: {:?}", 
             issues.iter().filter_map(|i| i.code.clone()).collect::<Vec<_>>());
 
-    // 验证 Issue 结构
+    // Validating the Issue Structure
     let first_issue = &issues[0];
     assert_issue_valid(first_issue, ".ts");
 
-    // 生成报告
+    // Generating reports
     generate_report(
         "npm_typecheck",
         "TypeScript Type Check",
@@ -253,8 +253,8 @@ fn test_npm_audit_parser_output() {
     let parser = NpmParser::new();
     let issues = parser.parse(&content);
 
-    // npm audit 可能没有漏洞（issues 为空也是正常的）
-    // 生成报告
+    // npm audit may not be vulnerable (issues being empty is also normal)
+    // Generating reports
     generate_report(
         "npm_audit",
         "NPM Audit",
@@ -276,13 +276,13 @@ fn test_maven_compile_parser_output() {
     let parser = MavenParser::new();
     let issues = parser.parse(&content);
 
-    // 验证解析出了 Issue
+    // Validation parses an Issue
     assert!(
         !issues.is_empty(),
         "Should parse at least one issue from Maven compile output"
     );
 
-    // 验证错误和警告的数量
+    // Number of validation errors and warnings
     let (errors, warnings, _) = count_issues_by_level(&issues);
     assert!(
         errors > 0,
@@ -290,11 +290,11 @@ fn test_maven_compile_parser_output() {
         errors
     );
 
-    // 验证 Issue 结构
+    // Validating the Issue Structure
     let first_issue = &issues[0];
     assert_issue_valid(first_issue, ".java");
 
-    // 生成报告
+    // Generating reports
     generate_report(
         "maven_compile",
         "Maven Compile",
@@ -317,13 +317,13 @@ fn test_maven_test_parser_output() {
     let parser = MavenParser::new();
     let issues = parser.parse(&content);
 
-    // 验证解析出了 Issue
+    // Validation parses an Issue
     assert!(
         !issues.is_empty(),
         "Should parse at least one issue from Maven test output"
     );
 
-    // 生成报告
+    // Generating reports
     generate_report(
         "maven_test",
         "Maven Test",
@@ -354,7 +354,7 @@ fn test_parser_handles_empty_input() {
 
 #[test]
 fn test_parser_handles_no_issues() {
-    // 模拟没有错误的输出
+    // Analog output without errors
     let no_error_output = "✓ No issues found\nAll checks passed!";
     let parser = NpmParser::new();
     let issues = parser.parse(no_error_output);
@@ -367,14 +367,14 @@ fn test_parser_handles_no_issues() {
 fn test_is_issue_start_detection() {
     let parser = NpmParser::new();
 
-    // ESLint 格式
+    // ESLint format
     assert!(parser.is_issue_start("  3:7   warning  message"));
     assert!(parser.is_issue_start("10:5   error    message"));
 
-    // TypeScript 格式
+    // TypeScript format
     assert!(parser.is_issue_start("src/index.ts(13,7): error TS2345: message"));
 
-    // NPM 错误格式
+    // NPM Error Format
     assert!(parser.is_issue_start("npm error code ENOLOCK"));
     assert!(parser.is_issue_start("npm error missing: package@version"));
 
@@ -400,7 +400,7 @@ fn test_all_sample_files_parsable() {
                 let filename = path.file_stem().unwrap_or_default().to_string_lossy();
                 let content = fs::read_to_string(&path).expect("Failed to read file");
 
-                // 根据文件名选择合适的解析器
+                // Choose the appropriate parser based on the filename
                 let issues = if filename.starts_with("mypy") {
                     let parser = MypyParser::new();
                     parser.parse(&content)
@@ -414,9 +414,9 @@ fn test_all_sample_files_parsable() {
                     continue;
                 };
 
-                // 验证解析结果
+                // Verify parsing results
                 if !issues.is_empty() {
-                    // 验证至少一个 Issue 的结构正确
+                    // Verify that at least one Issue is structured correctly
                     let valid = issues.iter().any(|i| {
                         !i.message.is_empty()
                             && !i.location.file_path.is_empty()
@@ -430,7 +430,7 @@ fn test_all_sample_files_parsable() {
                         failed_files.push(filename.to_string());
                     }
                 } else {
-                    // 空结果也可能是正确的（如果没有错误）
+                    // The null result may also be correct (if there are no errors)
                     println!("! {}: no issues parsed (may be correct)", filename);
                 }
             }

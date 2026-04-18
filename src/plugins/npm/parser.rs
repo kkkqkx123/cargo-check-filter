@@ -1,5 +1,5 @@
-//! NPM/Node.js 输出解析器
-//! 解析 npm/pnpm/yarn lint 和 type-check 的输出
+//! NPM/Node.js Output Parser
+//! Parsing the output of npm/pnpm/yarn lint and type-check
 
 use crate::core::{
     BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, TestCase,
@@ -17,10 +17,10 @@ impl NpmParser {
         }
     }
 
-    /// 检查一行是否是文件路径（ESLint 格式中文件路径单独一行）
+    /// Check if a line is a file path (file paths are on a separate line in ESLint format)
     fn is_file_path_line(&self, line: &str) -> bool {
         let trimmed = line.trim();
-        // 文件路径通常包含 / 或 \，且不以数字开头
+        // File paths usually contain / or \ and do not begin with a number
         !trimmed.is_empty()
             && (trimmed.contains('/') || trimmed.contains('\\'))
             && !trimmed.chars().next().unwrap_or(' ').is_ascii_digit()
@@ -32,10 +32,10 @@ impl NpmParser {
             && !trimmed.starts_with("error")
     }
 
-    /// 查找当前行对应的文件路径
-    /// 优先查找最近的文件路径行，如果没有则向上查找
+    /// Find the file path corresponding to the current line
+    /// Prioritizes the nearest file path line, and looks up if there is none.
     fn find_eslint_file_path(&self, lines: &[String], current_index: usize) -> String {
-        // 首先向上查找文件路径行
+        // First look up the file path line
         for i in (0..current_index).rev() {
             let line = &lines[i];
             if self.is_file_path_line(line) {
@@ -57,22 +57,22 @@ impl NpmParser {
         let line = &lines[start_index];
         let trimmed = line.trim();
 
-        // ESLint 格式: "  3:7   warning  message  rule-name"
-        // 行首可能有空格，然后是行号:列号
+        // ESLint 格式: " 3:7 warning message rule-name"
+        // There may be a space at the beginning of the line, followed by the line number:column number
         let parts: Vec<&str> = trimmed.splitn(2, ':').collect();
         if parts.len() < 2 {
             return (None, start_index + 1);
         }
 
-        // 解析行号（处理前导空格）
+        // Parsing line numbers (handling leading spaces)
         let line_num = parts[0].trim().parse::<u32>().ok();
         if line_num.is_none() {
             return (None, start_index + 1);
         }
 
         let rest = parts[1];
-        // 列号后面跟着级别和消息
-        // 格式: "7   warning  message  rule-name"
+        // The column number is followed by the level and message
+        // 格式: "7 warning message rule-name"
         let rest_parts: Vec<&str> = rest.splitn(2, |c: char| c.is_whitespace()).collect();
         if rest_parts.len() < 2 {
             return (None, start_index + 1);
@@ -81,8 +81,8 @@ impl NpmParser {
         let col_num = rest_parts[0].trim().parse::<u32>().ok();
         let after_col = rest_parts[1].trim();
 
-        // 解析级别和消息
-        // 格式: "warning  message  rule-name" 或 "error  message  rule-name"
+        // Resolution Levels and Messages
+        // 格式: "warning message rule-name" 或 "error message rule-name"
         let level_msg_parts: Vec<&str> = after_col.splitn(2, |c: char| c.is_whitespace()).collect();
         if level_msg_parts.is_empty() {
             return (None, start_index + 1);
@@ -96,7 +96,7 @@ impl NpmParser {
             _ => return (None, start_index + 1),
         };
 
-        // 提取消息（移除规则名）
+        // Extract message (remove rule name)
         let message = if level_msg_parts.len() > 1 {
             let msg_and_rule = level_msg_parts[1].trim();
             self.base.extract_message(msg_and_rule)
@@ -104,7 +104,7 @@ impl NpmParser {
             String::new()
         };
 
-        // 使用改进的文件路径查找
+        // Using Improved File Path Finding
         let file_path = self.find_eslint_file_path(lines, start_index);
 
         let location = if let Some(col) = col_num {
@@ -171,7 +171,7 @@ impl NpmParser {
         None
     }
 
-    /// 解析 NPM Audit 错误格式
+    /// Parsing NPM Audit Error Formats
     /// 格式: "npm error code CODE" 或 "npm error message"
     fn parse_npm_error(&self, line: &str) -> Option<Issue> {
         let trimmed = line.trim();
@@ -189,7 +189,7 @@ impl NpmParser {
         // 匹配 "npm error XXX"（不包括 code 行）
         if trimmed.starts_with("npm error") && !trimmed.starts_with("npm error code") {
             let message = trimmed.strip_prefix("npm error").unwrap_or("").trim();
-            // 跳过一些已知的非错误信息行
+            // Skip some known non-error message lines
             if message.starts_with("A complete log")
                 || message.starts_with("audit")
                 || message.is_empty()
@@ -206,13 +206,13 @@ impl NpmParser {
         None
     }
 
-    /// 解析 NPM 依赖缺失错误
+    /// Resolving NPM Dependency Missing Errors
     /// 格式: "npm error missing: package@version, required by package@version"
     fn parse_npm_missing_dep(&self, line: &str) -> Option<Issue> {
         let trimmed = line.trim();
 
         if trimmed.starts_with("npm error missing:") {
-            // 提取缺失的包信息
+            // Extracting missing package information
             let rest = trimmed.strip_prefix("npm error missing:").unwrap_or("").trim();
             return Some(Issue::new(
                 IssueLevel::Error,
@@ -224,8 +224,8 @@ impl NpmParser {
         None
     }
 
-    /// 解析 npm audit 安全漏洞报告
-    /// 格式:
+    /// Analyzing npm audit security vulnerability reports
+    /// Format.
     ///   package  version_range
     ///   Severity: level
     ///   description - https://...
@@ -237,13 +237,13 @@ impl NpmParser {
         let line = &lines[start_index];
         let trimmed = line.trim();
 
-        // 检查是否是包名行（格式: "package  version_range"）
-        // 通常是 audit report 中 severity 行之前的包名和版本范围
+        // Check if it is a package name line (format: "package version_range")
+        // This is usually the package name and version range before the severity line in the audit report.
         if trimmed.starts_with("Severity:") || trimmed.is_empty() {
             return (None, start_index + 1);
         }
 
-        // 向前看一行，检查是否是 Severity 行
+        // Look ahead one row to check if it is a Severity row
         if start_index + 1 >= lines.len() {
             return (None, start_index + 1);
         }
@@ -253,7 +253,7 @@ impl NpmParser {
             return (None, start_index + 1);
         }
 
-        // 提取包名和版本范围
+        // Extract package name and version range
         let package_info = trimmed.to_string();
 
         // 解析 severity
@@ -272,7 +272,7 @@ impl NpmParser {
             _ => IssueLevel::Warning,
         };
 
-        // 收集描述信息（可能在多行）
+        // Collect descriptive information (may be on multiple lines)
         let mut descriptions = Vec::new();
         let mut i = start_index + 2;
 
@@ -280,7 +280,7 @@ impl NpmParser {
             let desc_line = &lines[i];
             let desc_trimmed = desc_line.trim();
 
-            // 停止条件：空行、下一组漏洞、依赖树或修复建议
+            // Stop conditions: empty line, next set of vulnerabilities, dependency tree or fix suggestion
             if desc_trimmed.is_empty()
                 || desc_trimmed.starts_with("fix available")
                 || desc_trimmed.starts_with("node_modules/")
@@ -290,7 +290,7 @@ impl NpmParser {
                 break;
             }
 
-            // 收集描述（不包括依赖树行）
+            // Collection description (excluding dependency tree rows)
             if !desc_trimmed.starts_with("Depends on vulnerable")
                 && !desc_trimmed.starts_with("node_modules/")
             {
@@ -332,14 +332,14 @@ impl OutputParser for NpmParser {
         while i < lines.len() {
             let line = &lines[i];
 
-            // 优先解析 TypeScript 格式（带括号的格式）
+            // Prioritize parsing of TypeScript formats (formats with parentheses)
             if let Some(issue) = self.parse_typescript_format(line) {
                 issues.push(issue);
                 i += 1;
                 continue;
             }
 
-            // 解析 ESLint 格式
+            // Parsing the ESLint Format
             let (issue, new_index) = self.parse_eslint_format(&lines, i);
             if let Some(issue) = issue {
                 issues.push(issue);
@@ -347,21 +347,21 @@ impl OutputParser for NpmParser {
                 continue;
             }
 
-            // 解析 NPM 错误
+            // Parsing NPM Errors
             if let Some(issue) = self.parse_npm_error(line) {
                 issues.push(issue);
                 i += 1;
                 continue;
             }
 
-            // 解析 NPM 依赖缺失错误
+            // Resolving NPM Dependency Missing Errors
             if let Some(issue) = self.parse_npm_missing_dep(line) {
                 issues.push(issue);
                 i += 1;
                 continue;
             }
 
-            // 解析 npm audit 安全漏洞
+            // Analyzing npm audit security vulnerabilities
             let (audit_issue, new_index) = self.parse_npm_audit_vulnerability(&lines, i);
             if let Some(issue) = audit_issue {
                 issues.push(issue);
@@ -369,7 +369,7 @@ impl OutputParser for NpmParser {
                 continue;
             }
 
-            // 通用错误解析
+            // Generic error analysis
             if let Some(issue) = self.parse_generic_error(line) {
                 issues.push(issue);
             }
@@ -383,7 +383,7 @@ impl OutputParser for NpmParser {
     fn is_issue_start(&self, line: &str) -> bool {
         let trimmed = line.trim();
 
-        // ESLint 格式：数字开头，格式为 "line:col level message"
+        // ESLint format: starts with a number and is formatted as "line:col level message"
         if trimmed.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
             if trimmed.contains(':') {
                 let parts: Vec<&str> = trimmed.split(':').collect();
@@ -398,7 +398,7 @@ impl OutputParser for NpmParser {
             }
         }
 
-        // TypeScript 格式：文件路径后跟括号
+        // TypeScript format: file path followed by parentheses
         if trimmed.contains(".ts(")
             || trimmed.contains(".tsx(")
             || trimmed.contains(".js(")
@@ -407,12 +407,12 @@ impl OutputParser for NpmParser {
             return true;
         }
 
-        // NPM 错误格式
+        // NPM Error Format
         if trimmed.starts_with("npm error") {
             return true;
         }
 
-        // 通用错误格式
+        // Common Error Format
         trimmed.to_uppercase().starts_with("ERROR")
     }
 
@@ -427,12 +427,12 @@ impl OutputParser for NpmParser {
             return (Some(issue), start_index + 1);
         }
 
-        // 解析 NPM 错误
+        // Parsing NPM Errors
         if let Some(issue) = self.parse_npm_error(line) {
             return (Some(issue), start_index + 1);
         }
 
-        // 解析 NPM 依赖缺失
+        // Resolving missing NPM dependencies
         if let Some(issue) = self.parse_npm_missing_dep(line) {
             return (Some(issue), start_index + 1);
         }
@@ -445,17 +445,17 @@ impl TestOutputParser for NpmParser {
     fn parse_test_output(&self, output: &str) -> ParsedTestOutput {
         let mut result = ParsedTestOutput::new();
 
-        // 1. 复用现有逻辑解析编译/类型检查问题
+        // 1. Reuse of existing logic to resolve compilation/type-checking issues
         result.compile_issues = self.parse(output);
 
-        // 2. 解析测试执行结果
+        // 2. Parsing test execution results
         let lines: Vec<&str> = output.lines().collect();
         let mut i = 0;
 
         while i < lines.len() {
             let line = lines[i];
 
-            // 解析 Jest 测试用例行: "✓ <name> (<time>)" 或 "✕ <name> (<time>)"
+            // Parse Jest test case line: "✓ <name> (<time>)" or "✕ <name> (<time>)"
             if let Some(test_case) = self.parse_jest_test_line(line) {
                 match test_case.status {
                     TestStatus::Passed => result.passed_tests.push(test_case),
@@ -466,7 +466,7 @@ impl TestOutputParser for NpmParser {
                 continue;
             }
 
-            // 解析 Vitest 测试用例行: " ✓ <name> <time>"
+            // Parsing Vitest test case line: " ✓ <name> <time>"
             if let Some(test_case) = self.parse_vitest_test_line(line) {
                 match test_case.status {
                     TestStatus::Passed => result.passed_tests.push(test_case),
@@ -477,7 +477,7 @@ impl TestOutputParser for NpmParser {
                 continue;
             }
 
-            // 解析 Mocha 测试用例行
+            // Parsing Mocha Test Case Lines
             if let Some(test_case) = self.parse_mocha_test_line(line) {
                 match test_case.status {
                     TestStatus::Passed => result.passed_tests.push(test_case),
@@ -488,17 +488,17 @@ impl TestOutputParser for NpmParser {
                 continue;
             }
 
-            // 解析 Jest 测试结果汇总
+            // Parsing Jest Test Results Summary
             if line.starts_with("Tests:") {
                 result.test_summary = self.parse_jest_summary(line);
             }
 
-            // 解析 Vitest 测试结果汇总
+            // Analyzing Vitest Test Results Summary
             if line.contains("Test Files") && line.contains("tests") {
                 result.test_summary = self.parse_vitest_summary(&lines, i);
             }
 
-            // 解析 Mocha 测试结果汇总
+            // Analyzing Mocha Test Results Summary
             if line.starts_with("  ") && line.contains(" passing") && line.contains(" failing") {
                 result.test_summary = self.parse_mocha_summary(line);
             }
@@ -511,7 +511,7 @@ impl TestOutputParser for NpmParser {
 }
 
 impl NpmParser {
-    /// 解析 Jest 测试用例行
+    /// Parsing Jest Test Case Lines
     /// 格式: "✓ test name (5 ms)" 或 "✕ test name (5 ms)"
     fn parse_jest_test_line(&self, line: &str) -> Option<TestCase> {
         let trimmed = line.trim();
@@ -558,7 +558,7 @@ impl NpmParser {
         None
     }
 
-    /// 解析 Vitest 测试用例行
+    /// Parsing Vitest Test Case Lines
     /// 格式: " ✓ test name 5ms" 或 " ✗ test name 5ms"
     fn parse_vitest_test_line(&self, line: &str) -> Option<TestCase> {
         let trimmed = line.trim();
@@ -604,8 +604,8 @@ impl NpmParser {
         None
     }
 
-    /// 解析 Mocha 测试用例行
-    /// 格式: "    ✓ test name" 或 "    1) test name"
+    /// Parsing Mocha Test Case Lines
+    /// 格式: " ✓ test name" 或 " 1) test name"
     fn parse_mocha_test_line(&self, line: &str) -> Option<TestCase> {
         let trimmed = line.trim();
 
@@ -636,13 +636,13 @@ impl NpmParser {
         None
     }
 
-    /// 从测试名称中提取时间
+    /// Extract time from test name
     /// 格式: "test name (5 ms)" -> ("test name", Some(0.005))
     fn extract_time_from_name(&self, name: &str) -> (String, Option<f64>) {
         if let Some(start) = name.rfind("(") {
             if let Some(end) = name[start..].find(")") {
                 let time_str = &name[start + 1..start + end];
-                // 解析 "5 ms" 或 "0.5 s"
+                // Parsing "5 ms" or "0.5 s"
                 let time = if time_str.contains("ms") {
                     time_str
                         .trim()
@@ -667,10 +667,10 @@ impl NpmParser {
         (name.to_string(), None)
     }
 
-    /// 从 Vitest 行中提取时间
+    /// Extracting time from Vitest rows
     /// 格式: "test name 5ms" -> ("test name", Some(0.005))
     fn extract_vitest_time(&self, rest: &str) -> (String, Option<f64>) {
-        // 从末尾查找时间
+        // lookup time from the end
         let parts: Vec<&str> = rest.split_whitespace().collect();
         if parts.len() >= 2 {
             let last = parts.last().unwrap();
@@ -684,7 +684,7 @@ impl NpmParser {
         (rest.to_string(), None)
     }
 
-    /// 解析 Jest 测试结果汇总
+    /// Parsing Jest Test Results Summary
     /// 格式: "Tests: 5 passed, 1 failed, 2 skipped, 10 total"
     fn parse_jest_summary(&self, line: &str) -> Option<TestSummary> {
         let re = regex::Regex::new(
@@ -709,8 +709,8 @@ impl NpmParser {
         })
     }
 
-    /// 解析 Vitest 测试结果汇总
-    /// 格式多行:
+    /// Analyzing Vitest Test Results Summary
+    /// Format Multiline.
     /// " Test Files  1 passed (1)"
     /// "      Tests  5 passed (5)"
     fn parse_vitest_summary(&self, lines: &[&str], start_index: usize) -> Option<TestSummary> {
@@ -718,18 +718,18 @@ impl NpmParser {
         let mut failed = 0;
         let mut ignored = 0;
 
-        // 从当前行开始向后查找几行
+        // Look back a few rows from the current row
         for i in start_index..(start_index + 5).min(lines.len()) {
             let line = lines[i];
 
-            // 匹配 "Tests  5 passed (5)"
+            // 匹配 "Tests 5 passed (5)"
             if let Some(caps) = regex::Regex::new(r"Tests\s+(\d+)\s+passed")
                 .ok()?
                 .captures(line)
             {
                 passed = caps.get(1)?.as_str().parse().ok()?;
             }
-            // 匹配失败数
+            // Number of failed matches
             if let Some(caps) = regex::Regex::new(r"(\d+)\s+failed").ok()?.captures(line) {
                 failed = caps.get(1)?.as_str().parse().ok()?;
             }
@@ -746,8 +746,8 @@ impl NpmParser {
         })
     }
 
-    /// 解析 Mocha 测试结果汇总
-    /// 格式: "  5 passing (10ms)" 或 "  5 passing (10ms)\n  1 failing"
+    /// Analyzing Mocha Test Results Summary
+    /// 格式: " 5 passing (10ms)" 或 " 5 passing (10ms)\n 1 failing"
     fn parse_mocha_summary(&self, line: &str) -> Option<TestSummary> {
         let re = regex::Regex::new(r"(\d+)\s+passing").ok()?;
         let caps = re.captures(line)?;

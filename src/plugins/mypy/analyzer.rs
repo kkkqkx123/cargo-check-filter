@@ -1,5 +1,5 @@
-//! Mypy 分析器
-//! 运行 mypy 并解析输出
+//! Mypy Analyzer
+//Run mypy and parse the output. Run mypy and parse the output
 
 use std::path::Path;
 

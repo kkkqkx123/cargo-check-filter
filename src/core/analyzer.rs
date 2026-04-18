@@ -1,5 +1,5 @@
-//! 分析器 trait 定义
-//! 定义了构建工具分析器的接口
+//! Analyzer trait definition
+//! defines the interface to the build tool analyzer
 
 use std::path::Path;
 use std::time::Duration;
@@ -7,7 +7,7 @@ use super::types::{AnalysisResult, AnalyzeOptions};
 use super::parser::OutputParser;
 use super::config::Config;
 
-/// 分析器错误类型
+/// Analyzer Error Type
 #[derive(Debug)]
 pub enum AnalyzerError {
     CommandFailed(String),
@@ -37,37 +37,37 @@ impl From<std::io::Error> for AnalyzerError {
     }
 }
 
-/// 构建工具分析器 trait
-/// 实现此 trait 以支持新的构建工具
+/// Build tool analyzer trait
+/// Implement this trait to support new build tools
 pub trait BuildAnalyzer: Send + Sync {
-    /// 获取技术栈名称
+    /// Get the name of the technology stack
     fn name(&self) -> &str;
 
-    /// 获取支持的命令别名
+    /// Get supported command aliases
     fn supported_commands(&self) -> Vec<&str>;
 
-    /// 检查当前目录是否适用此分析器
+    /// Check the current directory for this analyzer
     fn is_applicable(&self, project_path: &Path) -> bool;
 
-    /// 运行分析命令
+    /// Run Analysis Command
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError>;
 
-    /// 获取解析器
+    /// Get parser
     fn parser(&self) -> &dyn OutputParser;
 
-    /// 设置配置（用于配置驱动模式）
+    /// Setup Configuration (for configuring the drive mode)
     fn set_config(&mut self, config: Config) {
-        // 默认空实现，向后兼容
+        // Default empty implementation, backward compatible
         let _ = config;
     }
 
-    /// 获取配置（如果已设置）
+    /// Get configuration (if set)
     fn config(&self) -> Option<&Config> {
         None
     }
 }
 
-/// 插件注册表
+/// Plugin Registry
 pub struct PluginRegistry {
     analyzers: Vec<Box<dyn BuildAnalyzer>>,
 }
@@ -79,12 +79,12 @@ impl PluginRegistry {
         }
     }
 
-    /// 注册分析器
+    /// Registration Analyzer
     pub fn register(&mut self, analyzer: Box<dyn BuildAnalyzer>) {
         self.analyzers.push(analyzer);
     }
 
-    /// 根据命令名称获取分析器
+    /// Get analyzer by command name
     pub fn get(&self, command: &str) -> Option<&dyn BuildAnalyzer> {
         self.analyzers
             .iter()
@@ -95,7 +95,7 @@ impl PluginRegistry {
             .map(|b| b.as_ref())
     }
 
-    /// 自动检测项目适用的分析器
+    /// Analyzers applicable to automated testing programs
     pub fn detect(&self, path: &Path) -> Vec<&dyn BuildAnalyzer> {
         self.analyzers
             .iter()
@@ -104,7 +104,7 @@ impl PluginRegistry {
             .collect()
     }
 
-    /// 列出所有已注册的分析器
+    /// List all registered analyzers
     pub fn list(&self) -> Vec<&str> {
         self.analyzers.iter().map(|a| a.name()).collect()
     }

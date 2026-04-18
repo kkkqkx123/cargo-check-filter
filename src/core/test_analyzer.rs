@@ -1,9 +1,9 @@
-//! 测试分析器 trait 定义
-//! 定义测试执行的统一接口
+//! Test analyzer trait definition
+//! Define a uniform interface for test execution
 
 use super::types::{Issue, TestCase, TestSummary};
 
-/// 测试分析器错误
+/// Test Analyzer Error
 #[derive(Debug)]
 pub enum TestAnalyzerError {
     CommandFailed(String),
@@ -25,18 +25,18 @@ impl std::fmt::Display for TestAnalyzerError {
 
 impl std::error::Error for TestAnalyzerError {}
 
-/// 解析后的测试输出
+/// Parsed test output
 #[derive(Debug, Default)]
 pub struct ParsedTestOutput {
-    /// 编译阶段的问题
+    /// Problems at the compilation stage
     pub compile_issues: Vec<Issue>,
-    /// 测试摘要
+    /// Test Summary
     pub test_summary: Option<TestSummary>,
-    /// 失败的测试用例
+    /// Failed Test Cases
     pub failed_tests: Vec<TestCase>,
-    /// 通过的测试用例
+    /// Test cases passed
     pub passed_tests: Vec<TestCase>,
-    /// 被忽略的测试用例
+    /// Neglected Test Cases
     pub ignored_tests: Vec<TestCase>,
 }
 
@@ -46,39 +46,39 @@ impl ParsedTestOutput {
     }
 }
 
-/// 测试输出解析器 trait
+/// Test output parser trait
 pub trait TestOutputParser: Send + Sync {
-    /// 解析测试输出
+    /// Parsing Test Output
     fn parse_test_output(&self, output: &str) -> ParsedTestOutput;
 }
 
-/// 测试选项
+/// Test Options
 #[derive(Debug, Default, Clone)]
 pub struct TestOptions {
-    /// 测试过滤器（如 test name pattern）
+    /// Test filters (e.g. test name pattern)
     pub filter: Option<String>,
-    /// 仅运行库测试
+    /// Run library tests only
     pub lib_only: bool,
-    /// 仅运行指定二进制文件的测试
+    /// Run only the tests for the specified binary
     pub bin: Option<String>,
-    /// 仅运行集成测试
+    /// Running Integration Tests Only
     pub test: Option<String>,
-    /// 仅运行文档测试
+    /// Running Documentation Tests Only
     pub doc_only: bool,
-    /// 其他参数
+    /// Other parameters
     pub extra_args: Vec<String>,
 }
 
-/// 测试分析器 trait
-/// 实现此 trait 以支持测试执行和分析
+/// Test Analyzer trait
+/// Implement this trait to support test execution and analysis
 pub trait TestAnalyzer: Send + Sync {
-    /// 是否支持测试分析
+    /// Whether to support test analysis
     fn supports_test(&self) -> bool;
 
-    /// 运行测试并返回解析后的输出
+    /// Run the test and return the parsed output
     fn run_tests(&self, options: &TestOptions) -> Result<ParsedTestOutput, TestAnalyzerError>;
 
-    /// 获取测试解析器
+    /// Getting the test parser
     fn test_parser(&self) -> Option<&dyn TestOutputParser> {
         None
     }

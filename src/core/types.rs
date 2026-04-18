@@ -1,9 +1,9 @@
-//! 核心类型定义
-//! 提供所有技术栈通用的类型
+//! Core Type Definition
+//! Provide types that are common to all tech stacks
 
 use std::collections::{HashMap, HashSet};
 
-/// 问题级别
+/// Issue level
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IssueLevel {
     Error,
@@ -23,7 +23,7 @@ impl std::fmt::Display for IssueLevel {
     }
 }
 
-/// 问题位置
+/// Problem location
 #[derive(Debug, Clone)]
 pub struct Location {
     pub file_path: String,
@@ -51,7 +51,7 @@ impl Location {
     }
 }
 
-/// 问题信息
+/// Problem information
 #[derive(Debug, Clone)]
 pub struct Issue {
     pub level: IssueLevel,
@@ -83,7 +83,7 @@ impl Issue {
     }
 }
 
-/// 分析结果统计
+/// Analysis results statistics
 #[derive(Debug, Default)]
 pub struct AnalysisResult {
     pub total_issues: usize,
@@ -109,29 +109,29 @@ impl AnalysisResult {
     pub fn add_issue(&mut self, issue: Issue) {
         self.total_issues += 1;
 
-        // 按级别统计
+        // Statistics by level
         *self.issues_by_level.entry(issue.level.clone()).or_insert(0) += 1;
 
-        // 按类型统计（使用错误代码或消息模式）
+        // Statistics by type (using error codes or message patterns)
         let type_key = issue
             .code
             .clone()
             .unwrap_or_else(|| self.extract_pattern(&issue.message));
         *self.issues_by_type.entry(type_key.clone()).or_insert(0) += 1;
 
-        // 按文件统计
+        // Statistics by document
         self.issues_by_file
             .entry(issue.location.file_path.clone())
             .or_insert_with(Vec::new)
             .push(issue);
 
-        // 记录唯一模式
+        // Record uniqueness model
         self.unique_patterns.insert(type_key);
     }
 
     fn extract_pattern(&self, message: &str) -> String {
-        // 简化消息，提取模式
-        // 移除具体的变量名、行号等
+        // Simplify messages, extract patterns
+        // Remove specific variable names, line numbers, etc.
         message
             .split_whitespace()
             .take(5)
@@ -156,7 +156,7 @@ impl AnalysisResult {
     }
 }
 
-/// 测试结果状态
+/// Test Result Status
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TestStatus {
     Passed,
@@ -164,7 +164,7 @@ pub enum TestStatus {
     Ignored(Option<String>),
 }
 
-/// 测试用例信息
+/// Test Case Information
 #[derive(Debug, Clone)]
 pub struct TestCase {
     pub name: String,
@@ -201,7 +201,7 @@ impl TestCase {
     }
 }
 
-/// 测试摘要
+/// Test Summary
 #[derive(Debug, Clone, Default)]
 pub struct TestSummary {
     pub total: usize,
@@ -213,20 +213,20 @@ pub struct TestSummary {
     pub execution_time: Option<f64>,
 }
 
-/// 扩展 AnalysisResult 支持测试信息
+/// Extending AnalysisResult to support test information
 #[derive(Debug, Default)]
 pub struct TestAnalysisResult {
-    /// 编译阶段的问题
+    /// Problems at the compilation stage
     pub compile_result: AnalysisResult,
-    /// 测试摘要
+    /// Test Summary
     pub test_summary: Option<TestSummary>,
-    /// 失败的测试用例
+    /// Failed Test Cases
     pub failed_tests: Vec<TestCase>,
-    /// 通过的测试用例
+    /// Test cases passed
     pub passed_tests: Vec<TestCase>,
-    /// 被忽略的测试用例
+    /// Neglected Test Cases
     pub ignored_tests: Vec<TestCase>,
-    /// 是否有测试输出
+    /// Availability of test output
     pub has_test_output: bool,
 }
 
@@ -243,7 +243,7 @@ impl TestAnalysisResult {
     }
 }
 
-/// 技术栈类型
+/// Technology stack type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TechStack {
     Cargo,
@@ -289,36 +289,36 @@ impl std::str::FromStr for TechStack {
     }
 }
 
-/// 子命令类型
-/// 支持预定义命令和动态自定义命令
+/// Subcommand Type
+/// Supports predefined commands and dynamically customized commands
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SubCommand {
-    // 预定义命令 - 保持向后兼容
-    // Cargo 子命令
+    // Predefined commands - maintain backward compatibility
+    // Cargo subcommand
     Check,        // cargo check
     Clippy,       // cargo clippy
     ClippyAll,    // cargo clippy --all-targets --all-features
     CheckTest,    // cargo check --tests
 
-    // Maven 子命令
+    // Maven Subcommands
     Compile,    // mvn compile
     MvnTest,    // mvn test
 
-    // NPM 子命令
+    // NPM Subcommands
     Lint,       // npm run lint
     TypeCheck,  // npm run type-check
     Audit,      // npm audit
 
-    // Mypy 子命令
+    // Mypy subcommand
     MypyCheck,       // mypy
     MypyCheckStrict, // mypy --strict
 
-    // Go 子命令
+    // Go subcommands
     GoBuild,    // go build
     GoVet,      // go vet
     GoLint,     // golangci-lint
 
-    // 动态自定义命令
+    // Dynamic customization commands
     Custom(String),
 }
 
@@ -343,7 +343,7 @@ impl SubCommand {
         }
     }
 
-    /// 获取该子命令的描述
+    /// Get a description of this subcommand
     pub fn description(&self) -> &str {
         match self {
             SubCommand::Check => "Fast syntax and type checking",
@@ -364,12 +364,12 @@ impl SubCommand {
         }
     }
 
-    /// 创建自定义命令
+    /// Creating custom commands
     pub fn custom(name: impl Into<String>) -> Self {
         SubCommand::Custom(name.into())
     }
 
-    /// 检查是否是自定义命令
+    /// Check if it is a customized command
     pub fn is_custom(&self) -> bool {
         matches!(self, SubCommand::Custom(_))
     }
@@ -392,8 +392,8 @@ impl std::str::FromStr for SubCommand {
             "build" => Ok(SubCommand::GoBuild),
             "vet" => Ok(SubCommand::GoVet),
             _ => {
-                // 支持动态自定义命令
-                // 验证命令名格式（只允许字母、数字、连字符、下划线）
+                // Support for dynamic customization of commands
+                // Verify command name format (only letters, numbers, hyphens, underscores allowed)
                 if s.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
                     Ok(SubCommand::Custom(s.to_string()))
                 } else {
@@ -404,7 +404,7 @@ impl std::str::FromStr for SubCommand {
     }
 }
 
-/// 分析选项
+/// Analyzing Options
 #[derive(Debug, Default, Clone)]
 pub struct AnalyzeOptions {
     pub subcommand: Option<SubCommand>,
@@ -413,7 +413,7 @@ pub struct AnalyzeOptions {
     pub output_file: Option<String>,
 }
 
-/// 报告格式
+/// Report format
 #[derive(Debug, Clone, Copy, Default)]
 pub enum ReportFormat {
     #[default]

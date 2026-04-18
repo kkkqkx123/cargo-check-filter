@@ -1,6 +1,6 @@
-//! 配置系统
-//! 支持多层级配置：内置默认 < 二进制目录 < 项目
-//! 注意：不使用任何用户目录配置，避免配置分散
+//! Configuration system
+//! Multi-level configuration support: built-in default < binary directory < project
+//! Note: Do not use any user directory configuration to avoid configuration fragmentation
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,22 +8,22 @@ use std::path::{Path, PathBuf};
 
 use crate::core::ReportFormat;
 
-/// 配置根结构
+/// Configuring the root structure
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
-    /// 配置版本
+    /// Configuration version
     #[serde(default = "default_version")]
     pub version: String,
 
-    /// 全局设置
+    /// global setting
     #[serde(default)]
     pub global: GlobalConfig,
 
-    /// 命令定义
+    /// Command Definition
     #[serde(default)]
     pub commands: HashMap<String, CommandConfig>,
 
-    /// 技术栈特定配置
+    /// Technology Stack Specific Configuration
     #[serde(rename = "tech_stack", default)]
     pub tech_stacks: HashMap<String, TechStackConfig>,
 }
@@ -32,18 +32,18 @@ fn default_version() -> String {
     "1.0".to_string()
 }
 
-/// 全局配置
+/// global configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GlobalConfig {
-    /// 默认输出格式
+    /// Default Output Format
     #[serde(default = "default_format")]
     pub default_format: String,
 
-    /// 是否默认过滤警告
+    /// Whether to filter warnings by default
     #[serde(default)]
     pub filter_warnings: bool,
 
-    /// 默认报告输出路径
+    /// Default report output path
     pub default_output: Option<String>,
 }
 
@@ -61,20 +61,20 @@ fn default_format() -> String {
     "markdown".to_string()
 }
 
-/// 命令配置
+/// instruction layout
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandConfig {
-    /// 实际执行的命令
+    /// Commands actually executed
     pub exec: String,
 
-    /// 命令描述
+    /// Command Description
     pub description: Option<String>,
 
-    /// 适用的技术栈
+    /// applicable technology stack
     #[serde(default)]
     pub tech_stacks: Vec<String>,
 
-    /// 是否启用
+    /// Enable or disable
     #[serde(default = "default_true")]
     pub enabled: bool,
 }
@@ -83,42 +83,42 @@ fn default_true() -> bool {
     true
 }
 
-/// 技术栈特定配置
+/// Technology Stack Specific Configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct TechStackConfig {
-    /// 命令覆盖
+    /// Command Override
     #[serde(default)]
     pub commands: HashMap<String, CommandConfig>,
 
-    /// 脚本名称映射
+    /// Script Name Mapping
     #[serde(default)]
     pub scripts: HashMap<String, String>,
 
-    /// 测试框架类型
+    /// Types of test frameworks
     pub test_framework: Option<String>,
 }
 
 impl Config {
-    /// 创建空配置
+    /// Creating an Empty Configuration
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// 加载配置（按优先级合并所有层级）
-    /// 优先级：内置默认 < 二进制目录 < 项目
-    /// 注意：不使用用户目录配置
+    /// Load configuration (merge all tiers by priority)
+    /// Priority: Built-in Defaults < Binary Directories < Projects
+    /// Note: Do not use the user directory configuration
     pub fn load(project_path: &Path) -> Result<Self, ConfigError> {
         let mut config = Self::default();
 
-        // 1. 加载内置默认值
+        // 1. Loading built-in defaults
         config.merge(Self::embedded_defaults());
 
-        // 2. 加载二进制目录配置
+        // 2. Load binary directory configuration
         if let Some(binary_dir_config) = Self::load_from_binary_dir()? {
             config.merge(binary_dir_config);
         }
 
-        // 3. 加载项目级配置（最高优先级）
+        // 3. Load project level configuration (highest priority)
         if let Some(project_config) = Self::load_from_project(project_path)? {
             config.merge(project_config);
         }
@@ -126,7 +126,7 @@ impl Config {
         Ok(config)
     }
 
-    /// 仅从项目路径加载配置（用于测试或简化场景）
+    /// Load configuration from project path only (for testing or simplified scenarios)
     pub fn load_project_only(project_path: &Path) -> Result<Self, ConfigError> {
         let mut config = Self::default();
         config.merge(Self::embedded_defaults());
@@ -138,11 +138,11 @@ impl Config {
         Ok(config)
     }
 
-    /// 内置默认值
+    /// Built-in defaults
     fn embedded_defaults() -> Self {
         let mut commands = HashMap::new();
 
-        // Cargo 命令
+        // Cargo orders
         commands.insert(
             "check".to_string(),
             CommandConfig {
@@ -193,7 +193,7 @@ impl Config {
             },
         );
 
-        // NPM 命令
+        // NPM Commands
         commands.insert(
             "lint".to_string(),
             CommandConfig {
@@ -224,7 +224,7 @@ impl Config {
             },
         );
 
-        // Mypy 命令
+        // Mypy command
         commands.insert(
             "mypy".to_string(),
             CommandConfig {
@@ -253,7 +253,7 @@ impl Config {
         }
     }
 
-    /// 从二进制文件所在目录加载配置
+    /// Load the configuration from the directory where the binary is located
     fn load_from_binary_dir() -> Result<Option<Self>, ConfigError> {
         let exe_path = std::env::current_exe()
             .map_err(|e| ConfigError::IoError(format!("Failed to get executable path: {}", e)))?;
@@ -266,20 +266,20 @@ impl Config {
         Self::load_from_file(&config_path)
     }
 
-    /// 从项目路径加载配置
+    /// Load configuration from project path
     fn load_from_project(project_path: &Path) -> Result<Option<Self>, ConfigError> {
-        // 优先查找隐藏文件 .analyzer.toml
+        // Prioritize hidden files .analyzer.toml
         let hidden_config = project_path.join(".analyzer.toml");
         if hidden_config.exists() {
             return Self::load_from_file(&hidden_config);
         }
 
-        // 然后查找 analyzer.toml
+        // Then look for analyzer.toml
         let config_path = project_path.join("analyzer.toml");
         Self::load_from_file(&config_path)
     }
 
-    /// 从文件加载配置
+    /// Load configuration from file
     fn load_from_file(path: &Path) -> Result<Option<Self>, ConfigError> {
         if !path.exists() {
             return Ok(None);
@@ -294,9 +294,9 @@ impl Config {
         Ok(Some(config))
     }
 
-    /// 合并另一个配置（高优先级覆盖低优先级）
+    /// Merge another configuration (high priority overrides low priority)
     fn merge(&mut self, other: Self) {
-        // 合并全局配置
+        // Merge Global Configuration
         if other.global.default_format != default_format() {
             self.global.default_format = other.global.default_format;
         }
@@ -305,25 +305,25 @@ impl Config {
             self.global.default_output = other.global.default_output;
         }
 
-        // 合并命令（高优先级覆盖）
+        // Merge command (high-priority override)
         for (name, cmd_config) in other.commands {
             self.commands.insert(name, cmd_config);
         }
 
-        // 合并技术栈配置
+        // Consolidate technology stack configurations
         for (stack_name, stack_config) in other.tech_stacks {
             self.tech_stacks
                 .entry(stack_name)
                 .and_modify(|existing| {
-                    // 合并命令
+                    // merge command
                     for (cmd_name, cmd_config) in &stack_config.commands {
                         existing.commands.insert(cmd_name.clone(), cmd_config.clone());
                     }
-                    // 合并脚本
+                    // Merge Script
                     for (script_name, script_value) in &stack_config.scripts {
                         existing.scripts.insert(script_name.clone(), script_value.clone());
                     }
-                    // 覆盖测试框架
+                    // Coverage Testing Framework
                     if stack_config.test_framework.is_some() {
                         existing.test_framework = stack_config.test_framework.clone();
                     }
@@ -332,9 +332,9 @@ impl Config {
         }
     }
 
-    /// 获取命令配置（考虑技术栈特定覆盖）
+    /// Get command configuration (consider tech stack specific overrides)
     pub fn get_command(&self, tech_stack: &str, command_name: &str) -> Option<&CommandConfig> {
-        // 1. 先查技术栈特定配置
+        // 1. Check for technology stack-specific configurations first
         if let Some(stack_config) = self.tech_stacks.get(tech_stack) {
             if let Some(cmd) = stack_config.commands.get(command_name) {
                 if cmd.enabled {
@@ -343,7 +343,7 @@ impl Config {
             }
         }
 
-        // 2. 再查全局命令
+        // 2. Re-check global commands
         if let Some(cmd) = self.commands.get(command_name) {
             if cmd.enabled && cmd.tech_stacks.iter().any(|s| s == tech_stack) {
                 return Some(cmd);
@@ -353,7 +353,7 @@ impl Config {
         None
     }
 
-    /// 获取所有可用的命令名称
+    /// Get all available command names
     pub fn get_available_commands(&self, tech_stack: &str) -> Vec<&String> {
         self.commands
             .iter()
@@ -364,14 +364,14 @@ impl Config {
             .collect()
     }
 
-    /// 获取技术栈的脚本映射
+    /// Get script mapping for the tech stack
     pub fn get_script_mapping(&self, tech_stack: &str, script_name: &str) -> Option<&String> {
         self.tech_stacks
             .get(tech_stack)
             .and_then(|stack| stack.scripts.get(script_name))
     }
 
-    /// 获取技术栈的测试框架
+    /// Get the test framework for the technology stack
     pub fn get_test_framework(&self, tech_stack: &str) -> Option<&String> {
         self.tech_stacks
             .get(tech_stack)
@@ -379,7 +379,7 @@ impl Config {
     }
 }
 
-/// 配置错误
+/// misconfiguration
 #[derive(Debug)]
 pub enum ConfigError {
     IoError(String),

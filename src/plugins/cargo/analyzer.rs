@@ -1,5 +1,5 @@
-//! Cargo 分析器
-//! 运行 cargo check/clippy/test 并解析输出
+//! Cargo Analyzer
+//Run cargo check/clippy/test and parse the output. Run cargo check/clippy/test and parse the output.
 
 use std::path::Path;
 
@@ -48,7 +48,7 @@ impl CargoAnalyzer {
         builder.arg("--message-format=short")
     }
 
-    /// 创建测试命令
+    /// Creating a test command
     fn create_test_command(&self, options: &TestOptions) -> CommandBuilder {
         let mut builder = CommandBuilder::new("cargo").arg("test");
 
@@ -72,7 +72,7 @@ impl CargoAnalyzer {
             builder = builder.arg(filter);
         }
 
-        // 添加 --nocapture 以获取完整输出
+        // Add --nocapture to get the full output
         builder = builder.arg("--").arg("--nocapture");
 
         builder
@@ -157,7 +157,7 @@ impl TestAnalyzer for CargoAnalyzer {
             .execute()
             .map_err(|e| TestAnalyzerError::CommandFailed(e.to_string()))?;
 
-        // 使用 TestOutputParser 解析输出
+        // Parsing Output with TestOutputParser
         let parsed = self
             .test_parser()
             .ok_or(TestAnalyzerError::NotSupported)?

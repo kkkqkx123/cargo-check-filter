@@ -1,5 +1,5 @@
 # Test Python Project
-"""用于Mypy分析器集成测试的Python项目"""
+"""Python Project for Mypy Analyzer Integration Testing"""
 
 from .main import User, DataProcessor, add_numbers
 from .utils import parse_json, divide, format_name

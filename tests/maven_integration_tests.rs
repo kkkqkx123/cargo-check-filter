@@ -1,5 +1,5 @@
-//! Maven 集成测试
-//! 执行实际的 Maven 命令，验证解析逻辑与实际输出格式是否一致
+//! Maven Integration Testing
+//! Execute the actual Maven commands to verify that the parsing logic matches the actual output format
 
 use std::path::PathBuf;
 
@@ -10,7 +10,7 @@ fn maven_project_path() -> PathBuf {
     fixtures_dir().join("maven-project")
 }
 
-/// 检查 Maven 是否可用
+/// Check if Maven is available
 fn ensure_maven() -> Result<(), String> {
     if !is_command_available("mvn") {
         return Err("Maven (mvn) is not available in PATH. Please install Maven.".to_string());
@@ -30,17 +30,17 @@ fn test_maven_compile_output() {
 
     let project_path = maven_project_path();
 
-    // 运行 Maven 编译
+    // Run a Maven build
     let output = match run_command("mvn", &["compile", "-q"], &project_path) {
         Ok(output) => output,
         Err(e) => {
-            // Maven 编译失败时也会返回输出（包含错误信息）
+            // Maven also returns output (with error messages) when compilation fails
             println!("Maven compile failed or found errors: {}", e);
-            // 尝试再次运行以获取错误输出
+            // Try running it again to get the error output
             match run_command("mvn", &["compile"], &project_path) {
                 Ok(output) => output,
                 Err(_) => {
-                    // 如果还是失败，使用样本输出
+                    // If it still fails, use the sample output
                     println!("Using sample output for testing");
                     read_sample("maven_compile_sample")
                 }
@@ -48,10 +48,10 @@ fn test_maven_compile_output() {
         }
     };
 
-    // 保存原始输出
+    // Saving the original output
     save_raw_output("maven_compile", &output);
 
-    // 解析并生成报告
+    // Parses and generates reports
     let parser = MavenParser::new();
     let issues = parser.parse(&output);
     generate_report(
@@ -65,7 +65,7 @@ fn test_maven_compile_output() {
     println!("=== Maven Compile Output ===");
     println!("{}", output);
 
-    // 验证 Maven 输出格式
+    // Validating the Maven Output Format
     // 格式: [ERROR] /path/to/File.java:[line,col] error: message
     // 格式: [WARNING] /path/to/File.java:[line,col] warning: message
     let lines: Vec<&str> = output.lines().collect();
@@ -81,7 +81,7 @@ fn test_maven_compile_output() {
         println!("! No error lines found (may be due to Maven configuration or build success)");
     }
 
-    // 验证输出格式符合解析器预期
+    // Verify that the output format is as expected by the parser
     for line in &lines {
         let trimmed: &str = line.trim();
         if trimmed.starts_with("[ERROR]") || trimmed.starts_with("[WARNING]") {
@@ -102,7 +102,7 @@ fn test_maven_test_output() {
 
     let project_path = maven_project_path();
 
-    // 运行 Maven 测试
+    // Running Maven Tests
     let output = match run_command("mvn", &["test", "-q"], &project_path) {
         Ok(output) => output,
         Err(e) => {
@@ -117,10 +117,10 @@ fn test_maven_test_output() {
         }
     };
 
-    // 保存原始输出
+    // Saving the original output
     save_raw_output("maven_test", &output);
 
-    // 解析并生成报告
+    // Parses and generates reports
     let parser = MavenParser::new();
     let issues = parser.parse(&output);
     generate_report(
@@ -134,7 +134,7 @@ fn test_maven_test_output() {
     println!("=== Maven Test Output ===");
     println!("{}", output);
 
-    // 验证测试输出
+    // Validation Test Output
     let lines: Vec<&str> = output.lines().collect();
     let has_test_output = lines.iter().any(|line: &&str| {
         line.contains("Tests run:") || line.contains("T E S T S")
@@ -156,7 +156,7 @@ fn test_validate_maven_outputs() {
 
     let parser = MavenParser::new();
 
-    // 验证编译错误样本
+    // Sample Verification Compilation Errors
     let compile_output = read_sample("maven_compile_sample");
     let issues = parser.parse(&compile_output);
 
@@ -167,13 +167,13 @@ fn test_validate_maven_outputs() {
     println!("Total errors: {}", result.issues_by_level.get(&IssueLevel::Error).unwrap_or(&0));
     println!("Total warnings: {}", result.issues_by_level.get(&IssueLevel::Warning).unwrap_or(&0));
 
-    // 验证解析结果
+    // Verify parsing results
     assert!(
         result.total_issues > 0,
         "Expected at least one issue in the sample output"
     );
 
-    // 验证错误详情
+    // Verify Error Details
     for (file_path, file_issues) in &result.issues_by_file {
         println!("  File: {} - {} issues", file_path, file_issues.len());
         for issue in file_issues {
@@ -193,7 +193,7 @@ fn test_maven_parser_specific_patterns() {
 
     let parser = MavenParser::new();
 
-    // 测试各种 Maven 错误格式
+    // Testing various Maven error formats
     let test_cases = vec![
         ("[ERROR] /src/main/java/App.java:[10,5] error: cannot find symbol", true),
         ("[WARNING] /src/main/java/App.java:[20,10] warning: [unchecked] unchecked conversion", true),
