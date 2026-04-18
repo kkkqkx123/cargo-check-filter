@@ -1,38 +1,38 @@
-# TypeScript Type Check 分析报告
+# TypeScript Type Check Analysis Report
 
-**执行命令**: `npm run type-check`
+**Command**: `npm run type-check`
 
-## 摘要
+## Summary
 
-- **总问题数**: 7
-- **错误数**: 7
-- **警告数**: 0
-- **信息数**: 0
-- **涉及文件数**: 2
+- **Total Issues**: 7
+- **Errors**: 7
+- **Warnings**: 0
+- **Info**: 0
+- **Files with Issues**: 2
 
-## 问题详情（按文件分组）
+## Issue Details (Grouped by File)
+
+### src/index.ts
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 13 | 7 | Error | Argument of type 'number' is not assignable to parameter of type 'string'. |
+| 20 | 23 | Error | Parameter 'data' implicitly has an 'any' type. |
+| 26 | 1 | Error | 'calculate', which lacks return-type annotation, implicitly has an 'any' return type. |
 
 ### src/utils.ts
 
-| 行号 | 列号 | 级别 | 消息 |
-|------|------|------|------|
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
 | 15 | 29 | Error | Parameter 'data' implicitly has an 'any' type. |
 | 20 | 24 | Error | Parameter 'users' implicitly has an 'any' type. |
 | 20 | 37 | Error | 'processUsers', which lacks return-type annotation, implicitly has an 'any' return type. |
 | 53 | 5 | Error | Rest parameter 'args' implicitly has an 'any[]' type. |
 
-### src/index.ts
+## Raw Output
 
-| 行号 | 列号 | 级别 | 消息 |
-|------|------|------|------|
-| 13 | 7 | Error | Argument of type 'number' is not assignable to parameter of type 'string'. |
-| 20 | 23 | Error | Parameter 'data' implicitly has an 'any' type. |
-| 26 | 1 | Error | 'calculate', which lacks return-type annotation, implicitly has an 'any' return type. |
-
-## 原始输出
-
-查看原始命令输出: [samples/npm_typecheck_sample.txt](samples/npm_typecheck_sample.txt)
+View raw command output: [samples/npm_typecheck_sample.txt](samples/npm_typecheck_sample.txt)
 
 ---
 
-*报告生成时间: 2026-04-18 19:34:37*
+*Report generated at: 2026-04-18 22:24:38*

@@ -1,19 +1,19 @@
-# NPM Audit 分析报告
+# NPM Audit Analysis Report
 
-**执行命令**: `npm audit`
+**Command**: `npm audit`
 
-## 摘要
+## Summary
 
-- **总问题数**: 0
-- **错误数**: 0
-- **警告数**: 0
-- **信息数**: 0
-- **涉及文件数**: 0
+- **Total Issues**: 0
+- **Errors**: 0
+- **Warnings**: 0
+- **Info**: 0
+- **Files with Issues**: 0
 
-## 原始输出
+## Raw Output
 
-查看原始命令输出: [samples/npm_audit_sample.txt](samples/npm_audit_sample.txt)
+View raw command output: [samples/npm_audit_sample.txt](samples/npm_audit_sample.txt)
 
 ---
 
-*报告生成时间: 2026-04-18 19:34:37*
+*Report generated at: 2026-04-18 22:24:38*

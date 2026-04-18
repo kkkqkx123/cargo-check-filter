@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.0, pytest-7.4.0, pluggy-1.0.0
+rootdir: /home/user/project
+collected 10 items
+
+tests/test_example.py::test_add_positive_numbers PASSED [0.01s]
+tests/test_example.py::test_add_negative_numbers PASSED [0.01s]
+tests/test_example.py::test_add_zero PASSED [0.01s]
+tests/test_example.py::test_divide_normal PASSED [0.01s]
+tests/test_example.py::test_divide_by_zero PASSED [0.01s]
+tests/test_example.py::test_divide_failure FAILED [0.02s]
+tests/test_example.py::test_future_feature SKIPPED [not implemented yet]
+tests/test_example.py::test_known_bug XFAIL [known bug: issue #123]
+tests/test_utils.py::test_multiply PASSED [0.01s]
+tests/test_utils.py::test_subtract PASSED [0.01s]
+
+=================================== FAILURES ===================================
+________________________________ test_divide_failure ________________________________
+
+    def test_divide_failure():
+        """This test is designed to fail for testing purposes."""
+        # Intentionally wrong assertion for testing
+>       assert divide(10, 2) == 6  # Should be 5
+E       AssertionError: assert 5.0 == 6
+E        +  where 5.0 = divide(10, 2)
+
+tests/test_example.py:35: AssertionError
+
+=============================== short test summary info ================================
+FAILED tests/test_example.py::test_divide_failure - AssertionError: assert 5.0 == 6
+============= 8 passed, 1 skipped, 1 xfailed, 1 failed in 0.15s =============

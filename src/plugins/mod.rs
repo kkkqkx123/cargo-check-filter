@@ -6,6 +6,7 @@ pub mod gradle;
 pub mod maven;
 pub mod mypy;
 pub mod npm;
+pub mod pytest;
 
 use std::path::Path;
 use crate::core::PluginRegistry;
@@ -34,6 +35,9 @@ pub fn create_registry() -> PluginRegistry {
 
     // Registering the Gradle Analyzer
     registry.register(Box::new(gradle::GradleAnalyzer::new()));
+
+    // Registering the Pytest Analyzer
+    registry.register(Box::new(pytest::PytestAnalyzer::new()));
 
     registry
 }

@@ -1,21 +1,21 @@
-# Mypy Specific File 分析报告
+# Mypy Specific File Analysis Report
 
-**执行命令**: `mypy src/main.py`
+**Command**: `mypy src/main.py`
 
-## 摘要
+## Summary
 
-- **总问题数**: 20
-- **错误数**: 17
-- **警告数**: 0
-- **信息数**: 3
-- **涉及文件数**: 2
+- **Total Issues**: 20
+- **Errors**: 17
+- **Warnings**: 0
+- **Info**: 3
+- **Files with Issues**: 2
 
-## 问题详情（按文件分组）
+## Issue Details (Grouped by File)
 
 ### src\utils.py
 
-| 行号 | 列号 | 级别 | 消息 |
-|------|------|------|------|
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
 | 9 | 5 | Error | Returning Any from function declared to return "dict[Any, Any]"  [no-any-return] |
 | 24 | 1 | Error | Function is missing a type annotation  [no-untyped-def] |
 | 53 | 5 | Error | Function is missing a type annotation for one or more arguments  [no-untyped-def] |
@@ -28,8 +28,8 @@
 
 ### src\main.py
 
-| 行号 | 列号 | 级别 | 消息 |
-|------|------|------|------|
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
 | 14 | 18 | Error | Unsupported operand types for + ("int" and "str")  [operator] |
 | 26 | 1 | Error | Function is missing a type annotation  [no-untyped-def] |
 | 40 | 16 | Error | Argument 1 to "len" has incompatible type "Optional[str]"; expected "Sized"  [arg-type] |
@@ -42,10 +42,10 @@
 | 96 | 14 | Error | Incompatible types in assignment (expression has type "int", variable has type "str")  [assignment] |
 | 99 | 11 | Error | Name "undefined_variable" is not defined  [name-defined] |
 
-## 原始输出
+## Raw Output
 
-查看原始命令输出: [samples/mypy_specific_file.txt](samples/mypy_specific_file.txt)
+View raw command output: [samples/mypy_specific_file.txt](samples/mypy_specific_file.txt)
 
 ---
 
-*报告生成时间: 2026-04-18 19:34:37*
+*Report generated at: 2026-04-18 22:24:38*

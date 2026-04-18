@@ -318,6 +318,11 @@ pub enum SubCommand {
     GoVet,      // go vet
     GoLint,     // golangci-lint
 
+    // Pytest subcommands
+    Pytest,         // pytest
+    PytestQuiet,    // pytest -q
+    PytestVerbose,  // pytest -vv
+
     // Dynamic customization commands
     Custom(String),
 }
@@ -339,6 +344,9 @@ impl SubCommand {
             SubCommand::GoBuild => "build",
             SubCommand::GoVet => "vet",
             SubCommand::GoLint => "lint",
+            SubCommand::Pytest => "test",
+            SubCommand::PytestQuiet => "test-quiet",
+            SubCommand::PytestVerbose => "test-verbose",
             SubCommand::Custom(name) => name.as_str(),
         }
     }
@@ -360,6 +368,9 @@ impl SubCommand {
             SubCommand::GoBuild => "Build the project",
             SubCommand::GoVet => "Run go vet",
             SubCommand::GoLint => "Run golangci-lint",
+            SubCommand::Pytest => "Run pytest",
+            SubCommand::PytestQuiet => "Run pytest in quiet mode",
+            SubCommand::PytestVerbose => "Run pytest in verbose mode",
             SubCommand::Custom(_) => "Custom command",
         }
     }
@@ -391,6 +402,9 @@ impl std::str::FromStr for SubCommand {
             "check-strict" => Ok(SubCommand::MypyCheckStrict),
             "build" => Ok(SubCommand::GoBuild),
             "vet" => Ok(SubCommand::GoVet),
+            "test" => Ok(SubCommand::Pytest),
+            "test-quiet" => Ok(SubCommand::PytestQuiet),
+            "test-verbose" => Ok(SubCommand::PytestVerbose),
             _ => {
                 // Support for dynamic customization of commands
                 // Verify command name format (only letters, numbers, hyphens, underscores allowed)
