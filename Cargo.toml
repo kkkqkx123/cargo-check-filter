@@ -1,24 +1,21 @@
 [package]
-name = "cargo-error-analyzer"
-version = "0.1.0"
+name = "analyzer"
+version = "0.2.0"
 edition = "2021"
+description = "Multi-language build tool error analyzer"
 
-# 最小化依赖，避免影响分发版压缩
 [dependencies]
-# 使用标准库，无需外部依赖
+regex = "1.10"
 
 [profile.release]
 lto = true
 panic = "abort"
-opt-level = "z"  # 最小化代码大小
+opt-level = "z"
 codegen-units = 1
 
 [profile.dev]
 opt-level = 0
 
-[lib]
-path = "lib.rs"
-
 [[bin]]
-name = "analyze_cargo"
-path = "analyze_cargo.rs"
+name = "analyzer"
+path = "src/main.rs"
