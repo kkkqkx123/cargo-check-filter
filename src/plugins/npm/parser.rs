@@ -17,6 +17,34 @@ impl NpmParser {
         }
     }
 
+    /// 检查一行是否是文件路径（ESLint 格式中文件路径单独一行）
+    fn is_file_path_line(&self, line: &str) -> bool {
+        let trimmed = line.trim();
+        // 文件路径通常包含 / 或 \，且不以数字开头
+        !trimmed.is_empty()
+            && (trimmed.contains('/') || trimmed.contains('\\'))
+            && !trimmed.chars().next().unwrap_or(' ').is_ascii_digit()
+            && !trimmed.starts_with('✖')
+            && !trimmed.starts_with('│')
+            && !trimmed.starts_with('├')
+            && !trimmed.starts_with('└')
+            && !trimmed.starts_with("npm error")
+            && !trimmed.starts_with("error")
+    }
+
+    /// 查找当前行对应的文件路径
+    /// 优先查找最近的文件路径行，如果没有则向上查找
+    fn find_eslint_file_path(&self, lines: &[String], current_index: usize) -> String {
+        // 首先向上查找文件路径行
+        for i in (0..current_index).rev() {
+            let line = &lines[i];
+            if self.is_file_path_line(line) {
+                return line.trim().to_string();
+            }
+        }
+        String::from("unknown")
+    }
+
     fn parse_eslint_format(
         &self,
         lines: &[String],
@@ -29,17 +57,22 @@ impl NpmParser {
         let line = &lines[start_index];
         let trimmed = line.trim();
 
+        // ESLint 格式: "  3:7   warning  message  rule-name"
+        // 行首可能有空格，然后是行号:列号
         let parts: Vec<&str> = trimmed.splitn(2, ':').collect();
         if parts.len() < 2 {
             return (None, start_index + 1);
         }
 
+        // 解析行号（处理前导空格）
         let line_num = parts[0].trim().parse::<u32>().ok();
         if line_num.is_none() {
             return (None, start_index + 1);
         }
 
         let rest = parts[1];
+        // 列号后面跟着级别和消息
+        // 格式: "7   warning  message  rule-name"
         let rest_parts: Vec<&str> = rest.splitn(2, |c: char| c.is_whitespace()).collect();
         if rest_parts.len() < 2 {
             return (None, start_index + 1);
@@ -48,6 +81,8 @@ impl NpmParser {
         let col_num = rest_parts[0].trim().parse::<u32>().ok();
         let after_col = rest_parts[1].trim();
 
+        // 解析级别和消息
+        // 格式: "warning  message  rule-name" 或 "error  message  rule-name"
         let level_msg_parts: Vec<&str> = after_col.splitn(2, |c: char| c.is_whitespace()).collect();
         if level_msg_parts.is_empty() {
             return (None, start_index + 1);
@@ -61,6 +96,7 @@ impl NpmParser {
             _ => return (None, start_index + 1),
         };
 
+        // 提取消息（移除规则名）
         let message = if level_msg_parts.len() > 1 {
             let msg_and_rule = level_msg_parts[1].trim();
             self.base.extract_message(msg_and_rule)
@@ -68,7 +104,8 @@ impl NpmParser {
             String::new()
         };
 
-        let file_path = self.base.find_file_path(lines, start_index);
+        // 使用改进的文件路径查找
+        let file_path = self.find_eslint_file_path(lines, start_index);
 
         let location = if let Some(col) = col_num {
             Location::new(file_path)
@@ -133,6 +170,59 @@ impl NpmParser {
 
         None
     }
+
+    /// 解析 NPM Audit 错误格式
+    /// 格式: "npm error code CODE" 或 "npm error message"
+    fn parse_npm_error(&self, line: &str) -> Option<Issue> {
+        let trimmed = line.trim();
+
+        // 匹配 "npm error code XXX"
+        if trimmed.starts_with("npm error code") {
+            let code = trimmed.strip_prefix("npm error code").unwrap_or("").trim();
+            return Some(Issue::new(
+                IssueLevel::Error,
+                format!("NPM error code: {}", code),
+                Location::new("package.json"),
+            ));
+        }
+
+        // 匹配 "npm error XXX"（不包括 code 行）
+        if trimmed.starts_with("npm error") && !trimmed.starts_with("npm error code") {
+            let message = trimmed.strip_prefix("npm error").unwrap_or("").trim();
+            // 跳过一些已知的非错误信息行
+            if message.starts_with("A complete log")
+                || message.starts_with("audit")
+                || message.is_empty()
+            {
+                return None;
+            }
+            return Some(Issue::new(
+                IssueLevel::Error,
+                message.to_string(),
+                Location::new("package.json"),
+            ));
+        }
+
+        None
+    }
+
+    /// 解析 NPM 依赖缺失错误
+    /// 格式: "npm error missing: package@version, required by package@version"
+    fn parse_npm_missing_dep(&self, line: &str) -> Option<Issue> {
+        let trimmed = line.trim();
+
+        if trimmed.starts_with("npm error missing:") {
+            // 提取缺失的包信息
+            let rest = trimmed.strip_prefix("npm error missing:").unwrap_or("").trim();
+            return Some(Issue::new(
+                IssueLevel::Error,
+                format!("Missing dependency: {}", rest),
+                Location::new("package.json"),
+            ));
+        }
+
+        None
+    }
 }
 
 impl Default for NpmParser {
@@ -150,12 +240,14 @@ impl OutputParser for NpmParser {
         while i < lines.len() {
             let line = &lines[i];
 
+            // 优先解析 TypeScript 格式（带括号的格式）
             if let Some(issue) = self.parse_typescript_format(line) {
                 issues.push(issue);
                 i += 1;
                 continue;
             }
 
+            // 解析 ESLint 格式
             let (issue, new_index) = self.parse_eslint_format(&lines, i);
             if let Some(issue) = issue {
                 issues.push(issue);
@@ -163,6 +255,21 @@ impl OutputParser for NpmParser {
                 continue;
             }
 
+            // 解析 NPM 错误
+            if let Some(issue) = self.parse_npm_error(line) {
+                issues.push(issue);
+                i += 1;
+                continue;
+            }
+
+            // 解析 NPM 依赖缺失错误
+            if let Some(issue) = self.parse_npm_missing_dep(line) {
+                issues.push(issue);
+                i += 1;
+                continue;
+            }
+
+            // 通用错误解析
             if let Some(issue) = self.parse_generic_error(line) {
                 issues.push(issue);
             }
@@ -176,6 +283,7 @@ impl OutputParser for NpmParser {
     fn is_issue_start(&self, line: &str) -> bool {
         let trimmed = line.trim();
 
+        // ESLint 格式：数字开头，格式为 "line:col level message"
         if trimmed.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
             if trimmed.contains(':') {
                 let parts: Vec<&str> = trimmed.split(':').collect();
@@ -190,13 +298,21 @@ impl OutputParser for NpmParser {
             }
         }
 
+        // TypeScript 格式：文件路径后跟括号
         if trimmed.contains(".ts(")
             || trimmed.contains(".tsx(")
             || trimmed.contains(".js(")
+            || trimmed.contains(".jsx(")
         {
             return true;
         }
 
+        // NPM 错误格式
+        if trimmed.starts_with("npm error") {
+            return true;
+        }
+
+        // 通用错误格式
         trimmed.to_uppercase().starts_with("ERROR")
     }
 
@@ -208,6 +324,16 @@ impl OutputParser for NpmParser {
         let line = &lines[start_index];
 
         if let Some(issue) = self.parse_typescript_format(line) {
+            return (Some(issue), start_index + 1);
+        }
+
+        // 解析 NPM 错误
+        if let Some(issue) = self.parse_npm_error(line) {
+            return (Some(issue), start_index + 1);
+        }
+
+        // 解析 NPM 依赖缺失
+        if let Some(issue) = self.parse_npm_missing_dep(line) {
             return (Some(issue), start_index + 1);
         }
 

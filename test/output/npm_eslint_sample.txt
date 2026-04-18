@@ -1,0 +1,19 @@
+
+
+D:\项目\cli\analyze-cargo\test\fixtures\npm-project\src\index.ts
+  3:7   warning  'unusedVariable' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  10:5   error    Unexpected console statement                         no-console
+  13:7   error    Argument of type 'number' is not assignable to parameter of type 'string'  @typescript-eslint/no-unsafe-argument
+  17:10  warning  'unusedFunction' is defined but never used           @typescript-eslint/no-unused-vars
+  20:23  warning  Parameter 'data' implicitly has an 'any' type        @typescript-eslint/no-explicit-any
+  26:1   warning  Missing return type on function                      @typescript-eslint/explicit-function-return-type
+  30:1   error    Unexpected var, use let or const instead             no-var
+
+D:\项目\cli\analyze-cargo\test\fixtures\npm-project\src\utils.ts
+  4:10   error    'readFileSync' is defined but never used             @typescript-eslint/no-unused-vars
+  15:29  warning  Parameter 'data' implicitly has an 'any' type        @typescript-eslint/no-explicit-any
+  20:24  warning  Parameter 'users' implicitly has an 'any' type       @typescript-eslint/no-explicit-any
+  20:37  warning  Return type annotation is missing                    @typescript-eslint/explicit-function-return-type
+  23:7   warning  'API_URL' is assigned a value but never used         @typescript-eslint/no-unused-vars
+
+✖ 7 problems (3 errors, 4 warnings)

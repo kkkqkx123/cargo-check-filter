@@ -18,6 +18,10 @@ codegen-units = 1
 [profile.dev]
 opt-level = 0
 
+[lib]
+name = "analyzer"
+path = "src/lib.rs"
+
 [[bin]]
 name = "analyzer"
 path = "src/main.rs"

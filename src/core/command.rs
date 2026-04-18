@@ -1,8 +1,53 @@
 //! 命令执行工具
-//! 提供统一的命令构建和执行功能
+//! 提供统一的命令构建和执行功能，支持跨平台命令查找
 
+use std::path::PathBuf;
 use std::process::Command;
+
 use super::analyzer::AnalyzerError;
+
+/// 获取命令的完整路径（跨平台）
+/// 在 Windows 上，会优先查找 .cmd, .bat, .exe 等可执行扩展名
+pub fn resolve_command(cmd: &str) -> Option<PathBuf> {
+    // 如果已经是绝对路径或相对路径，直接返回
+    if cmd.contains('/') || cmd.contains('\\') {
+        return Some(PathBuf::from(cmd));
+    }
+
+    // 使用 which/where 命令查找
+    #[cfg(windows)]
+    let check_cmd = "where";
+    #[cfg(not(windows))]
+    let check_cmd = "which";
+
+    let output = Command::new(check_cmd).arg(cmd).output().ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let paths: Vec<PathBuf> = stdout.lines().map(PathBuf::from).collect();
+
+    #[cfg(windows)]
+    {
+        // 在 Windows 上，优先选择有扩展名的可执行文件
+        // 优先级: .cmd > .bat > .exe > 其他
+        let priority = [".cmd", ".bat", ".exe"];
+        for ext in &priority {
+            if let Some(path) = paths.iter().find(|p| {
+                p.extension()
+                    .map(|e| e.to_string_lossy().to_lowercase() == ext.trim_start_matches('.'))
+                    .unwrap_or(false)
+            }) {
+                return Some(path.clone());
+            }
+        }
+    }
+
+    // 默认返回第一个找到的路径
+    paths.into_iter().next()
+}
 
 /// 命令构建器
 /// 用于构建和执行外部命令
@@ -55,19 +100,65 @@ impl CommandBuilder {
         cmd
     }
 
-    /// 执行命令并捕获输出
-    pub fn execute(&self) -> Result<String, AnalyzerError> {
-        if self.verbose {
-            println!("Running: {} {}", self.program, self.args.join(" "));
+    /// 获取程序名称（用于跨平台解析）
+    fn resolve_program(&self) -> Result<String, AnalyzerError> {
+        // 尝试解析命令路径
+        if let Some(resolved) = resolve_command(&self.program) {
+            return Ok(resolved.to_string_lossy().to_string());
         }
 
-        let output = Command::new(&self.program)
+        // 如果解析失败，返回原始程序名（让系统尝试）
+        Ok(self.program.clone())
+    }
+
+    /// 执行命令并捕获输出
+    pub fn execute(&self) -> Result<String, AnalyzerError> {
+        let program = self.resolve_program()?;
+
+        if self.verbose {
+            println!("Running: {} {}", program, self.args.join(" "));
+        }
+
+        let output = Command::new(&program)
             .args(&self.args)
             .output()
             .map_err(|e| {
                 AnalyzerError::CommandFailed(format!(
-                    "Failed to execute {}: {}",
-                    self.program, e
+                    "Failed to execute {}: {}. Hint: Make sure '{}' is installed and in PATH",
+                    self.program, e, self.program
+                ))
+            })?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+
+        Ok(format!("{}{}", stdout, stderr))
+    }
+
+    /// 在指定目录执行命令并捕获输出
+    pub fn execute_in_dir(&self, dir: &PathBuf) -> Result<String, AnalyzerError> {
+        let program = self.resolve_program()?;
+
+        if self.verbose {
+            println!(
+                "Running in {}: {} {}",
+                dir.display(),
+                program,
+                self.args.join(" ")
+            );
+        }
+
+        let output = Command::new(&program)
+            .args(&self.args)
+            .current_dir(dir)
+            .output()
+            .map_err(|e| {
+                AnalyzerError::CommandFailed(format!(
+                    "Failed to execute {} in {}: {}. Hint: Make sure '{}' is installed and in PATH",
+                    self.program,
+                    dir.display(),
+                    e,
+                    self.program
                 ))
             })?;
 
@@ -79,17 +170,19 @@ impl CommandBuilder {
 
     /// 执行命令但不捕获输出
     pub fn execute_silent(&self) -> Result<(), AnalyzerError> {
+        let program = self.resolve_program()?;
+
         if self.verbose {
-            println!("Running: {} {}", self.program, self.args.join(" "));
+            println!("Running: {} {}", program, self.args.join(" "));
         }
 
-        Command::new(&self.program)
+        Command::new(&program)
             .args(&self.args)
             .output()
             .map_err(|e| {
                 AnalyzerError::CommandFailed(format!(
-                    "Failed to execute {}: {}",
-                    self.program, e
+                    "Failed to execute {}: {}. Hint: Make sure '{}' is installed and in PATH",
+                    self.program, e, self.program
                 ))
             })?;
 
@@ -122,5 +215,22 @@ mod tests {
         let cmd = CommandBuilder::new("npm").build();
         assert_eq!(cmd.len(), 1);
         assert_eq!(cmd[0], "npm");
+    }
+
+    #[test]
+    fn test_resolve_command_cargo() {
+        // cargo 应该能找到
+        let resolved = resolve_command("cargo");
+        assert!(
+            resolved.is_some(),
+            "cargo should be found in PATH"
+        );
+    }
+
+    #[test]
+    fn test_resolve_command_nonexistent() {
+        // 不存在的命令应该返回 None
+        let resolved = resolve_command("this_command_definitely_does_not_exist_12345");
+        assert!(resolved.is_none());
     }
 }
