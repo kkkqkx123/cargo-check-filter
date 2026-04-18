@@ -206,23 +206,27 @@ fn test_npm_audit_parser_output() {
     let parser = NpmParser::new();
     let issues = parser.parse(&content);
 
-    // npm audit 输出包含错误信息
+    // npm audit 输出包含安全漏洞信息
     assert!(
         !issues.is_empty(),
         "Should parse at least one issue from npm audit output"
     );
 
-    // 验证包含 NPM 错误
-    let has_npm_error = issues.iter().any(|i| {
-        i.message.contains("NPM error") || i.message.contains("requires an existing lockfile")
+    // 验证包含安全漏洞信息
+    let has_vulnerability = issues.iter().any(|i| {
+        i.message.contains("Security vulnerability") || i.message.contains("NPM error")
     });
-    assert!(has_npm_error, "Should have NPM audit errors");
+    assert!(has_vulnerability, "Should have security vulnerability issues");
 
-    // 验证错误级别
-    let all_errors = issues.iter().all(|i| matches!(i.level, IssueLevel::Error));
-    assert!(all_errors, "All npm audit issues should be errors");
+    // 验证错误级别（high/critical severity 应该是 Error）
+    let has_errors = issues.iter().any(|i| matches!(i.level, IssueLevel::Error));
+    assert!(has_errors, "Should have at least some error-level issues for high severity vulnerabilities");
 
-    println!("✓ NPM audit parser correctly parsed {} errors", issues.len());
+    // 验证位置信息
+    let all_have_location = issues.iter().all(|i| !i.location.file_path.is_empty());
+    assert!(all_have_location, "All audit issues should have location information");
+
+    println!("✓ NPM audit parser correctly parsed {} security vulnerabilities", issues.len());
 }
 
 #[test]

@@ -223,6 +223,98 @@ impl NpmParser {
 
         None
     }
+
+    /// 解析 npm audit 安全漏洞报告
+    /// 格式:
+    ///   package  version_range
+    ///   Severity: level
+    ///   description - https://...
+    fn parse_npm_audit_vulnerability(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
+        if start_index >= lines.len() {
+            return (None, start_index);
+        }
+
+        let line = &lines[start_index];
+        let trimmed = line.trim();
+
+        // 检查是否是包名行（格式: "package  version_range"）
+        // 通常是 audit report 中 severity 行之前的包名和版本范围
+        if trimmed.starts_with("Severity:") || trimmed.is_empty() {
+            return (None, start_index + 1);
+        }
+
+        // 向前看一行，检查是否是 Severity 行
+        if start_index + 1 >= lines.len() {
+            return (None, start_index + 1);
+        }
+
+        let next_line = &lines[start_index + 1];
+        if !next_line.trim().starts_with("Severity:") {
+            return (None, start_index + 1);
+        }
+
+        // 提取包名和版本范围
+        let package_info = trimmed.to_string();
+
+        // 解析 severity
+        let severity_line = next_line.trim();
+        let severity = severity_line
+            .strip_prefix("Severity:")
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+
+        let level = match severity.as_str() {
+            "critical" => IssueLevel::Error,
+            "high" => IssueLevel::Error,
+            "moderate" => IssueLevel::Warning,
+            "low" => IssueLevel::Info,
+            _ => IssueLevel::Warning,
+        };
+
+        // 收集描述信息（可能在多行）
+        let mut descriptions = Vec::new();
+        let mut i = start_index + 2;
+
+        while i < lines.len() {
+            let desc_line = &lines[i];
+            let desc_trimmed = desc_line.trim();
+
+            // 停止条件：空行、下一组漏洞、依赖树或修复建议
+            if desc_trimmed.is_empty()
+                || desc_trimmed.starts_with("fix available")
+                || desc_trimmed.starts_with("node_modules/")
+                || desc_trimmed.starts_with("Severity:")
+                || (desc_trimmed.contains(" vulnerabilities") && desc_trimmed.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false))
+            {
+                break;
+            }
+
+            // 收集描述（不包括依赖树行）
+            if !desc_trimmed.starts_with("Depends on vulnerable")
+                && !desc_trimmed.starts_with("node_modules/")
+            {
+                descriptions.push(desc_trimmed.to_string());
+            }
+
+            i += 1;
+        }
+
+        let message = if descriptions.is_empty() {
+            format!("NPM error: Security vulnerability in {}", package_info)
+        } else {
+            format!(
+                "NPM error: Security vulnerability in {} - {}",
+                package_info,
+                descriptions.join(" ")
+            )
+        };
+
+        (
+            Some(Issue::new(level, message, Location::new("package.json"))),
+            i,
+        )
+    }
 }
 
 impl Default for NpmParser {
@@ -266,6 +358,14 @@ impl OutputParser for NpmParser {
             if let Some(issue) = self.parse_npm_missing_dep(line) {
                 issues.push(issue);
                 i += 1;
+                continue;
+            }
+
+            // 解析 npm audit 安全漏洞
+            let (audit_issue, new_index) = self.parse_npm_audit_vulnerability(&lines, i);
+            if let Some(issue) = audit_issue {
+                issues.push(issue);
+                i = new_index;
                 continue;
             }
 

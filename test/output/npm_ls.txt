@@ -1,18 +1,9 @@
 test-npm-project@1.0.0 D:\项目\cli\analyze-cargo\test\fixtures\npm-project
-├── UNMET DEPENDENCY @types/jest@^29.0.0
-├── UNMET DEPENDENCY @types/node@^20.0.0
-├── UNMET DEPENDENCY @typescript-eslint/eslint-plugin@^6.0.0
-├── UNMET DEPENDENCY @typescript-eslint/parser@^6.0.0
-├── UNMET DEPENDENCY eslint@^8.0.0
-├── UNMET DEPENDENCY jest@^29.0.0
-└── UNMET DEPENDENCY typescript@^5.0.0
+├── @types/jest@29.5.14
+├── @types/node@20.19.39
+├── @typescript-eslint/eslint-plugin@6.21.0
+├── @typescript-eslint/parser@6.21.0
+├── eslint@8.57.1
+├── jest@29.7.0
+└── typescript@5.9.3
 
-npm error code ELSPROBLEMS
-npm error missing: @types/jest@^29.0.0, required by test-npm-project@1.0.0
-npm error missing: @types/node@^20.0.0, required by test-npm-project@1.0.0
-npm error missing: @typescript-eslint/eslint-plugin@^6.0.0, required by test-npm-project@1.0.0
-npm error missing: @typescript-eslint/parser@^6.0.0, required by test-npm-project@1.0.0
-npm error missing: eslint@^8.0.0, required by test-npm-project@1.0.0
-npm error missing: jest@^29.0.0, required by test-npm-project@1.0.0
-npm error missing: typescript@^5.0.0, required by test-npm-project@1.0.0
-npm error A complete log of this run can be found in: C:\Users\33530\AppData\Local\npm-cache\_logs\2026-04-18T09_23_02_897Z-debug-0.log

@@ -1,17 +1,24 @@
 //! 命令执行工具
 //! 提供统一的命令构建和执行功能，支持跨平台命令查找
 
-use std::path::PathBuf;
-use std::process::Command;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 
 use super::analyzer::AnalyzerError;
+
+/// 默认命令超时时间（5分钟）
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(300);
 
 /// 获取命令的完整路径（跨平台）
 /// 在 Windows 上，会优先查找 .cmd, .bat, .exe 等可执行扩展名
 pub fn resolve_command(cmd: &str) -> Option<PathBuf> {
-    // 如果已经是绝对路径或相对路径，直接返回
-    if cmd.contains('/') || cmd.contains('\\') {
-        return Some(PathBuf::from(cmd));
+    // 如果已经是绝对路径或包含路径分隔符，直接返回
+    let path = Path::new(cmd);
+    if path.is_absolute() || path.components().count() > 1 {
+        return Some(path.to_path_buf());
     }
 
     // 使用 which/where 命令查找
@@ -33,11 +40,11 @@ pub fn resolve_command(cmd: &str) -> Option<PathBuf> {
     {
         // 在 Windows 上，优先选择有扩展名的可执行文件
         // 优先级: .cmd > .bat > .exe > 其他
-        let priority = [".cmd", ".bat", ".exe"];
+        let priority = ["cmd", "bat", "exe"];
         for ext in &priority {
             if let Some(path) = paths.iter().find(|p| {
                 p.extension()
-                    .map(|e| e.to_string_lossy().to_lowercase() == ext.trim_start_matches('.'))
+                    .map(|e| e.to_string_lossy().to_lowercase() == *ext)
                     .unwrap_or(false)
             }) {
                 return Some(path.clone());
@@ -55,6 +62,7 @@ pub struct CommandBuilder {
     program: String,
     args: Vec<String>,
     verbose: bool,
+    timeout: Duration,
 }
 
 impl CommandBuilder {
@@ -64,7 +72,14 @@ impl CommandBuilder {
             program: program.into(),
             args: Vec::new(),
             verbose: true,
+            timeout: DEFAULT_TIMEOUT,
         }
+    }
+
+    /// 设置命令执行超时时间
+    pub fn timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = timeout;
+        self
     }
 
     /// 添加单个参数
@@ -111,7 +126,7 @@ impl CommandBuilder {
         Ok(self.program.clone())
     }
 
-    /// 执行命令并捕获输出
+    /// 执行命令并捕获输出（带超时）
     pub fn execute(&self) -> Result<String, AnalyzerError> {
         let program = self.resolve_program()?;
 
@@ -119,23 +134,61 @@ impl CommandBuilder {
             println!("Running: {} {}", program, self.args.join(" "));
         }
 
-        let output = Command::new(&program)
-            .args(&self.args)
-            .output()
-            .map_err(|e| {
-                AnalyzerError::CommandFailed(format!(
-                    "Failed to execute {}: {}. Hint: Make sure '{}' is installed and in PATH",
-                    self.program, e, self.program
-                ))
-            })?;
+        self.execute_with_timeout(&program, None)
+    }
+
+    /// 内部方法：执行命令并带超时控制
+    fn execute_with_timeout(
+        &self,
+        program: &str,
+        dir: Option<&PathBuf>,
+    ) -> Result<String, AnalyzerError> {
+        let (tx, rx) = mpsc::channel();
+        let program = program.to_string();
+        let args = self.args.clone();
+        let timeout = self.timeout;
+
+        thread::spawn(move || {
+            let mut cmd = Command::new(&program);
+            cmd.args(&args)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped());
+
+            let output = cmd.output();
+            let _ = tx.send(output);
+        });
+
+        let result = rx.recv_timeout(timeout).map_err(|_| {
+            AnalyzerError::Timeout(timeout)
+        })?;
+
+        let output = result.map_err(|e| {
+            AnalyzerError::CommandFailed(format!(
+                "Failed to execute {}: {}. Hint: Make sure '{}' is installed and in PATH",
+                self.program, e, self.program
+            ))
+        })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
+        let combined = format!("{}{}", stdout, stderr);
 
-        Ok(format!("{}{}", stdout, stderr))
+        if !output.status.success() {
+            let location = dir.map(|d| format!(" in directory {}", d.display()))
+                .unwrap_or_default();
+            return Err(AnalyzerError::CommandFailed(format!(
+                "Command '{}' failed with exit code {:?}{}\nOutput: {}",
+                self.program,
+                output.status.code(),
+                location,
+                combined.trim()
+            )));
+        }
+
+        Ok(combined)
     }
 
-    /// 在指定目录执行命令并捕获输出
+    /// 在指定目录执行命令并捕获输出（带超时）
     pub fn execute_in_dir(&self, dir: &PathBuf) -> Result<String, AnalyzerError> {
         let program = self.resolve_program()?;
 
@@ -148,27 +201,54 @@ impl CommandBuilder {
             );
         }
 
-        let output = Command::new(&program)
-            .args(&self.args)
-            .current_dir(dir)
-            .output()
-            .map_err(|e| {
-                AnalyzerError::CommandFailed(format!(
-                    "Failed to execute {} in {}: {}. Hint: Make sure '{}' is installed and in PATH",
-                    self.program,
-                    dir.display(),
-                    e,
-                    self.program
-                ))
-            })?;
+        let (tx, rx) = mpsc::channel();
+        let program = program.to_string();
+        let args = self.args.clone();
+        let dir_for_thread = dir.clone();
+        let timeout = self.timeout;
+
+        thread::spawn(move || {
+            let output = Command::new(&program)
+                .args(&args)
+                .current_dir(&dir_for_thread)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output();
+            let _ = tx.send(output);
+        });
+
+        let result = rx.recv_timeout(timeout).map_err(|_| {
+            AnalyzerError::Timeout(timeout)
+        })?;
+
+        let output = result.map_err(|e| {
+            AnalyzerError::CommandFailed(format!(
+                "Failed to execute {} in {}: {}. Hint: Make sure '{}' is installed and in PATH",
+                self.program,
+                dir.display(),
+                e,
+                self.program
+            ))
+        })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
+        let combined = format!("{}{}", stdout, stderr);
 
-        Ok(format!("{}{}", stdout, stderr))
+        if !output.status.success() {
+            return Err(AnalyzerError::CommandFailed(format!(
+                "Command '{}' failed with exit code {:?} in directory {}\nOutput: {}",
+                self.program,
+                output.status.code(),
+                dir.display(),
+                combined.trim()
+            )));
+        }
+
+        Ok(combined)
     }
 
-    /// 执行命令但不捕获输出
+    /// 执行命令但不捕获输出（带超时）
     pub fn execute_silent(&self) -> Result<(), AnalyzerError> {
         let program = self.resolve_program()?;
 
@@ -176,15 +256,40 @@ impl CommandBuilder {
             println!("Running: {} {}", program, self.args.join(" "));
         }
 
-        Command::new(&program)
-            .args(&self.args)
-            .output()
-            .map_err(|e| {
-                AnalyzerError::CommandFailed(format!(
-                    "Failed to execute {}: {}. Hint: Make sure '{}' is installed and in PATH",
-                    self.program, e, self.program
-                ))
-            })?;
+        let (tx, rx) = mpsc::channel();
+        let program = program.to_string();
+        let args = self.args.clone();
+        let timeout = self.timeout;
+
+        thread::spawn(move || {
+            let output = Command::new(&program)
+                .args(&args)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output();
+            let _ = tx.send(output);
+        });
+
+        let result = rx.recv_timeout(timeout).map_err(|_| {
+            AnalyzerError::Timeout(timeout)
+        })?;
+
+        let output = result.map_err(|e| {
+            AnalyzerError::CommandFailed(format!(
+                "Failed to execute {}: {}. Hint: Make sure '{}' is installed and in PATH",
+                self.program, e, self.program
+            ))
+        })?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(AnalyzerError::CommandFailed(format!(
+                "Command '{}' failed with exit code {:?}\nStderr: {}",
+                self.program,
+                output.status.code(),
+                stderr.trim()
+            )));
+        }
 
         Ok(())
     }

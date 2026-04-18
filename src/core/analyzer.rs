@@ -2,6 +2,7 @@
 //! 定义了构建工具分析器的接口
 
 use std::path::Path;
+use std::time::Duration;
 use super::types::{AnalysisResult, AnalyzeOptions};
 use super::parser::OutputParser;
 use super::config::Config;
@@ -13,6 +14,7 @@ pub enum AnalyzerError {
     ParseError(String),
     IoError(std::io::Error),
     NotApplicable,
+    Timeout(Duration),
 }
 
 impl std::fmt::Display for AnalyzerError {
@@ -22,6 +24,7 @@ impl std::fmt::Display for AnalyzerError {
             AnalyzerError::ParseError(msg) => write!(f, "Parse error: {}", msg),
             AnalyzerError::IoError(e) => write!(f, "IO error: {}", e),
             AnalyzerError::NotApplicable => write!(f, "Analyzer not applicable for this project"),
+            AnalyzerError::Timeout(d) => write!(f, "Command timed out after {:?}", d),
         }
     }
 }
