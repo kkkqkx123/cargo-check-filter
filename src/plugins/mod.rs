@@ -2,6 +2,7 @@
 //! Analyzer implementations containing various technology stacks
 
 pub mod cargo;
+pub mod gradle;
 pub mod maven;
 pub mod mypy;
 pub mod npm;
@@ -30,6 +31,9 @@ pub fn create_registry() -> PluginRegistry {
 
     // Registering the Maven Analyzer
     registry.register(Box::new(maven::MavenAnalyzer::new()));
+
+    // Registering the Gradle Analyzer
+    registry.register(Box::new(gradle::GradleAnalyzer::new()));
 
     registry
 }

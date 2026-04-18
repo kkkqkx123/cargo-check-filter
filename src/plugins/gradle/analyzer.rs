@@ -1,0 +1,136 @@
+//! Gradle Analyzer
+//! Run gradle compile/test and parse the output
+
+use std::path::Path;
+
+use crate::core::{
+    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
+    SubCommand,
+};
+
+use super::parser::GradleParser;
+
+pub struct GradleAnalyzer {
+    parser: GradleParser,
+}
+
+impl GradleAnalyzer {
+    pub fn new() -> Self {
+        Self {
+            parser: GradleParser::new(),
+        }
+    }
+
+    /// Creating a command builder
+    fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder {
+        let mut builder = CommandBuilder::new("gradle");
+
+        match options.subcommand {
+            Some(SubCommand::Compile) => {
+                builder = builder.arg("compileJava");
+            }
+            Some(SubCommand::MvnTest) => {
+                builder = builder.arg("test");
+            }
+            _ => {
+                // By default, compile
+                builder = builder.arg("compileJava");
+            }
+        }
+
+        // Adding the --quiet parameter reduces output noise, but preserves error messages
+        builder = builder.arg("--quiet");
+
+        builder
+    }
+
+    fn filter_issues(&self, result: AnalysisResult, options: &AnalyzeOptions) -> AnalysisResult {
+        if !options.filter_warnings && options.filter_paths.is_empty() {
+            return result;
+        }
+
+        let mut filtered = AnalysisResult::new();
+
+        for (file_path, issues) in result.issues_by_file {
+            if !options.filter_paths.is_empty() {
+                let matches = options
+                    .filter_paths
+                    .iter()
+                    .any(|filter| file_path.contains(filter));
+                if !matches {
+                    continue;
+                }
+            }
+
+            for issue in issues {
+                if options.filter_warnings && matches!(issue.level, crate::core::IssueLevel::Warning)
+                {
+                    continue;
+                }
+
+                filtered.add_issue(issue);
+            }
+        }
+
+        filtered
+    }
+}
+
+impl Default for GradleAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl BuildAnalyzer for GradleAnalyzer {
+    fn name(&self) -> &str {
+        "gradle"
+    }
+
+    fn supported_commands(&self) -> Vec<&str> {
+        vec!["gradle", "gradlew", "java"]
+    }
+
+    fn is_applicable(&self, project_path: &Path) -> bool {
+        project_path.join("build.gradle").exists()
+            || project_path.join("build.gradle.kts").exists()
+            || project_path.join("settings.gradle").exists()
+            || project_path.join("settings.gradle.kts").exists()
+    }
+
+    fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
+        let builder = self.create_command_builder(options);
+        let output = builder.execute()?;
+
+        println!("Parsing Gradle output...");
+        let issues = self.parser.parse(&output);
+        println!("Found {} issues", issues.len());
+
+        let result = AnalysisResult::from_issues(issues);
+        Ok(self.filter_issues(result, options))
+    }
+
+    fn parser(&self) -> &dyn OutputParser {
+        &self.parser
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gradle_analyzer_name() {
+        let analyzer = GradleAnalyzer::new();
+        assert_eq!(analyzer.name(), "gradle");
+    }
+
+    #[test]
+    fn test_supported_commands() {
+        let analyzer = GradleAnalyzer::new();
+        let commands = analyzer.supported_commands();
+        assert!(commands.contains(&"gradle"));
+        assert!(commands.contains(&"gradlew"));
+        assert!(commands.contains(&"java"));
+    }
+}

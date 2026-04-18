@@ -1,0 +1,41 @@
+> Task :compileJava
+/Users/user/project/src/main/java/com/example/App.java:15: warning: [unchecked] unchecked conversion
+        List rawList = new ArrayList();
+                      ^
+  required: List<E>
+  found:    ArrayList
+  where E is a type-variable:
+    E extends Object declared in interface List
+/Users/user/project/src/main/java/com/example/Utils.java:22: warning: [deprecation] getYear() in Date has been deprecated
+        int year = date.getYear();
+                         ^
+/Users/user/project/src/main/java/com/example/Broken.java:8: error: cannot find symbol
+        undefinedVar = 10;
+        ^
+  symbol:   variable undefinedVar
+  location: class com.example.Broken
+/Users/user/project/src/main/java/com/example/Broken.java:12: error: cannot find symbol
+        undefinedMethod();
+        ^
+  symbol:   method undefinedMethod()
+  location: class com.example.Broken
+/Users/user/project/src/main/java/com/example/Broken.java:5: error: class Broken is public, should be declared in a file named Broken.java
+public class Broken {
+       ^
+/Users/user/project/src/main/kotlin/App.kt:10: error: unresolved reference: undefinedFunction
+    undefinedFunction()
+    ^
+> Task :compileJava FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+
+BUILD FAILED in 2s
