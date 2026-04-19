@@ -1,6 +1,6 @@
 ---
 name: analyzer-usage
-description: "Analyzes build tool errors from Cargo, NPM, Mypy, Maven, Gradle, Go, and Pytest. Invoke when user asks to analyze build errors, check code quality issues, or use the analyzer CLI tool."
+description: "Analyzes build tool errors from Cargo, NPM, Mypy, Maven, Gradle, Go, Pytest, and C++ (CMake/GCC/Clang/MSVC). Invoke when user asks to analyze build errors, check code quality issues, or use the analyzer CLI tool."
 ---
 
 # Analyzer - Multi-language Build Tool Error Analyzer
@@ -25,6 +25,10 @@ analyzer <tech-stack> <subcommand> [options]
 | Gradle (Java)   | `compileJava`, `test`         |
 | Go              | `build`, `test`, `vet`        |
 | Pytest (Python) | `pytest`                      |
+| C++ (CMake)     | `configure`, `build`          |
+| C++ (GCC)       | `compile`                     |
+| C++ (Clang)     | `compile`                     |
+| C++ (MSVC)      | `compile`                     |
 
 ## Usage Examples
 
@@ -58,6 +62,19 @@ analyzer go vet
 
 # Analyze Python/Pytest
 analyzer pytest
+
+# Analyze C++ project with CMake
+analyzer cpp cmake configure
+analyzer cpp cmake build
+
+# Analyze C++ project with GCC
+analyzer cpp gcc compile
+
+# Analyze C++ project with Clang
+analyzer cpp clang compile
+
+# Analyze C++ project with MSVC
+analyzer cpp msvc compile
 ```
 
 ## Options

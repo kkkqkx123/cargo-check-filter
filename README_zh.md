@@ -1,6 +1,6 @@
 # Analyzer - 多语言构建工具错误分析器
 
-一款支持多种技术栈的多语言构建工具错误分析器，采用插件化架构，支持 Cargo、NPM、Maven、Gradle、Mypy、Go 和 Pytest 等工具。
+一款支持多种技术栈的多语言构建工具错误分析器，采用插件化架构，支持 Cargo、NPM、Maven、Gradle、Mypy、Go、Pytest 和 C++ (CMake/GCC/Clang/MSVC) 等工具。
 
 ## 功能特性
 
@@ -12,6 +12,10 @@
   - Java/Gradle: `gradle compileJava`、`gradle test`
   - Go: `go build`、`go test`、`go vet`
   - Python/Pytest: `pytest`
+  - C++/CMake: `cmake configure`、`cmake build`
+  - C++/GCC: `gcc compile`
+  - C++/Clang: `clang compile`
+  - C++/MSVC: `msvc compile`
 - **插件化架构**：可轻松扩展支持新工具
 - **多种报告格式**：Markdown、JSON、HTML
 - **灵活过滤**：按警告或特定文件路径进行过滤
@@ -66,6 +70,19 @@ analyzer go vet
 
 # 分析 Python/Pytest
 analyzer pytest
+
+# 分析 C++/CMake 项目
+analyzer cpp cmake configure
+analyzer cpp cmake build
+
+# 分析 C++/GCC 项目
+analyzer cpp gcc compile
+
+# 分析 C++/Clang 项目
+analyzer cpp clang compile
+
+# 分析 C++/MSVC 项目
+analyzer cpp msvc compile
 ```
 
 ### 选项
@@ -129,15 +146,19 @@ CLI 入口 → 核心模块 → 插件模块
 
 ### 插件模块 (plugins/)
 
-| 插件   | 支持的命令                    |
-| ------ | ----------------------------- |
-| Cargo  | `check`、`clippy`、`test`     |
-| Mypy   | `mypy`、`mypy --strict`       |
-| NPM    | `lint`、`type-check`、`audit` |
-| Maven  | `compile`、`test`             |
-| Gradle | `compileJava`、`test`         |
-| Go     | `build`、`test`、`vet`        |
-| Pytest | `pytest`                      |
+| 插件      | 支持的命令                    |
+| --------- | ----------------------------- |
+| Cargo     | `check`、`clippy`、`test`     |
+| Mypy      | `mypy`、`mypy --strict`       |
+| NPM       | `lint`、`type-check`、`audit` |
+| Maven     | `compile`、`test`             |
+| Gradle    | `compileJava`、`test`         |
+| Go        | `build`、`test`、`vet`        |
+| Pytest    | `pytest`                      |
+| C++/CMake | `configure`、`build`          |
+| C++/GCC   | `compile`                     |
+| C++/Clang | `compile`                     |
+| C++/MSVC  | `compile`                     |
 
 ## 使用场景
 

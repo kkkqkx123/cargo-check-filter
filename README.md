@@ -1,6 +1,6 @@
 # Analyzer - Multi-language Build Tool Error Analyzer
 
-A multilingual build tool error analyzer with a plugin-based architecture, supporting technology stacks such as Cargo, NPM, Maven, Gradle, Mypy, Go, and Pytest.
+A multilingual build tool error analyzer with a plugin-based architecture, supporting technology stacks such as Cargo, NPM, Maven, Gradle, Mypy, Go, Pytest, and C++ (CMake/GCC/Clang/MSVC).
 
 ## Features
 
@@ -12,6 +12,10 @@ A multilingual build tool error analyzer with a plugin-based architecture, suppo
   - Java/Gradle: `gradle compileJava`, `gradle test`
   - Go: `go build`, `go test`, `go vet`
   - Python/Pytest: `pytest`
+  - C++/CMake: `cmake configure`, `cmake build`
+  - C++/GCC: `gcc compile`
+  - C++/Clang: `clang compile`
+  - C++/MSVC: `msvc compile`
 - **Plugin-based Architecture**: Easily extendable for new tools
 - **Multiple Report Formats**: Markdown, JSON, HTML
 - **Flexible Filtering**: Filter by warnings or specific file paths
@@ -66,6 +70,19 @@ analyzer go vet
 
 # Analyze Python/Pytest
 analyzer pytest
+
+# Analyze C++ project with CMake
+analyzer cpp cmake configure
+analyzer cpp cmake build
+
+# Analyze C++ project with GCC
+analyzer cpp gcc compile
+
+# Analyze C++ project with Clang
+analyzer cpp clang compile
+
+# Analyze C++ project with MSVC
+analyzer cpp msvc compile
 ```
 
 ### Options
@@ -137,6 +154,10 @@ CLI Entry → Core Module → Plugin Module
 | Gradle   | `compileJava`, `test`                    |
 | Go       | `build`, `test`, `vet`                   |
 | Pytest   | `pytest`                                 |
+| C++/CMake | `configure`, `build`                    |
+| C++/GCC  | `compile`                                |
+| C++/Clang | `compile`                               |
+| C++/MSVC | `compile`                                |
 
 ## Use Cases
 
