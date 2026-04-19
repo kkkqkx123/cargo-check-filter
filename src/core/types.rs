@@ -254,6 +254,10 @@ pub enum TechStack {
     Mypy,
     GoBuild,
     GolangciLint,
+    CMake,
+    Gcc,
+    Clang,
+    Msvc,
 }
 
 impl TechStack {
@@ -267,6 +271,10 @@ impl TechStack {
             TechStack::Mypy => "mypy",
             TechStack::GoBuild => "go",
             TechStack::GolangciLint => "golangci-lint",
+            TechStack::CMake => "cmake",
+            TechStack::Gcc => "gcc",
+            TechStack::Clang => "clang",
+            TechStack::Msvc => "msvc",
         }
     }
 }
@@ -284,6 +292,10 @@ impl std::str::FromStr for TechStack {
             "mypy" | "python" => Ok(TechStack::Mypy),
             "go" | "golang" => Ok(TechStack::GoBuild),
             "golangci-lint" => Ok(TechStack::GolangciLint),
+            "cmake" | "cmake-build" => Ok(TechStack::CMake),
+            "gcc" | "g++" => Ok(TechStack::Gcc),
+            "clang" | "clang++" => Ok(TechStack::Clang),
+            "msvc" | "cl" => Ok(TechStack::Msvc),
             _ => Err(format!("Unknown tech stack: {}", s)),
         }
     }
@@ -425,6 +437,16 @@ pub struct AnalyzeOptions {
     pub filter_warnings: bool,
     pub filter_paths: Vec<String>,
     pub output_file: Option<String>,
+    // C++ related options
+    pub source_dir: Option<String>,
+    pub build_dir: Option<String>,
+    pub cmake_generator: Option<String>,
+    pub target: Option<String>,
+    pub target_files: Vec<String>,
+    pub include_paths: Vec<String>,
+    pub defines: Vec<String>,
+    pub cpp_standard: Option<String>,
+    pub json_output: bool,
 }
 
 /// Report format

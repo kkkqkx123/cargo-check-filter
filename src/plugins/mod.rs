@@ -2,12 +2,11 @@
 //! Analyzer implementations containing various technology stacks
 
 pub mod cargo;
+pub mod cpp;
 pub mod go;
-pub mod gradle;
-pub mod maven;
-pub mod mypy;
+pub mod java;
 pub mod npm;
-pub mod pytest;
+pub mod python;
 
 use crate::core::PluginRegistry;
 
@@ -18,9 +17,6 @@ pub fn create_registry() -> PluginRegistry {
     // Register Cargo Analyzer
     registry.register(Box::new(cargo::CargoAnalyzer::new()));
 
-    // Register Mypy Analyzer
-    registry.register(Box::new(mypy::MypyAnalyzer::new()));
-
     // Register NPM Analyzer
     registry.register(Box::new(npm::NpmAnalyzer::npm()));
 
@@ -30,17 +26,22 @@ pub fn create_registry() -> PluginRegistry {
     // Registering the Yarn Analyzer
     registry.register(Box::new(npm::NpmAnalyzer::yarn()));
 
-    // Registering the Maven Analyzer
-    registry.register(Box::new(maven::MavenAnalyzer::new()));
+    // Registering the Python Analyzers
+    registry.register(Box::new(python::MypyAnalyzer::new()));
+    registry.register(Box::new(python::PytestAnalyzer::new()));
 
-    // Registering the Gradle Analyzer
-    registry.register(Box::new(gradle::GradleAnalyzer::new()));
-
-    // Registering the Pytest Analyzer
-    registry.register(Box::new(pytest::PytestAnalyzer::new()));
+    // Registering the Java Analyzers
+    registry.register(Box::new(java::MavenAnalyzer::new()));
+    registry.register(Box::new(java::GradleAnalyzer::new()));
 
     // Registering the Go Analyzer
     registry.register(Box::new(go::GoAnalyzer::new()));
+
+    // Registering the C++ Analyzers
+    registry.register(Box::new(cpp::CMakeAnalyzer::new()));
+    registry.register(Box::new(cpp::GccAnalyzer::new()));
+    registry.register(Box::new(cpp::ClangAnalyzer::new()));
+    registry.register(Box::new(cpp::MsvcAnalyzer::new()));
 
     registry
 }
