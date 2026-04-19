@@ -3,7 +3,7 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    SubCommand, TechStack,
+    TechStack,
 };
 
 use super::parser::MypyParser;

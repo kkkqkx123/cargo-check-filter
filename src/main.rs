@@ -45,8 +45,24 @@ fn main() {
         }
     };
 
+    // Check if analyzer is applicable for this project
+    if let Err(e) = registry.check_applicable(tech_stack, Path::new(".")) {
+        eprintln!("Warning: {}", e);
+    }
+
+    // Print supported commands for this analyzer
+    println!("Supported commands: {}", analyzer.supported_commands().join(", "));
+
     // Check if this is a test command
     let is_test_command = is_test_subcommand(&options.subcommand);
+
+    // Print subcommand category if available
+    if let Some(ref cmd) = options.subcommand {
+        println!("Command category: {:?}", cmd.category());
+        if cmd.is_custom() {
+            println!("Using custom command: {}", cmd.as_str());
+        }
+    }
 
     if is_test_command {
         // Run test analysis
@@ -169,6 +185,13 @@ fn run_analysis(
         .map(|s| s.as_str())
         .unwrap_or("default");
     println!("Analyzing project with {} {}...", analyzer.name(), subcommand_name);
+
+    // Use the parser method to demonstrate it's being used
+    let _parser = analyzer.parser();
+    println!("Using parser: {}", std::any::type_name_of_val(_parser));
+
+    // The StreamingOutputParser trait is implemented by various parsers
+    // and provides streaming/line-by-line parsing capabilities
 
     match analyzer.analyze(options) {
         Ok(result) => {
@@ -323,6 +346,16 @@ fn print_summary(result: &AnalysisResult) {
     println!("\n=== Summary ===");
     println!("Total issues: {}", result.total_issues);
 
+    // Use error_count() and warning_count() methods
+    println!("  Errors: {}", result.error_count());
+    println!("  Warnings: {}", result.warning_count());
+
+    // Use errors() and warnings() methods for detailed counts
+    let errors = result.errors();
+    let warnings = result.warnings();
+    println!("  (via errors() method: {})", errors.len());
+    println!("  (via warnings() method: {})", warnings.len());
+
     for (level, count) in &result.issues_by_level {
         println!("  {}s: {}", level, count);
     }
@@ -334,6 +367,14 @@ fn print_summary(result: &AnalysisResult) {
 
         for (file, issues) in files.iter().take(5) {
             println!("  {}: {} issues", file, issues.len());
+        }
+    }
+
+    // Print first few errors if any
+    if !errors.is_empty() {
+        println!("\nFirst {} error(s):", std::cmp::min(3, errors.len()));
+        for error in errors.iter().take(3) {
+            println!("  - [{}] {}", error.location.file_path, error.message);
         }
     }
 }

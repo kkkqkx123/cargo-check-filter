@@ -154,6 +154,16 @@ impl AnalysisResult {
             .filter(|i| i.level == IssueLevel::Warning)
             .collect()
     }
+
+    /// Get total error count
+    pub fn error_count(&self) -> usize {
+        self.issues_by_level.get(&IssueLevel::Error).copied().unwrap_or(0)
+    }
+
+    /// Get total warning count
+    pub fn warning_count(&self) -> usize {
+        self.issues_by_level.get(&IssueLevel::Warning).copied().unwrap_or(0)
+    }
 }
 
 /// Test Result Status
@@ -231,15 +241,21 @@ pub struct TestAnalysisResult {
 }
 
 impl TestAnalysisResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn from_compile_result(compile_result: AnalysisResult) -> Self {
         Self {
             compile_result,
             ..Default::default()
         }
+    }
+
+    /// Check if all tests passed (no failures and no compile issues)
+    pub fn all_passed(&self) -> bool {
+        self.failed_tests.is_empty() && self.compile_result.total_issues == 0
+    }
+
+    /// Get total test count
+    pub fn total_tests(&self) -> usize {
+        self.passed_tests.len() + self.failed_tests.len() + self.ignored_tests.len()
     }
 }
 
@@ -335,6 +351,7 @@ pub enum SubCommand {
     Build,        // go build / cmake build
     Vet,          // go vet
     Test,         // pytest / cargo test
+    Format,       // cargo fmt / npm run format
     // Dynamic customization commands
     Custom(String),
 }
@@ -353,6 +370,7 @@ impl SubCommand {
             SubCommand::Build => "build",
             SubCommand::Vet => "vet",
             SubCommand::Test => "test",
+            SubCommand::Format => "format",
             SubCommand::Custom(name) => name.as_str(),
         }
     }
@@ -368,6 +386,7 @@ impl SubCommand {
             SubCommand::Vet => CommandCategory::Check,
             SubCommand::Custom(_) => CommandCategory::Custom,
             SubCommand::ClippyAll => CommandCategory::Lint,
+            SubCommand::Format => CommandCategory::Format,
         }
     }
 
@@ -393,6 +412,7 @@ impl std::str::FromStr for SubCommand {
             "build" => Ok(SubCommand::Build),
             "vet" => Ok(SubCommand::Vet),
             "test" => Ok(SubCommand::Test),
+            "format" => Ok(SubCommand::Format),
             _ => {
                 // Support for dynamic customization of commands
                 if s.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {

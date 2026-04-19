@@ -1,17 +1,13 @@
 //! Gradle Output Parser
 //! Parsing the output of Gradle compile/test
 
-use crate::core::{BaseParser, Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
+use crate::core::{Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
 
-pub struct GradleParser {
-    base: BaseParser,
-}
+pub struct GradleParser;
 
 impl GradleParser {
     pub fn new() -> Self {
-        Self {
-            base: BaseParser::new(),
-        }
+        Self
     }
 
     /// Parsing Gradle Compile Error/Warning Lines

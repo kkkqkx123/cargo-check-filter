@@ -167,7 +167,8 @@ impl Reporter for MarkdownReporter {
         let mut report = String::new();
 
         // Selection of titles based on test results
-        let all_passed = result.failed_tests.is_empty() && result.compile_result.total_issues == 0;
+        let all_passed = result.all_passed();
+        let total_tests = result.total_tests();
         if all_passed {
             report.push_str("# ✅ Test Report - All Passed\n\n");
         } else {
@@ -177,15 +178,15 @@ impl Reporter for MarkdownReporter {
         // Test Summary
         if let Some(ref summary) = result.test_summary {
             report.push_str("## Summary\n\n");
-            
+
             // Calculating the pass rate
             let pass_rate = if summary.total > 0 {
                 (summary.passed as f64 / summary.total as f64) * 100.0
             } else {
                 0.0
             };
-            
-            report.push_str(&format!("- **Total**: {} test(s)\n", summary.total));
+
+            report.push_str(&format!("- **Total**: {} test(s) (calculated: {})\n", summary.total, total_tests));
             report.push_str(&format!("- **Passed**: ✅ {} ({:.1}%)\n", summary.passed, pass_rate));
             if summary.failed > 0 {
                 report.push_str(&format!("- **Failed**: ❌ {}\n", summary.failed));
@@ -242,6 +243,26 @@ impl Reporter for MarkdownReporter {
                 report.push_str(&format!("- `{}`{}\n", test.name, reason));
             }
             report.push('\n');
+        }
+
+        // Passed Tests (summary only if there are many)
+        if !result.passed_tests.is_empty() {
+            report.push_str(&format!("## Passed Tests ({} item(s))\n\n", result.passed_tests.len()));
+            if result.passed_tests.len() <= 10 {
+                // List all passed tests if there are few
+                for test in &result.passed_tests {
+                    report.push_str(&format!("- ✅ `{}`\n", test.name));
+                }
+            } else {
+                // Just show count if there are many
+                report.push_str(&format!("✅ {} tests passed\n", result.passed_tests.len()));
+            }
+            report.push('\n');
+        }
+
+        // Test output availability indicator
+        if result.has_test_output {
+            report.push_str("---\n*Test output was successfully captured*\n");
         }
 
         // Compilation issues (if any)

@@ -47,17 +47,20 @@ impl ParsedTestOutput {
 impl From<ParsedTestOutput> for TestAnalysisResult {
     fn from(output: ParsedTestOutput) -> Self {
         use super::types::AnalysisResult;
-        
+
         let compile_result = AnalysisResult::from_issues(output.compile_issues);
-        
-        TestAnalysisResult {
-            compile_result,
-            test_summary: output.test_summary,
-            failed_tests: output.failed_tests,
-            passed_tests: output.passed_tests,
-            ignored_tests: output.ignored_tests,
-            has_test_output: true,
-        }
+
+        // Use from_compile_result to create the base result
+        let mut result = TestAnalysisResult::from_compile_result(compile_result);
+
+        // Add test-specific data
+        result.test_summary = output.test_summary;
+        result.failed_tests = output.failed_tests;
+        result.passed_tests = output.passed_tests;
+        result.ignored_tests = output.ignored_tests;
+        result.has_test_output = true;
+
+        result
     }
 }
 

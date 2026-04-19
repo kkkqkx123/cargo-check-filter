@@ -1,17 +1,13 @@
 //! Maven Output Parser
 //Parsing the output of Maven compile/test Parsing the output of Maven compile/test
 
-use crate::core::{BaseParser, Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
+use crate::core::{Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
 
-pub struct MavenParser {
-    base: BaseParser,
-}
+pub struct MavenParser;
 
 impl MavenParser {
     pub fn new() -> Self {
-        Self {
-            base: BaseParser::new(),
-        }
+        Self
     }
 
     /// Parsing Maven Compile Error/Warning Lines

@@ -132,6 +132,13 @@ impl BuildAnalyzer for CargoAnalyzer {
         let issues = self.parser.parse(&output);
         println!("Found {} issues", issues.len());
 
+        // Validate that we got valid output
+        if output.contains("error: could not compile") && issues.is_empty() {
+            return Err(AnalyzerError::ParseError(
+                "Failed to parse cargo output: compilation failed but no issues were extracted".to_string()
+            ));
+        }
+
         let result = AnalysisResult::from_issues(issues);
         Ok(self.filter_issues(result, options))
     }

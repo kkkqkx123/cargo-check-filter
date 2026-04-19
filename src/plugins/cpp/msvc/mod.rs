@@ -5,4 +5,3 @@ pub mod analyzer;
 pub mod parser;
 
 pub use analyzer::MsvcAnalyzer;
-pub use parser::MsvcParser;

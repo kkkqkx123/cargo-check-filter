@@ -88,6 +88,33 @@ impl PluginRegistry {
     pub fn list(&self) -> Vec<&str> {
         self.analyzers.iter().map(|a| a.name()).collect()
     }
+
+    /// Check if an analyzer is applicable for the given project path
+    pub fn check_applicable(&self, stack: TechStack, project_path: &std::path::Path) -> Result<(), AnalyzerError> {
+        let analyzer = self.get(stack)
+            .ok_or(AnalyzerError::NotApplicable)?;
+
+        // Check if the analyzer supports any of the commands for this project
+        let supported = analyzer.supported_commands();
+        if supported.is_empty() {
+            return Err(AnalyzerError::NotApplicable);
+        }
+
+        // Check if project has required files (basic check)
+        let has_required_files = match stack {
+            TechStack::Cargo => project_path.join("Cargo.toml").exists(),
+            TechStack::Maven => project_path.join("pom.xml").exists(),
+            TechStack::Gradle => project_path.join("build.gradle").exists() || project_path.join("build.gradle.kts").exists(),
+            TechStack::Npm | TechStack::Pnpm | TechStack::Yarn => project_path.join("package.json").exists(),
+            _ => true, // For other stacks, assume applicable
+        };
+
+        if !has_required_files {
+            return Err(AnalyzerError::NotApplicable);
+        }
+
+        Ok(())
+    }
 }
 
 impl Default for PluginRegistry {

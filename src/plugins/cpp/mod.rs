@@ -7,7 +7,7 @@ pub mod gcc;
 pub mod clang;
 pub mod msvc;
 
-pub use parser::{CppParser, CompilerType};
+// Note: CppParser and CompilerType are available via cpp::parser module directly
 pub use cmake::CMakeAnalyzer;
 pub use gcc::GccAnalyzer;
 pub use clang::ClangAnalyzer;

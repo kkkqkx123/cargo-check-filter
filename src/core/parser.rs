@@ -13,6 +13,10 @@ pub trait OutputParser: Send + Sync {
 /// Streaming output parser trait
 /// For parsers that support incremental/line-by-line parsing
 /// Provides a default implementation of `parse()` using streaming methods
+///
+/// Note: This trait is designed as an "extension trait" - it enhances OutputParser
+/// with a default implementation. The trait itself may appear unused in code,
+/// but its methods (is_issue_start, parse_issue) are used by implementing parsers.
 pub trait StreamingOutputParser: OutputParser {
     /// Check if a row is the starting row of the problem
     fn is_issue_start(&self, line: &str) -> bool;

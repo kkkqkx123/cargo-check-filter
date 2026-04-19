@@ -2,19 +2,15 @@
 //! Parsing the output of pytest
 
 use crate::core::{
-    BaseParser, Issue, Location, OutputParser, ParsedTestOutput, StreamingOutputParser, TestCase,
+    Issue, Location, OutputParser, ParsedTestOutput, StreamingOutputParser, TestCase,
     TestOutputParser, TestStatus, TestSummary,
 };
 
-pub struct PytestParser {
-    base: BaseParser,
-}
+pub struct PytestParser;
 
 impl PytestParser {
     pub fn new() -> Self {
-        Self {
-            base: BaseParser::new(),
-        }
+        Self
     }
 
     /// Parse pytest failure output format
@@ -74,15 +70,16 @@ impl PytestParser {
             }
         });
 
-        let location = Some(Location::new(file_path));
+        let location = Location::new(file_path);
 
-        Some(TestCase {
-            name: test_name,
-            status,
-            location,
-            failure_details: None,
-            execution_time,
-        })
+        let mut test_case = TestCase::new(test_name, status)
+            .with_location(location);
+
+        if let Some(time) = execution_time {
+            test_case = test_case.with_execution_time(time);
+        }
+
+        Some(test_case)
     }
 
     /// Parse test summary line
@@ -320,6 +317,23 @@ impl TestOutputParser for PytestParser {
                     TestStatus::Passed => result.passed_tests.push(test_case),
                     TestStatus::Failed => result.failed_tests.push(test_case),
                     TestStatus::Ignored(_) => result.ignored_tests.push(test_case),
+                }
+                i += 1;
+                continue;
+            }
+
+            // Parse failure lines from short summary (e.g., "test_file.py::test_func - AssertionError: msg")
+            if line.contains("::") && line.contains(" - ") {
+                if let Some((test_name, error_msg, location)) = self.parse_failure_line(line) {
+                    // Check if we already have this test, if not add it
+                    if !result.failed_tests.iter().any(|t| t.name == test_name) {
+                        let mut test_case = TestCase::new(&test_name, TestStatus::Failed)
+                            .with_failure_details(&error_msg);
+                        if let Some(loc) = location {
+                            test_case = test_case.with_location(loc);
+                        }
+                        result.failed_tests.push(test_case);
+                    }
                 }
                 i += 1;
                 continue;

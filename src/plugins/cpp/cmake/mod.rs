@@ -5,4 +5,3 @@ pub mod analyzer;
 pub mod parser;
 
 pub use analyzer::CMakeAnalyzer;
-pub use parser::CMakeParser;

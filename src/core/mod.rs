@@ -15,4 +15,4 @@ pub use analyzer::*;
 pub use reporter::*;
 pub use command::CommandBuilder;
 pub use test_analyzer::*;
-pub use config::{Config, ConfigError, CommandConfig};
+pub use config::Config;
