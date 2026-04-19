@@ -2,8 +2,8 @@
 //! Parsing the output of npm/pnpm/yarn lint and type-check
 
 use crate::core::{
-    BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, TestCase,
-    TestOutputParser, TestStatus, TestSummary,
+    BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, StreamingOutputParser,
+    TestCase, TestOutputParser, TestStatus, TestSummary,
 };
 
 pub struct NpmParser {
@@ -379,7 +379,9 @@ impl OutputParser for NpmParser {
 
         issues
     }
+}
 
+impl StreamingOutputParser for NpmParser {
     fn is_issue_start(&self, line: &str) -> bool {
         let trimmed = line.trim();
 
@@ -446,7 +448,7 @@ impl TestOutputParser for NpmParser {
         let mut result = ParsedTestOutput::new();
 
         // 1. Reuse of existing logic to resolve compilation/type-checking issues
-        result.compile_issues = self.parse(output);
+        result.compile_issues = <Self as OutputParser>::parse(self, output);
 
         // 2. Parsing test execution results
         let lines: Vec<&str> = output.lines().collect();
@@ -716,7 +718,7 @@ impl NpmParser {
     fn parse_vitest_summary(&self, lines: &[&str], start_index: usize) -> Option<TestSummary> {
         let mut passed = 0;
         let mut failed = 0;
-        let mut ignored = 0;
+        let ignored = 0;
 
         // Look back a few rows from the current row
         for i in start_index..(start_index + 5).min(lines.len()) {

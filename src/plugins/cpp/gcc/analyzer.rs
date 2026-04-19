@@ -3,7 +3,7 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    SubCommand,
+    SubCommand, TechStack,
 };
 
 use super::parser::GccParser;
@@ -112,8 +112,8 @@ impl Default for GccAnalyzer {
 }
 
 impl BuildAnalyzer for GccAnalyzer {
-    fn name(&self) -> &str {
-        "gcc"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::Gcc
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -134,5 +134,9 @@ impl BuildAnalyzer for GccAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

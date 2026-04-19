@@ -3,7 +3,7 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, SubCommand,
-    OutputParser,
+    OutputParser, TechStack,
 };
 
 use super::parser::CMakeParser;
@@ -89,8 +89,8 @@ impl Default for CMakeAnalyzer {
 }
 
 impl BuildAnalyzer for CMakeAnalyzer {
-    fn name(&self) -> &str {
-        "cmake"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::CMake
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -111,5 +111,9 @@ impl BuildAnalyzer for CMakeAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

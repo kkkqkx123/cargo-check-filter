@@ -8,13 +8,39 @@ use super::types::{Issue, IssueLevel, Location};
 pub trait OutputParser: Send + Sync {
     /// Parses command output to extract all problem information
     fn parse(&self, output: &str) -> Vec<Issue>;
+}
 
+/// Streaming output parser trait
+/// For parsers that support incremental/line-by-line parsing
+/// Provides a default implementation of `parse()` using streaming methods
+pub trait StreamingOutputParser: OutputParser {
     /// Check if a row is the starting row of the problem
     fn is_issue_start(&self, line: &str) -> bool;
 
     /// Parsing one-line question information
     /// Returns the parsed Issue and the number of lines of text consumed.
     fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize);
+
+    /// Default implementation: use streaming methods to parse entire output
+    fn parse(&self, output: &str) -> Vec<Issue> {
+        let lines: Vec<String> = output.lines().map(String::from).collect();
+        let mut issues = Vec::new();
+        let mut i = 0;
+
+        while i < lines.len() {
+            if self.is_issue_start(&lines[i]) {
+                let (issue, consumed) = self.parse_issue(&lines, i);
+                if let Some(issue) = issue {
+                    issues.push(issue);
+                }
+                i += consumed;
+            } else {
+                i += 1;
+            }
+        }
+
+        issues
+    }
 }
 
 /// Base parser implementation providing generic helper methods
@@ -23,26 +49,6 @@ pub struct BaseParser;
 impl BaseParser {
     pub fn new() -> Self {
         Self
-    }
-
-    /// Extracting file paths, line numbers and column numbers from path strings
-    /// Supported formats: path/to/file.rs:10:5
-    pub fn parse_location(&self, location_str: &str) -> Option<Location> {
-        let parts: Vec<&str> = location_str.rsplitn(3, ':').collect();
-
-        if parts.len() == 3 {
-            let col = parts[0].parse::<u32>().ok()?;
-            let line = parts[1].parse::<u32>().ok()?;
-            let file = parts[2];
-
-            Some(
-                Location::new(file.to_string())
-                    .with_line(line)
-                    .with_column(col),
-            )
-        } else {
-            Some(Location::new(location_str.to_string()))
-        }
     }
 
     /// Detection problem level
@@ -192,24 +198,6 @@ impl BaseParser {
             }
         }
         text.to_string()
-    }
-
-    /// Find file paths (look up non-empty lines)
-    pub fn find_file_path(&self, lines: &[String], current_index: usize) -> String {
-        for i in (0..current_index).rev() {
-            let prev_line = &lines[i];
-            let prev_trimmed = prev_line.trim();
-            
-            if !prev_trimmed.is_empty()
-                && !prev_trimmed.chars().next().unwrap_or(' ').is_ascii_digit()
-                && !prev_trimmed.starts_with('✖')
-                && !prev_trimmed.to_lowercase().starts_with("error")
-                && !prev_trimmed.to_lowercase().starts_with("warning")
-            {
-                return prev_trimmed.to_string();
-            }
-        }
-        String::from("unknown")
     }
 }
 

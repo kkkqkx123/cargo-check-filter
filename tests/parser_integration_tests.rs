@@ -9,7 +9,7 @@ mod common;
 use common::{samples_dir, generate_report};
 
 // Importing the parser from src
-use analyzer::core::{IssueLevel, OutputParser};
+use analyzer::core::{IssueLevel, OutputParser, StreamingOutputParser};
 use analyzer::plugins::python::mypy::parser::MypyParser;
 use analyzer::plugins::npm::parser::NpmParser;
 use analyzer::plugins::java::maven::parser::MavenParser;
@@ -55,7 +55,7 @@ fn count_issues_by_level(issues: &[analyzer::core::Issue]) -> (usize, usize, usi
 fn test_mypy_parser_basic() {
     let content = read_sample_file("mypy_basic_sample");
     let parser = MypyParser::new();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // Validation parses an Issue
     assert!(!issues.is_empty(), "Should parse at least one issue from mypy output");
@@ -94,7 +94,7 @@ fn test_mypy_parser_basic() {
 fn test_mypy_parser_specific_file() {
     let content = read_sample_file("mypy_specific_file_sample");
     let parser = MypyParser::new();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     assert!(!issues.is_empty(), "Should parse issues from specific file output");
 
@@ -122,7 +122,7 @@ fn test_mypy_parser_specific_file() {
 fn test_mypy_parser_strict() {
     let content = read_sample_file("mypy_strict_sample");
     let parser = MypyParser::new();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // There should be more errors in strict mode
     assert!(
@@ -147,7 +147,7 @@ fn test_mypy_parser_strict() {
 fn test_eslint_parser_output() {
     let content = read_sample_file("npm_eslint_sample");
     let parser = NpmParser::new();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // Validation parses an Issue
     assert!(
@@ -206,7 +206,7 @@ fn test_eslint_parser_output() {
 fn test_typescript_parser_output() {
     let content = read_sample_file("npm_typecheck_sample");
     let parser = NpmParser::new();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // Validation parses an Issue
     assert!(
@@ -251,7 +251,7 @@ fn test_typescript_parser_output() {
 fn test_npm_audit_parser_output() {
     let content = read_sample_file("npm_audit_sample");
     let parser = NpmParser::new();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // npm audit may not be vulnerable (issues being empty is also normal)
     // Generating reports
@@ -274,7 +274,7 @@ fn test_npm_audit_parser_output() {
 fn test_maven_compile_parser_output() {
     let content = read_sample_file("maven_compile_sample");
     let parser = MavenParser::new();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // Validation parses an Issue
     assert!(
@@ -315,7 +315,7 @@ fn test_maven_compile_parser_output() {
 fn test_maven_test_parser_output() {
     let content = read_sample_file("maven_test_sample");
     let parser = MavenParser::new();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // Validation parses an Issue
     assert!(
@@ -338,15 +338,15 @@ fn test_maven_test_parser_output() {
 #[test]
 fn test_parser_handles_empty_input() {
     let parser = NpmParser::new();
-    let issues = parser.parse("");
+    let issues = OutputParser::parse(&parser, "");
     assert!(issues.is_empty(), "Should return empty vec for empty input");
 
     let parser = MypyParser::new();
-    let issues = parser.parse("");
+    let issues = OutputParser::parse(&parser, "");
     assert!(issues.is_empty(), "Should return empty vec for empty input");
 
     let parser = MavenParser::new();
-    let issues = parser.parse("");
+    let issues = OutputParser::parse(&parser, "");
     assert!(issues.is_empty(), "Should return empty vec for empty input");
 
     println!("✓ Parsers correctly handle empty input");
@@ -357,7 +357,7 @@ fn test_parser_handles_no_issues() {
     // Analog output without errors
     let no_error_output = "✓ No issues found\nAll checks passed!";
     let parser = NpmParser::new();
-    let issues = parser.parse(no_error_output);
+    let issues = OutputParser::parse(&parser, no_error_output);
     assert!(issues.is_empty(), "Should return empty vec when no issues found");
 
     println!("✓ Parsers correctly handle 'no issues' output");
@@ -403,13 +403,13 @@ fn test_all_sample_files_parsable() {
                 // Choose the appropriate parser based on the filename
                 let issues = if filename.starts_with("mypy") {
                     let parser = MypyParser::new();
-                    parser.parse(&content)
+                    OutputParser::parse(&parser, &content)
                 } else if filename.starts_with("npm") {
                     let parser = NpmParser::new();
-                    parser.parse(&content)
+                    OutputParser::parse(&parser, &content)
                 } else if filename.starts_with("maven") {
                     let parser = MavenParser::new();
-                    parser.parse(&content)
+                    OutputParser::parse(&parser, &content)
                 } else {
                     continue;
                 };

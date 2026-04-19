@@ -3,7 +3,7 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, SubCommand,
-    OutputParser,
+    OutputParser, TechStack,
 };
 
 use super::parser::ClangParser;
@@ -117,8 +117,8 @@ impl Default for ClangAnalyzer {
 }
 
 impl BuildAnalyzer for ClangAnalyzer {
-    fn name(&self) -> &str {
-        "clang"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::Clang
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -139,5 +139,9 @@ impl BuildAnalyzer for ClangAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

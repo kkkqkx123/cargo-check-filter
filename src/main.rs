@@ -14,7 +14,8 @@ mod core;
 mod plugins;
 
 use core::{
-    AnalyzeOptions, ReportFormat, ReporterFactory, SubCommand,
+    AnalysisResult, AnalyzeOptions, ReportFormat, ReporterFactory, SubCommand, TechStack,
+    TestAnalyzer, TestOptions, Config,
 };
 
 fn main() {
@@ -25,29 +26,151 @@ fn main() {
         std::process::exit(1);
     }
 
-    // parameterization
-    let (tech_stack, options) = parse_arguments(&args);
+    // Load configuration
+    let config = Config::load(Path::new(".")).unwrap_or_default();
+
+    // Parse arguments
+    let (tech_stack, options) = parse_arguments(&args, &config);
 
     // Creating a plug-in registry
     let registry = plugins::create_registry();
 
     // Get the corresponding analyzer
-    let analyzer = match registry.get(&tech_stack) {
+    let analyzer = match registry.get(tech_stack) {
         Some(a) => a,
         None => {
-            eprintln!("Error: Unknown tech stack '{}'", tech_stack);
+            eprintln!("Error: Unknown tech stack '{}'", tech_stack.as_str());
             eprintln!("Supported: {}", registry.list().join(", "));
             std::process::exit(1);
         }
     };
 
-    // Run analysis
+    // Check if this is a test command
+    let is_test_command = is_test_subcommand(&options.subcommand);
+
+    if is_test_command {
+        // Run test analysis
+        run_test_analysis(analyzer, &options, &config);
+    } else {
+        // Run regular analysis
+        run_analysis(analyzer, &options, &config);
+    }
+}
+
+fn parse_arguments(args: &[String], config: &Config) -> (TechStack, AnalyzeOptions) {
+    let mut tech_stack_str = String::new();
+    let mut subcommand: Option<SubCommand> = None;
+    let mut options = AnalyzeOptions::default();
+
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--help" | "-h" => {
+                show_help();
+                std::process::exit(0);
+            }
+            "--version" | "-v" => {
+                println!("analyzer 0.2.0");
+                std::process::exit(0);
+            }
+            "--filter-warnings" => {
+                options.filter_warnings = true;
+            }
+            "--filter-paths" => {
+                if i + 1 < args.len() {
+                    options.filter_paths = args[i + 1]
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .collect();
+                    i += 1;
+                }
+            }
+            "--output" | "-o" => {
+                if i + 1 < args.len() {
+                    options.output_file = Some(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            arg => {
+                if !arg.starts_with('-') {
+                    if tech_stack_str.is_empty() {
+                        tech_stack_str = arg.to_string();
+                    } else if subcommand.is_none() {
+                        // Parse subcommand
+                        match arg.parse::<SubCommand>() {
+                            Ok(cmd) => subcommand = Some(cmd),
+                            Err(_) => {
+                                eprintln!("Error: Unknown subcommand '{}'", arg);
+                                eprintln!("Run 'analyzer --help' for usage information.");
+                                std::process::exit(1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        i += 1;
+    }
+
+    if tech_stack_str.is_empty() {
+        eprintln!("Error: No tech stack specified");
+        show_help();
+        std::process::exit(1);
+    }
+
+    // Parse tech stack
+    let tech_stack: TechStack = tech_stack_str.parse().unwrap_or_else(|e| {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
+    });
+
+    // If no subcommand is specified, use default based on tech stack
+    if subcommand.is_none() {
+        subcommand = Some(get_default_subcommand(tech_stack));
+    }
+
+    // Apply config defaults if not overridden by CLI
+    if !options.filter_warnings && config.global.filter_warnings {
+        options.filter_warnings = true;
+    }
+
+    options.subcommand = subcommand;
+    (tech_stack, options)
+}
+
+fn is_test_subcommand(subcommand: &Option<SubCommand>) -> bool {
+    matches!(
+        subcommand,
+        Some(SubCommand::CheckTest) | Some(SubCommand::Test)
+    )
+}
+
+fn get_default_subcommand(tech_stack: TechStack) -> SubCommand {
+    match tech_stack {
+        TechStack::Cargo => SubCommand::Check,
+        TechStack::Maven | TechStack::Gradle => SubCommand::Compile,
+        TechStack::Npm | TechStack::Pnpm | TechStack::Yarn => SubCommand::Lint,
+        TechStack::Mypy => SubCommand::TypeCheck,
+        TechStack::Pytest => SubCommand::Test,
+        TechStack::GoBuild | TechStack::GolangciLint => SubCommand::Build,
+        TechStack::CMake => SubCommand::Check,
+        TechStack::Gcc => SubCommand::Check,
+        TechStack::Clang => SubCommand::Check,
+        TechStack::Msvc => SubCommand::Check,
+    }
+}
+
+fn run_analysis(
+    analyzer: &dyn core::BuildAnalyzer,
+    options: &AnalyzeOptions,
+    _config: &Config,
+) {
     let subcommand_name = options.subcommand.as_ref()
         .map(|s| s.as_str())
         .unwrap_or("default");
     println!("Analyzing project with {} {}...", analyzer.name(), subcommand_name);
 
-    match analyzer.analyze(&options) {
+    match analyzer.analyze(options) {
         Ok(result) => {
             println!("\nAnalysis complete!");
             println!("Total issues: {}", result.total_issues);
@@ -85,85 +208,66 @@ fn main() {
     }
 }
 
-fn parse_arguments(args: &[String]) -> (String, AnalyzeOptions) {
-    let mut tech_stack = String::new();
-    let mut subcommand: Option<SubCommand> = None;
-    let mut options = AnalyzeOptions::default();
-
-    let mut i = 1;
-    while i < args.len() {
-        match args[i].as_str() {
-            "--help" | "-h" => {
-                show_help();
-                std::process::exit(0);
-            }
-            "--version" | "-v" => {
-                println!("analyzer 0.2.0");
-                std::process::exit(0);
-            }
-            "--filter-warnings" => {
-                options.filter_warnings = true;
-            }
-            "--filter-paths" => {
-                if i + 1 < args.len() {
-                    options.filter_paths = args[i + 1]
-                        .split(',')
-                        .map(|s| s.trim().to_string())
-                        .collect();
-                    i += 1;
-                }
-            }
-            "--output" | "-o" => {
-                if i + 1 < args.len() {
-                    options.output_file = Some(args[i + 1].clone());
-                    i += 1;
-                }
-            }
-            arg => {
-                if !arg.starts_with('-') {
-                    if tech_stack.is_empty() {
-                        tech_stack = arg.to_string();
-                    } else if subcommand.is_none() {
-                        // Parse subcommand
-                        match arg.parse::<SubCommand>() {
-                            Ok(cmd) => subcommand = Some(cmd),
-                            Err(_) => {
-                                eprintln!("Error: Unknown subcommand '{}'", arg);
-                                eprintln!("Run 'analyzer --help' for usage information.");
-                                std::process::exit(1);
-                            }
-                        }
-                    }
-                }
-            }
+fn run_test_analysis(
+    analyzer: &dyn core::BuildAnalyzer,
+    options: &AnalyzeOptions,
+    _config: &Config,
+) {
+    // Try to downcast to TestAnalyzer
+    let test_analyzer = match analyzer.as_any().downcast_ref::<&dyn TestAnalyzer>() {
+        Some(ta) => *ta,
+        None => {
+            eprintln!("Error: Test analysis not supported for {}", analyzer.name());
+            std::process::exit(1);
         }
-        i += 1;
-    }
+    };
 
-    if tech_stack.is_empty() {
-        eprintln!("Error: No tech stack specified");
-        show_help();
+    if !test_analyzer.supports_test() {
+        eprintln!("Error: Test analysis not supported for {}", analyzer.name());
         std::process::exit(1);
     }
 
-    // If no subcommand is specified, the default value is used
-    if subcommand.is_none() {
-        subcommand = Some(get_default_subcommand(&tech_stack));
-    }
+    println!("Running tests for {}...", analyzer.name());
 
-    options.subcommand = subcommand;
-    (tech_stack, options)
-}
+    // Convert AnalyzeOptions to TestOptions
+    let test_options = TestOptions::from(options);
 
-/// Get default subcommands based on tech stack
-fn get_default_subcommand(tech_stack: &str) -> SubCommand {
-    match tech_stack.to_lowercase().as_str() {
-        "cargo" | "rust" => SubCommand::Check,
-        "maven" | "mvn" => SubCommand::Compile,
-        "npm" | "pnpm" | "yarn" => SubCommand::Lint,
-        "mypy" | "python" => SubCommand::MypyCheck,
-        "go" | "golang" => SubCommand::GoBuild,
-        _ => SubCommand::Check,
+    match test_analyzer.run_tests(&test_options) {
+        Ok(test_output) => {
+            println!("\nTest analysis complete!");
+            println!("Compile issues: {}", test_output.compile_issues.len());
+
+            if let Some(ref summary) = test_output.test_summary {
+                println!("Tests: {} total, {} passed, {} failed, {} ignored",
+                    summary.total, summary.passed, summary.failed, summary.ignored);
+            }
+
+            // Generate test report
+            let reporter = ReporterFactory::create(ReportFormat::Markdown);
+            let report = match reporter.generate_test_report(&test_output.into()) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("Failed to generate report: {}", e);
+                    std::process::exit(1);
+                }
+            };
+
+            let output_path = options
+                .output_file
+                .as_deref()
+                .unwrap_or("test_report.md");
+
+            if let Err(e) = reporter.write_to_file(&report, Path::new(output_path)) {
+                eprintln!("Failed to write report: {}", e);
+                std::process::exit(1);
+            }
+
+            println!("Test report written to: {}", output_path);
+        }
+        Err(e) => {
+            eprintln!("Test analysis failed: {}", e);
+            std::process::exit(1);
+        }
     }
 }
 
@@ -178,6 +282,8 @@ fn show_help() {
     println!("  npm           Node.js/npm projects");
     println!("  pnpm          Node.js/pnpm projects");
     println!("  yarn          Node.js/yarn projects");
+    println!("  go            Go projects");
+    println!("  maven         Java/Maven projects");
     println!();
     println!("Subcommands for Cargo:");
     println!("  check         Fast syntax and type checking (cargo check)");
@@ -213,7 +319,7 @@ fn show_help() {
     println!("  analyzer yarn audit");
 }
 
-fn print_summary(result: &core::AnalysisResult) {
+fn print_summary(result: &AnalysisResult) {
     println!("\n=== Summary ===");
     println!("Total issues: {}", result.total_issues);
 

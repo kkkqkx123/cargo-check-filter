@@ -1,7 +1,7 @@
 //! Markdown Report Generator
 
 use super::{Reporter, ReporterError};
-use crate::core::types::{AnalysisResult, IssueLevel, ReportFormat, TestAnalysisResult, TestStatus};
+use crate::core::types::{AnalysisResult, IssueLevel, TestAnalysisResult, TestStatus};
 
 /// Markdown Report Generator
 pub struct MarkdownReporter;
@@ -252,9 +252,5 @@ impl Reporter for MarkdownReporter {
         }
 
         Ok(report)
-    }
-
-    fn format(&self) -> ReportFormat {
-        ReportFormat::Markdown
     }
 }

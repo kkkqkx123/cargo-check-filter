@@ -7,7 +7,7 @@ use std::path::PathBuf;
 mod common;
 use common::samples_dir;
 
-use analyzer::core::{IssueLevel, OutputParser};
+use analyzer::core::{IssueLevel, OutputParser, StreamingOutputParser};
 use analyzer::plugins::cpp::parser::{CppParser, CompilerType};
 
 /// Read sample file content
@@ -30,7 +30,7 @@ fn count_issues_by_level(issues: &[analyzer::core::Issue]) -> (usize, usize, usi
 fn test_gcc_parser_basic() {
     let content = read_sample("gcc_basic_sample");
     let parser = CppParser::with_gcc();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // Should parse 4 issues (2 errors, 1 warning, 1 note)
     assert_eq!(issues.len(), 4, "Should parse 4 issues from GCC output");
@@ -69,7 +69,7 @@ fn test_gcc_parser_basic() {
 fn test_clang_parser_basic() {
     let content = read_sample("clang_basic_sample");
     let parser = CppParser::with_clang();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // Should parse 4 issues
     assert_eq!(issues.len(), 4, "Should parse 4 issues from Clang output");
@@ -95,7 +95,7 @@ fn test_clang_parser_basic() {
 fn test_msvc_parser_basic() {
     let content = read_sample("msvc_basic_sample");
     let parser = CppParser::with_msvc();
-    let issues = parser.parse(&content);
+    let issues = OutputParser::parse(&parser, &content);
 
     // Should parse 4 issues (3 errors including fatal, 1 warning)
     assert_eq!(issues.len(), 4, "Should parse 4 issues from MSVC output");
@@ -175,7 +175,7 @@ fn test_is_issue_start() {
 fn test_gcc_parser_with_error_code() {
     let output = "src/test.cpp:15:10: error: invalid conversion [-fpermissive]";
     let parser = CppParser::with_gcc();
-    let issues = parser.parse(output);
+    let issues = OutputParser::parse(&parser, output);
 
     assert_eq!(issues.len(), 1);
     let issue = &issues[0];
@@ -189,7 +189,7 @@ fn test_gcc_parser_with_error_code() {
 fn test_msvc_parser_with_error_code() {
     let output = "src\\test.cpp(15,10): error C2440: 'initializing': cannot convert";
     let parser = CppParser::with_msvc();
-    let issues = parser.parse(output);
+    let issues = OutputParser::parse(&parser, output);
 
     assert_eq!(issues.len(), 1);
     let issue = &issues[0];
@@ -208,7 +208,7 @@ fn test_empty_output() {
     ];
 
     for parser in &parsers {
-        let issues = parser.parse("");
+        let issues = OutputParser::parse(parser, "");
         assert!(issues.is_empty(), "Empty output should produce no issues");
     }
 
@@ -229,7 +229,7 @@ src/utils.cpp:25:12: warning: unused variable 'tmp' [-Wunused-variable]
 "#;
 
     let parser = CppParser::with_gcc();
-    let issues = parser.parse(output);
+    let issues = OutputParser::parse(&parser, output);
 
     assert_eq!(issues.len(), 2, "Should parse exactly 2 issues from mixed output");
 

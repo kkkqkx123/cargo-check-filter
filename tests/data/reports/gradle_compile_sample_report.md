@@ -12,6 +12,12 @@
 
 ## Issue Details (Grouped by File)
 
+### /Users/user/project/src/main/java/com/example/App.java
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 15 | 0 | Warning | [unchecked] unchecked conversion |
+
 ### /Users/user/project/src/main/java/com/example/Utils.java
 
 | Line | Column | Level | Message |
@@ -36,12 +42,6 @@
 |------|--------|-------|---------|
 | 10 | 0 | Error | unresolved reference: undefinedFunction |
 
-### /Users/user/project/src/main/java/com/example/App.java
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 15 | 0 | Warning | [unchecked] unchecked conversion |
-
 ### build.gradle
 
 | Line | Column | Level | Message |
@@ -55,4 +55,4 @@ View raw command output: [samples/gradle_compile_sample.txt](samples/gradle_comp
 
 ---
 
-*Report generated at: 2026-04-18 23:58:50*
+*Report generated at: 2026-04-19 15:10:33*

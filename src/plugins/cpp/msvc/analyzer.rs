@@ -3,7 +3,7 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, SubCommand,
-    OutputParser,
+    OutputParser, TechStack,
 };
 
 use super::parser::MsvcParser;
@@ -114,8 +114,8 @@ impl Default for MsvcAnalyzer {
 }
 
 impl BuildAnalyzer for MsvcAnalyzer {
-    fn name(&self) -> &str {
-        "msvc"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::Msvc
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -136,5 +136,9 @@ impl BuildAnalyzer for MsvcAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

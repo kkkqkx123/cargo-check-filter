@@ -3,7 +3,7 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    SubCommand,
+    SubCommand, TechStack,
 };
 
 use super::parser::MypyParser;
@@ -22,11 +22,11 @@ impl MypyAnalyzer {
     fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder {
         let mut builder = CommandBuilder::new("mypy");
 
-        match options.subcommand {
-            Some(SubCommand::MypyCheckStrict) => {
+        // Check if the subcommand name indicates strict mode
+        if let Some(ref cmd) = options.subcommand {
+            if cmd.as_str() == "check-strict" {
                 builder = builder.arg("--strict");
             }
-            _ => {}
         }
 
         builder.arg("--show-column-numbers").arg(".")
@@ -71,8 +71,8 @@ impl Default for MypyAnalyzer {
 }
 
 impl BuildAnalyzer for MypyAnalyzer {
-    fn name(&self) -> &str {
-        "mypy"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::Mypy
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -93,5 +93,9 @@ impl BuildAnalyzer for MypyAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

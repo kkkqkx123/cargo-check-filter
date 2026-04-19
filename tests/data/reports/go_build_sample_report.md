@@ -12,17 +12,17 @@
 
 ## Issue Details (Grouped by File)
 
-### pkg/utils/math.go
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 20 | 16 | Error | undefined: os |
-
 ### internal/config/config.go
 
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
 | 15 | 15 | Warning | os.Setenv call has possible formatting directive %v |
+
+### pkg/utils/math.go
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 20 | 16 | Error | undefined: os |
 
 ### ./main.go
 
@@ -39,4 +39,4 @@ View raw command output: [samples/go_build_sample.txt](samples/go_build_sample.t
 
 ---
 
-*Report generated at: 2026-04-18 23:58:49*
+*Report generated at: 2026-04-19 15:10:32*

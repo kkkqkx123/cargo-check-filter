@@ -3,7 +3,8 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
+    ParsedTestOutput, SubCommand, TechStack, TestAnalyzer, TestAnalyzerError, TestOptions,
+    TestOutputParser,
 };
 
 use super::parser::GoParser;
@@ -22,9 +23,9 @@ impl GoAnalyzer {
     /// Create command builder based on subcommand
     fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder {
         match options.subcommand {
-            Some(SubCommand::GoVet) => self.create_go_vet_command(),
-            Some(SubCommand::GoLint) => self.create_golangci_lint_command(),
-            Some(SubCommand::GoBuild) | _ => self.create_go_build_command(),
+            Some(SubCommand::Vet) => self.create_go_vet_command(),
+            Some(SubCommand::Lint) => self.create_golangci_lint_command(),
+            Some(SubCommand::Build) | _ => self.create_go_build_command(),
         }
     }
 
@@ -119,8 +120,8 @@ impl Default for GoAnalyzer {
 }
 
 impl BuildAnalyzer for GoAnalyzer {
-    fn name(&self) -> &str {
-        "go"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::GoBuild
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -141,6 +142,10 @@ impl BuildAnalyzer for GoAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
@@ -202,7 +207,7 @@ mod tests {
     fn test_create_go_vet_command() {
         let analyzer = GoAnalyzer::new();
         let options = AnalyzeOptions {
-            subcommand: Some(SubCommand::GoVet),
+            subcommand: Some(SubCommand::Vet),
             ..Default::default()
         };
         let _builder = analyzer.create_command_builder(&options);
@@ -215,7 +220,7 @@ mod tests {
     fn test_create_golangci_lint_command() {
         let analyzer = GoAnalyzer::new();
         let options = AnalyzeOptions {
-            subcommand: Some(SubCommand::GoLint),
+            subcommand: Some(SubCommand::Lint),
             ..Default::default()
         };
         let _builder = analyzer.create_command_builder(&options);

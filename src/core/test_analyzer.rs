@@ -1,13 +1,12 @@
 //! Test analyzer trait definition
 //! Define a uniform interface for test execution
 
-use super::types::{Issue, TestCase, TestSummary};
+use super::types::{Issue, TestCase, TestSummary, AnalyzeOptions, TestAnalysisResult};
 
 /// Test Analyzer Error
 #[derive(Debug)]
 pub enum TestAnalyzerError {
     CommandFailed(String),
-    ParseError(String),
     NotSupported,
 }
 
@@ -15,7 +14,6 @@ impl std::fmt::Display for TestAnalyzerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TestAnalyzerError::CommandFailed(msg) => write!(f, "Test command failed: {}", msg),
-            TestAnalyzerError::ParseError(msg) => write!(f, "Test parse error: {}", msg),
             TestAnalyzerError::NotSupported => {
                 write!(f, "Test analysis not supported for this analyzer")
             }
@@ -43,6 +41,23 @@ pub struct ParsedTestOutput {
 impl ParsedTestOutput {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+
+impl From<ParsedTestOutput> for TestAnalysisResult {
+    fn from(output: ParsedTestOutput) -> Self {
+        use super::types::AnalysisResult;
+        
+        let compile_result = AnalysisResult::from_issues(output.compile_issues);
+        
+        TestAnalysisResult {
+            compile_result,
+            test_summary: output.test_summary,
+            failed_tests: output.failed_tests,
+            passed_tests: output.passed_tests,
+            ignored_tests: output.ignored_tests,
+            has_test_output: true,
+        }
     }
 }
 
@@ -75,6 +90,23 @@ pub struct TestOptions {
     pub coverage: bool,
     /// Other parameters
     pub extra_args: Vec<String>,
+}
+
+impl From<&AnalyzeOptions> for TestOptions {
+    fn from(_options: &AnalyzeOptions) -> Self {
+        Self {
+            filter: None,
+            lib_only: false,
+            bin: None,
+            test: None,
+            doc_only: false,
+            package: None,
+            timeout: None,
+            race: false,
+            coverage: false,
+            extra_args: Vec::new(),
+        }
+    }
 }
 
 /// Test Analyzer trait

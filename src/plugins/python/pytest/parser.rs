@@ -2,7 +2,7 @@
 //! Parsing the output of pytest
 
 use crate::core::{
-    BaseParser, Issue, Location, OutputParser, ParsedTestOutput, TestCase,
+    BaseParser, Issue, Location, OutputParser, ParsedTestOutput, StreamingOutputParser, TestCase,
     TestOutputParser, TestStatus, TestSummary,
 };
 
@@ -264,7 +264,9 @@ impl OutputParser for PytestParser {
         // It produces test failures which are handled by TestOutputParser
         Vec::new()
     }
+}
 
+impl StreamingOutputParser for PytestParser {
     fn is_issue_start(&self, _line: &str) -> bool {
         // Pytest output is primarily test results, not compilation issues
         false

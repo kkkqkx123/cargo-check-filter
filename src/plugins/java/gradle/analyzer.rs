@@ -3,7 +3,7 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    SubCommand,
+    SubCommand, TechStack,
 };
 
 use super::parser::GradleParser;
@@ -27,7 +27,7 @@ impl GradleAnalyzer {
             Some(SubCommand::Compile) => {
                 builder = builder.arg("compileJava");
             }
-            Some(SubCommand::MvnTest) => {
+            Some(SubCommand::Test) => {
                 builder = builder.arg("test");
             }
             _ => {
@@ -81,8 +81,8 @@ impl Default for GradleAnalyzer {
 }
 
 impl BuildAnalyzer for GradleAnalyzer {
-    fn name(&self) -> &str {
-        "gradle"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::Gradle
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -103,6 +103,10 @@ impl BuildAnalyzer for GradleAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 

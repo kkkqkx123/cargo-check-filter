@@ -1,7 +1,7 @@
 //! JSON Report Generator
 
 use super::{Reporter, ReporterError};
-use crate::core::types::{AnalysisResult, ReportFormat};
+use crate::core::types::AnalysisResult;
 
 /// JSON Report Generator
 pub struct JsonReporter;
@@ -83,9 +83,5 @@ impl Reporter for JsonReporter {
 
         json.push('}');
         Ok(json)
-    }
-
-    fn format(&self) -> ReportFormat {
-        ReportFormat::Json
     }
 }

@@ -3,7 +3,7 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    SubCommand,
+    SubCommand, TechStack,
 };
 
 use super::parser::MavenParser;
@@ -27,7 +27,7 @@ impl MavenAnalyzer {
             Some(SubCommand::Compile) => {
                 builder = builder.arg("compile");
             }
-            Some(SubCommand::MvnTest) => {
+            Some(SubCommand::Test) => {
                 builder = builder.arg("test");
             }
             _ => {
@@ -81,8 +81,8 @@ impl Default for MavenAnalyzer {
 }
 
 impl BuildAnalyzer for MavenAnalyzer {
-    fn name(&self) -> &str {
-        "maven"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::Maven
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -103,6 +103,10 @@ impl BuildAnalyzer for MavenAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 

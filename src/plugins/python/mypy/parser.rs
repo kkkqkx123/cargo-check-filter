@@ -1,7 +1,7 @@
 //! Mypy Output Parser
 //! Parsing the output of mypy
 
-use crate::core::{BaseParser, Issue, IssueLevel, OutputParser};
+use crate::core::{BaseParser, Issue, OutputParser, StreamingOutputParser};
 
 pub struct MypyParser {
     base: BaseParser,
@@ -46,7 +46,9 @@ impl OutputParser for MypyParser {
 
         issues
     }
+}
 
+impl StreamingOutputParser for MypyParser {
     fn is_issue_start(&self, line: &str) -> bool {
         let parts: Vec<&str> = line.split(':').collect();
         if parts.len() >= 4 {
@@ -71,6 +73,7 @@ impl OutputParser for MypyParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::IssueLevel;
 
     #[test]
     fn test_parse_error_with_column() {

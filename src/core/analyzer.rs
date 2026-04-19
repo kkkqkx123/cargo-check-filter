@@ -2,9 +2,8 @@
 //! defines the interface to the build tool analyzer
 
 use std::time::Duration;
-use super::types::{AnalysisResult, AnalyzeOptions};
+use super::types::{AnalysisResult, AnalyzeOptions, TechStack};
 use super::parser::OutputParser;
-use super::config::Config;
 
 /// Analyzer Error Type
 #[derive(Debug)]
@@ -39,8 +38,13 @@ impl From<std::io::Error> for AnalyzerError {
 /// Build tool analyzer trait
 /// Implement this trait to support new build tools
 pub trait BuildAnalyzer: Send + Sync {
+    /// Get the technology stack
+    fn tech_stack(&self) -> TechStack;
+
     /// Get the name of the technology stack
-    fn name(&self) -> &str;
+    fn name(&self) -> &str {
+        self.tech_stack().as_str()
+    }
 
     /// Get supported command aliases
     fn supported_commands(&self) -> Vec<&str>;
@@ -51,16 +55,8 @@ pub trait BuildAnalyzer: Send + Sync {
     /// Get parser
     fn parser(&self) -> &dyn OutputParser;
 
-    /// Setup Configuration (for configuring the drive mode)
-    fn set_config(&mut self, config: Config) {
-        // Default empty implementation, backward compatible
-        let _ = config;
-    }
-
-    /// Get configuration (if set)
-    fn config(&self) -> Option<&Config> {
-        None
-    }
+    /// Convert to Any for downcasting
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 /// Plugin Registry
@@ -80,14 +76,11 @@ impl PluginRegistry {
         self.analyzers.push(analyzer);
     }
 
-    /// Get analyzer by command name
-    pub fn get(&self, command: &str) -> Option<&dyn BuildAnalyzer> {
+    /// Get analyzer by TechStack
+    pub fn get(&self, stack: TechStack) -> Option<&dyn BuildAnalyzer> {
         self.analyzers
             .iter()
-            .find(|a| {
-                a.name() == command
-                    || a.supported_commands().contains(&command)
-            })
+            .find(|a| a.tech_stack() == stack)
             .map(|b| b.as_ref())
     }
 

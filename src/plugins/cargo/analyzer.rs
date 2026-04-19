@@ -3,7 +3,8 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
+    ParsedTestOutput, SubCommand, TechStack, TestAnalyzer, TestAnalyzerError, TestOptions,
+    TestOutputParser,
 };
 
 use super::parser::CargoParser;
@@ -115,8 +116,8 @@ impl Default for CargoAnalyzer {
 }
 
 impl BuildAnalyzer for CargoAnalyzer {
-    fn name(&self) -> &str {
-        "cargo"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::Cargo
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -137,6 +138,10 @@ impl BuildAnalyzer for CargoAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 

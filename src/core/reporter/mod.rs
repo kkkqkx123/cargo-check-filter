@@ -16,14 +16,12 @@ pub use html::HtmlReporter;
 #[derive(Debug)]
 pub enum ReporterError {
     IoError(std::io::Error),
-    FormatError(String),
 }
 
 impl std::fmt::Display for ReporterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ReporterError::IoError(e) => write!(f, "IO error: {}", e),
-            ReporterError::FormatError(msg) => write!(f, "Format error: {}", msg),
         }
     }
 }
@@ -46,9 +44,6 @@ pub trait Reporter: Send + Sync {
         // Default implementation: call General Report Generation
         self.generate(&result.compile_result)
     }
-
-    /// Access to report formats
-    fn format(&self) -> ReportFormat;
 
     /// Write report to file
     fn write_to_file(&self, content: &str, path: &Path) -> Result<(), ReporterError> {

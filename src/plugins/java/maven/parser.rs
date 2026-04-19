@@ -1,7 +1,7 @@
 //! Maven Output Parser
 //Parsing the output of Maven compile/test Parsing the output of Maven compile/test
 
-use crate::core::{BaseParser, Issue, IssueLevel, Location, OutputParser};
+use crate::core::{BaseParser, Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
 
 pub struct MavenParser {
     base: BaseParser,
@@ -171,7 +171,9 @@ impl OutputParser for MavenParser {
 
         issues
     }
+}
 
+impl StreamingOutputParser for MavenParser {
     fn is_issue_start(&self, line: &str) -> bool {
         let trimmed = line.trim();
         trimmed.starts_with("[ERROR]") || trimmed.starts_with("[WARNING]")

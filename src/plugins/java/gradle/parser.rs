@@ -1,7 +1,7 @@
 //! Gradle Output Parser
 //! Parsing the output of Gradle compile/test
 
-use crate::core::{BaseParser, Issue, IssueLevel, Location, OutputParser};
+use crate::core::{BaseParser, Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
 
 pub struct GradleParser {
     base: BaseParser,
@@ -161,7 +161,9 @@ impl OutputParser for GradleParser {
 
         issues
     }
+}
 
+impl StreamingOutputParser for GradleParser {
     fn is_issue_start(&self, line: &str) -> bool {
         let trimmed = line.trim();
 

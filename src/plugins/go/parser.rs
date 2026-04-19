@@ -2,7 +2,7 @@
 //! Parsing the output of go build, go vet, go test, golangci-lint
 
 use crate::core::{
-    BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, TestCase,
+    Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, StreamingOutputParser, TestCase,
     TestOutputParser, TestStatus, TestSummary,
 };
 
@@ -23,29 +23,14 @@ impl Default for GoCommandType {
 }
 
 pub struct GoParser {
-    base: BaseParser,
     command_type: GoCommandType,
 }
 
 impl GoParser {
     pub fn new() -> Self {
         Self {
-            base: BaseParser::new(),
             command_type: GoCommandType::Unknown,
         }
-    }
-
-    /// Create parser with specific command type
-    pub fn with_command_type(command_type: GoCommandType) -> Self {
-        Self {
-            base: BaseParser::new(),
-            command_type,
-        }
-    }
-
-    /// Set command type after creation
-    pub fn set_command_type(&mut self, command_type: GoCommandType) {
-        self.command_type = command_type;
     }
 
     /// Auto-detect command type from output content
@@ -425,7 +410,7 @@ impl OutputParser for GoParser {
         let lines: Vec<&str> = output.lines().collect();
 
         // Auto-detect command type if not set
-        let command_type = if self.command_type == GoCommandType::Unknown {
+        let _command_type = if self.command_type == GoCommandType::Unknown {
             self.detect_command_type(output)
         } else {
             self.command_type
@@ -439,7 +424,9 @@ impl OutputParser for GoParser {
 
         issues
     }
+}
 
+impl StreamingOutputParser for GoParser {
     fn is_issue_start(&self, line: &str) -> bool {
         let trimmed = line.trim();
 
@@ -647,41 +634,5 @@ ok  	example.com/myproject	0.061s
         let parser = GoParser::new();
         let output = "./main.go:10:5: undefined: foo";
         assert_eq!(parser.detect_command_type(output), GoCommandType::Build);
-    }
-
-    #[test]
-    fn test_with_command_type() {
-        let parser = GoParser::with_command_type(GoCommandType::Build);
-        assert_eq!(parser.command_type, GoCommandType::Build);
-    }
-
-    #[test]
-    fn test_parse_with_build_command_type() {
-        let parser = GoParser::with_command_type(GoCommandType::Build);
-        let output = "./main.go:10:5: undefined: someVar";
-        let issues = parser.parse(output);
-
-        assert_eq!(issues.len(), 1);
-        assert!(matches!(issues[0].level, IssueLevel::Error));
-    }
-
-    #[test]
-    fn test_parse_with_vet_command_type() {
-        let parser = GoParser::with_command_type(GoCommandType::Vet);
-        let output = "./main.go:10:5: Printf format mismatch";
-        let issues = parser.parse(output);
-
-        assert_eq!(issues.len(), 1);
-        assert!(matches!(issues[0].level, IssueLevel::Warning));
-    }
-
-    #[test]
-    fn test_vet_skips_build_errors() {
-        let parser = GoParser::with_command_type(GoCommandType::Vet);
-        // This should NOT be parsed as a vet issue
-        let output = "./main.go:10:5: undefined: someVar";
-        let issues = parser.parse(output);
-
-        assert_eq!(issues.len(), 0);
     }
 }

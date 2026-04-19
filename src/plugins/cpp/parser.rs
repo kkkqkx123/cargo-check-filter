@@ -1,7 +1,7 @@
 //! C++ Output Parser
 //! Shared parser for GCC, Clang, and MSVC compiler outputs
 
-use crate::core::{Issue, IssueLevel, Location, OutputParser};
+use crate::core::{Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
 use regex::Regex;
 
 /// Compiler type for C++ parsers
@@ -152,7 +152,9 @@ impl OutputParser for CppParser {
             }
         }
     }
+}
 
+impl StreamingOutputParser for CppParser {
     fn is_issue_start(&self, line: &str) -> bool {
         match self.compiler_type {
             CompilerType::Gcc | CompilerType::Clang => {
@@ -172,7 +174,8 @@ impl OutputParser for CppParser {
         }
 
         let line = &lines[start_index];
-        let issues = self.parse(line);
+        // Use OutputParser::parse explicitly to avoid ambiguity
+        let issues = <Self as OutputParser>::parse(self, line);
 
         if let Some(issue) = issues.into_iter().next() {
             (Some(issue), start_index + 1)

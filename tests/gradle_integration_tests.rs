@@ -229,7 +229,7 @@ fn test_validate_gradle_outputs() {
 #[test]
 fn test_gradle_parser_specific_patterns() {
     use analyzer::plugins::java::gradle::parser::GradleParser;
-    use analyzer::core::OutputParser;
+    use analyzer::core::{OutputParser, StreamingOutputParser};
 
     let parser = GradleParser::new();
 

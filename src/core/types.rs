@@ -248,10 +248,12 @@ impl TestAnalysisResult {
 pub enum TechStack {
     Cargo,
     Maven,
+    Gradle,
     Npm,
     Pnpm,
     Yarn,
     Mypy,
+    Pytest,
     GoBuild,
     GolangciLint,
     CMake,
@@ -265,10 +267,12 @@ impl TechStack {
         match self {
             TechStack::Cargo => "cargo",
             TechStack::Maven => "maven",
+            TechStack::Gradle => "gradle",
             TechStack::Npm => "npm",
             TechStack::Pnpm => "pnpm",
             TechStack::Yarn => "yarn",
             TechStack::Mypy => "mypy",
+            TechStack::Pytest => "pytest",
             TechStack::GoBuild => "go",
             TechStack::GolangciLint => "golangci-lint",
             TechStack::CMake => "cmake",
@@ -285,11 +289,13 @@ impl std::str::FromStr for TechStack {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "cargo" | "rust" => Ok(TechStack::Cargo),
-            "maven" | "mvn" | "java" => Ok(TechStack::Maven),
+            "maven" | "mvn" => Ok(TechStack::Maven),
+            "gradle" | "gradlew" => Ok(TechStack::Gradle),
             "npm" | "node" => Ok(TechStack::Npm),
             "pnpm" => Ok(TechStack::Pnpm),
             "yarn" => Ok(TechStack::Yarn),
-            "mypy" | "python" => Ok(TechStack::Mypy),
+            "mypy" => Ok(TechStack::Mypy),
+            "pytest" | "py.test" => Ok(TechStack::Pytest),
             "go" | "golang" => Ok(TechStack::GoBuild),
             "golangci-lint" => Ok(TechStack::GolangciLint),
             "cmake" | "cmake-build" => Ok(TechStack::CMake),
@@ -301,40 +307,34 @@ impl std::str::FromStr for TechStack {
     }
 }
 
+/// Command category for grouping and organization
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommandCategory {
+    Check,      // Syntax and type checking
+    Lint,       // Code linting
+    Test,       // Test execution
+    Audit,      // Security audit
+    Build,      // Build compilation
+    Format,     // Code formatting
+    Custom,     // User-defined
+}
+
 /// Subcommand Type
 /// Supports predefined commands and dynamically customized commands
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SubCommand {
-    // Predefined commands - maintain backward compatibility
-    // Cargo subcommand
+    // Predefined commands
     Check,        // cargo check
     Clippy,       // cargo clippy
     ClippyAll,    // cargo clippy --all-targets --all-features
     CheckTest,    // cargo check --tests
-
-    // Maven Subcommands
-    Compile,    // mvn compile
-    MvnTest,    // mvn test
-
-    // NPM Subcommands
-    Lint,       // npm run lint
-    TypeCheck,  // npm run type-check
-    Audit,      // npm audit
-
-    // Mypy subcommand
-    MypyCheck,       // mypy
-    MypyCheckStrict, // mypy --strict
-
-    // Go subcommands
-    GoBuild,    // go build
-    GoVet,      // go vet
-    GoLint,     // golangci-lint
-
-    // Pytest subcommands
-    Pytest,         // pytest
-    PytestQuiet,    // pytest -q
-    PytestVerbose,  // pytest -vv
-
+    Compile,      // mvn compile
+    Lint,         // npm run lint
+    TypeCheck,    // npm run type-check
+    Audit,        // npm audit
+    Build,        // go build / cmake build
+    Vet,          // go vet
+    Test,         // pytest / cargo test
     // Dynamic customization commands
     Custom(String),
 }
@@ -347,49 +347,28 @@ impl SubCommand {
             SubCommand::ClippyAll => "clippy-all",
             SubCommand::CheckTest => "check-test",
             SubCommand::Compile => "compile",
-            SubCommand::MvnTest => "test",
             SubCommand::Lint => "lint",
             SubCommand::TypeCheck => "type-check",
             SubCommand::Audit => "audit",
-            SubCommand::MypyCheck => "check",
-            SubCommand::MypyCheckStrict => "check-strict",
-            SubCommand::GoBuild => "build",
-            SubCommand::GoVet => "vet",
-            SubCommand::GoLint => "lint",
-            SubCommand::Pytest => "test",
-            SubCommand::PytestQuiet => "test-quiet",
-            SubCommand::PytestVerbose => "test-verbose",
+            SubCommand::Build => "build",
+            SubCommand::Vet => "vet",
+            SubCommand::Test => "test",
             SubCommand::Custom(name) => name.as_str(),
         }
     }
 
-    /// Get a description of this subcommand
-    pub fn description(&self) -> &str {
+    /// Get the category of this subcommand
+    pub fn category(&self) -> CommandCategory {
         match self {
-            SubCommand::Check => "Fast syntax and type checking",
-            SubCommand::Clippy => "Run Clippy linter",
-            SubCommand::ClippyAll => "Run Clippy on all targets and features",
-            SubCommand::CheckTest => "Check test code syntax and types",
-            SubCommand::Compile => "Compile the project",
-            SubCommand::MvnTest => "Run tests",
-            SubCommand::Lint => "Run linter",
-            SubCommand::TypeCheck => "Run TypeScript type checker",
-            SubCommand::Audit => "Audit dependencies for vulnerabilities",
-            SubCommand::MypyCheck => "Run mypy type checker",
-            SubCommand::MypyCheckStrict => "Run mypy in strict mode",
-            SubCommand::GoBuild => "Build the project",
-            SubCommand::GoVet => "Run go vet",
-            SubCommand::GoLint => "Run golangci-lint",
-            SubCommand::Pytest => "Run pytest",
-            SubCommand::PytestQuiet => "Run pytest in quiet mode",
-            SubCommand::PytestVerbose => "Run pytest in verbose mode",
-            SubCommand::Custom(_) => "Custom command",
+            SubCommand::Check | SubCommand::TypeCheck => CommandCategory::Check,
+            SubCommand::Clippy | SubCommand::Lint => CommandCategory::Lint,
+            SubCommand::CheckTest | SubCommand::Test => CommandCategory::Test,
+            SubCommand::Audit => CommandCategory::Audit,
+            SubCommand::Compile | SubCommand::Build => CommandCategory::Build,
+            SubCommand::Vet => CommandCategory::Check,
+            SubCommand::Custom(_) => CommandCategory::Custom,
+            SubCommand::ClippyAll => CommandCategory::Lint,
         }
-    }
-
-    /// Creating custom commands
-    pub fn custom(name: impl Into<String>) -> Self {
-        SubCommand::Custom(name.into())
     }
 
     /// Check if it is a customized command
@@ -411,15 +390,11 @@ impl std::str::FromStr for SubCommand {
             "lint" => Ok(SubCommand::Lint),
             "type-check" => Ok(SubCommand::TypeCheck),
             "audit" => Ok(SubCommand::Audit),
-            "check-strict" => Ok(SubCommand::MypyCheckStrict),
-            "build" => Ok(SubCommand::GoBuild),
-            "vet" => Ok(SubCommand::GoVet),
-            "test" => Ok(SubCommand::Pytest),
-            "test-quiet" => Ok(SubCommand::PytestQuiet),
-            "test-verbose" => Ok(SubCommand::PytestVerbose),
+            "build" => Ok(SubCommand::Build),
+            "vet" => Ok(SubCommand::Vet),
+            "test" => Ok(SubCommand::Test),
             _ => {
                 // Support for dynamic customization of commands
-                // Verify command name format (only letters, numbers, hyphens, underscores allowed)
                 if s.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
                     Ok(SubCommand::Custom(s.to_string()))
                 } else {

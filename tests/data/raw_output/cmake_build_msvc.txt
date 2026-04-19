@@ -6,7 +6,7 @@ Change Dir: 'D:/项目/cli/analyze-cargo/tests/data/fixtures/cpp-cmake-project/b
 
 Run Build Command(s): "D:/softwares/Visual Studio/MSBuild/Current/Bin/amd64/MSBuild.exe" ALL_BUILD.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
 适用于 .NET Framework MSBuild 版本 17.13.19+0d9f5a35a
-生成启动时间为 2026/4/19 11:15:54。
+生成启动时间为 2026/4/19 15:10:31。
 
 节点 1 上的项目“D:\项目\cli\analyze-cargo\tests\data\fixtures\cpp-cmake-project\build_test_full\ALL_BUILD.vcxproj”(默认目标)。
 项目“D:\项目\cli\analyze-cargo\tests\data\fixtures\cpp-cmake-project\build_test_full\ALL_BUILD.vcxproj”(1)正在节点 1 上生成“D:\项目\cli\analyze-cargo\tests\data\fixtures\cpp-cmake-project\build_test_full\ZERO_CHECK.vcxproj”(2) (默认目标)。
@@ -198,5 +198,5 @@ D:\项目\cli\analyze-cargo\tests\data\fixtures\cpp-cmake-project\src\utils.cpp(
     0 个警告
     8 个错误
 
-已用时间 00:00:00.73
+已用时间 00:00:00.77
 

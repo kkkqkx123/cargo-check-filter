@@ -1,7 +1,7 @@
 //! HTML Report Generator
 
 use super::{Reporter, ReporterError};
-use crate::core::types::{AnalysisResult, IssueLevel, ReportFormat};
+use crate::core::types::{AnalysisResult, IssueLevel};
 
 /// HTML Report Generator
 pub struct HtmlReporter;
@@ -170,9 +170,5 @@ impl Reporter for HtmlReporter {
         html.push_str("</body>\n</html>");
 
         Ok(html)
-    }
-
-    fn format(&self) -> ReportFormat {
-        ReportFormat::Html
     }
 }

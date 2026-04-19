@@ -21,17 +21,6 @@
 | 20 | 27 | Warning | [deprecation] getMonth() in Date has been deprecated |
 | 21 | 25 | Warning | [deprecation] getDate() in Date has been deprecated |
 
-### D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 5 | 1 | Error | class Broken is public, should be declared in a file named Broken.java |
-| 8 | 9 | Error | cannot find symbol |
-| 12 | 16 | Error | cannot find symbol |
-| 5 | 1 | Error | class Broken is public, should be declared in a file named Broken.java |
-| 8 | 9 | Error | cannot find symbol |
-| 12 | 16 | Error | cannot find symbol |
-
 ### D:\project\test\fixtures\maven-project\src\main\java\com\example\App.java
 
 | Line | Column | Level | Message |
@@ -55,10 +44,21 @@
 | - | - | Error | Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.10.1:compile (default-compile) on project maven-test-project: Compilation failure: Compilation failure: |
 | - | - | Error | -> [Help 1] |
 
+### D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 5 | 1 | Error | class Broken is public, should be declared in a file named Broken.java |
+| 8 | 9 | Error | cannot find symbol |
+| 12 | 16 | Error | cannot find symbol |
+| 5 | 1 | Error | class Broken is public, should be declared in a file named Broken.java |
+| 8 | 9 | Error | cannot find symbol |
+| 12 | 16 | Error | cannot find symbol |
+
 ## Raw Output
 
 View raw command output: [samples/maven_compile_sample.txt](samples/maven_compile_sample.txt)
 
 ---
 
-*Report generated at: 2026-04-18 23:59:00*
+*Report generated at: 2026-04-19 15:10:44*

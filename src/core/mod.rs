@@ -6,7 +6,6 @@ pub mod parser;
 pub mod analyzer;
 pub mod reporter;
 pub mod command;
-pub mod base_analyzer;
 pub mod test_analyzer;
 pub mod config;
 

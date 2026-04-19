@@ -4,9 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-
-use crate::core::ReportFormat;
+use std::path::Path;
 
 /// Configuring the root structure
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -99,11 +97,6 @@ pub struct TechStackConfig {
 }
 
 impl Config {
-    /// Creating an Empty Configuration
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Load configuration (merge all tiers by priority)
     /// Priority: Built-in Defaults < Binary Directories < Projects
     /// Note: Do not use the user directory configuration
@@ -119,18 +112,6 @@ impl Config {
         }
 
         // 3. Load project level configuration (highest priority)
-        if let Some(project_config) = Self::load_from_project(project_path)? {
-            config.merge(project_config);
-        }
-
-        Ok(config)
-    }
-
-    /// Load configuration from project path only (for testing or simplified scenarios)
-    pub fn load_project_only(project_path: &Path) -> Result<Self, ConfigError> {
-        let mut config = Self::default();
-        config.merge(Self::embedded_defaults());
-
         if let Some(project_config) = Self::load_from_project(project_path)? {
             config.merge(project_config);
         }
@@ -332,51 +313,6 @@ impl Config {
         }
     }
 
-    /// Get command configuration (consider tech stack specific overrides)
-    pub fn get_command(&self, tech_stack: &str, command_name: &str) -> Option<&CommandConfig> {
-        // 1. Check for technology stack-specific configurations first
-        if let Some(stack_config) = self.tech_stacks.get(tech_stack) {
-            if let Some(cmd) = stack_config.commands.get(command_name) {
-                if cmd.enabled {
-                    return Some(cmd);
-                }
-            }
-        }
-
-        // 2. Re-check global commands
-        if let Some(cmd) = self.commands.get(command_name) {
-            if cmd.enabled && cmd.tech_stacks.iter().any(|s| s == tech_stack) {
-                return Some(cmd);
-            }
-        }
-
-        None
-    }
-
-    /// Get all available command names
-    pub fn get_available_commands(&self, tech_stack: &str) -> Vec<&String> {
-        self.commands
-            .iter()
-            .filter(|(_, config)| {
-                config.enabled && config.tech_stacks.iter().any(|s| s == tech_stack)
-            })
-            .map(|(name, _)| name)
-            .collect()
-    }
-
-    /// Get script mapping for the tech stack
-    pub fn get_script_mapping(&self, tech_stack: &str, script_name: &str) -> Option<&String> {
-        self.tech_stacks
-            .get(tech_stack)
-            .and_then(|stack| stack.scripts.get(script_name))
-    }
-
-    /// Get the test framework for the technology stack
-    pub fn get_test_framework(&self, tech_stack: &str) -> Option<&String> {
-        self.tech_stacks
-            .get(tech_stack)
-            .and_then(|stack| stack.test_framework.as_ref())
-    }
 }
 
 /// misconfiguration
@@ -410,23 +346,10 @@ mod tests {
     }
 
     #[test]
-    fn test_get_command() {
-        let config = Config::embedded_defaults();
-
-        let check_cmd = config.get_command("cargo", "check");
-        assert!(check_cmd.is_some());
-        assert_eq!(check_cmd.unwrap().exec, "cargo check");
-
-        let lint_cmd = config.get_command("npm", "lint");
-        assert!(lint_cmd.is_some());
-        assert_eq!(lint_cmd.unwrap().exec, "npm run lint");
-    }
-
-    #[test]
     fn test_merge() {
         let mut base = Config::embedded_defaults();
 
-        let mut override_config = Config::new();
+        let mut override_config = Config::default();
         override_config.commands.insert(
             "check".to_string(),
             CommandConfig {
@@ -439,7 +362,7 @@ mod tests {
 
         base.merge(override_config);
 
-        let check_cmd = base.get_command("cargo", "check");
+        let check_cmd = base.commands.get("check");
         assert_eq!(check_cmd.unwrap().exec, "cargo check --all-targets");
     }
 }

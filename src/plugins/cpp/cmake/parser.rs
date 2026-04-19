@@ -2,7 +2,7 @@
 //! Parses CMake configuration and build output
 
 use regex::Regex;
-use crate::core::{Issue, IssueLevel, Location, OutputParser};
+use crate::core::{Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
 use crate::plugins::cpp::parser::{CppParser, CompilerType};
 
 pub struct CMakeParser {
@@ -28,14 +28,47 @@ impl CMakeParser {
 
     fn parse_cmake_errors(&self, output: &str) -> Vec<Issue> {
         let mut issues = Vec::new();
+        let lines: Vec<&str> = output.lines().collect();
+        let mut i = 0;
 
-        for line in output.lines() {
+        while i < lines.len() {
+            let line = lines[i];
+
             // Parse CMake errors
             if let Some(caps) = self.cmake_error_regex.captures(line) {
                 let file_path = caps[1].to_string();
                 let line_num = caps[2].parse::<u32>().ok();
-                let _command = &caps[3];
-                let message = caps[4].to_string();
+                let command = &caps[3];
+                // Capture any message on the same line after ":"
+                let same_line_msg = caps[4].trim();
+
+                // Collect multi-line message (indented lines following the error)
+                let mut message_parts = Vec::new();
+                if !same_line_msg.is_empty() {
+                    message_parts.push(same_line_msg.to_string());
+                }
+
+                i += 1;
+                while i < lines.len() {
+                    let next_line = lines[i];
+                    // Check if next line is indented (part of the message)
+                    // or empty line within message block
+                    if next_line.starts_with("  ") || next_line.is_empty() {
+                        let trimmed = next_line.trim();
+                        if !trimmed.is_empty() {
+                            message_parts.push(trimmed.to_string());
+                        }
+                        i += 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                let message = if message_parts.is_empty() {
+                    command.to_string()
+                } else {
+                    message_parts.join(" ")
+                };
 
                 let mut location = Location::new(file_path);
                 if let Some(ln) = line_num {
@@ -45,14 +78,40 @@ impl CMakeParser {
                 let issue = Issue::new(IssueLevel::Error, message, location)
                     .with_code("CMake Error");
                 issues.push(issue);
+                continue;
             }
 
             // Parse CMake warnings
             if let Some(caps) = self.cmake_warning_regex.captures(line) {
                 let file_path = caps[1].to_string();
                 let line_num = caps[2].parse::<u32>().ok();
-                let _command = &caps[3];
-                let message = caps[4].to_string();
+                let command = &caps[3];
+                let same_line_msg = caps[4].trim();
+
+                let mut message_parts = Vec::new();
+                if !same_line_msg.is_empty() {
+                    message_parts.push(same_line_msg.to_string());
+                }
+
+                i += 1;
+                while i < lines.len() {
+                    let next_line = lines[i];
+                    if next_line.starts_with("  ") || next_line.is_empty() {
+                        let trimmed = next_line.trim();
+                        if !trimmed.is_empty() {
+                            message_parts.push(trimmed.to_string());
+                        }
+                        i += 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                let message = if message_parts.is_empty() {
+                    command.to_string()
+                } else {
+                    message_parts.join(" ")
+                };
 
                 let mut location = Location::new(file_path);
                 if let Some(ln) = line_num {
@@ -62,7 +121,10 @@ impl CMakeParser {
                 let issue = Issue::new(IssueLevel::Warning, message, location)
                     .with_code("CMake Warning");
                 issues.push(issue);
+                continue;
             }
+
+            i += 1;
         }
 
         issues
@@ -89,11 +151,13 @@ impl OutputParser for CMakeParser {
         // Parse compiler errors from build output
         let compiler_type = self.detect_compiler_type(output);
         let cpp_parser = CppParser::new(compiler_type);
-        issues.extend(cpp_parser.parse(output));
+        issues.extend(<CppParser as OutputParser>::parse(&cpp_parser, output));
 
         issues
     }
+}
 
+impl StreamingOutputParser for CMakeParser {
     fn is_issue_start(&self, line: &str) -> bool {
         // CMake errors
         if line.starts_with("CMake Error") || line.starts_with("CMake Warning") {
@@ -103,9 +167,9 @@ impl OutputParser for CMakeParser {
         // Compiler errors - try generic detection
         line.contains(": error:")
             || line.contains(": warning:")
-            || line.contains("(error")
-            || line.contains("(warning")
-            || line.contains("(fatal error")
+            || line.contains("): error")
+            || line.contains("): warning")
+            || line.contains("): fatal error")
     }
 
     fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
@@ -114,7 +178,7 @@ impl OutputParser for CMakeParser {
         }
 
         let line = &lines[start_index];
-        let issues = self.parse(line);
+        let issues = <Self as OutputParser>::parse(self, line);
 
         if let Some(issue) = issues.into_iter().next() {
             (Some(issue), start_index + 1)

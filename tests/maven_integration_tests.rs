@@ -189,7 +189,7 @@ fn test_validate_maven_outputs() {
 #[test]
 fn test_maven_parser_specific_patterns() {
     use analyzer::plugins::java::maven::parser::MavenParser;
-    use analyzer::core::OutputParser;
+    use analyzer::core::{OutputParser, StreamingOutputParser};
 
     let parser = MavenParser::new();
 

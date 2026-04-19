@@ -1,11 +1,10 @@
 //! NPM/Node.js Analyzer
 //! Run the npm/pnpm/yarn command and parse the output
 
-use std::path::Path;
-
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
+    ParsedTestOutput, SubCommand, TechStack, TestAnalyzer, TestAnalyzerError, TestOptions,
+    TestOutputParser,
 };
 
 use super::parser::NpmParser;
@@ -28,26 +27,6 @@ pub enum PackageManager {
 }
 
 impl PackageManager {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            PackageManager::Npm => "npm",
-            PackageManager::Pnpm => "pnpm",
-            PackageManager::Yarn => "yarn",
-        }
-    }
-
-    pub fn detect(project_path: &Path) -> Option<PackageManager> {
-        if project_path.join("pnpm-lock.yaml").exists() {
-            Some(PackageManager::Pnpm)
-        } else if project_path.join("yarn.lock").exists() {
-            Some(PackageManager::Yarn)
-        } else if project_path.join("package-lock.json").exists() {
-            Some(PackageManager::Npm)
-        } else {
-            Some(PackageManager::Npm)
-        }
-    }
-
     fn build_command(&self, options: &AnalyzeOptions) -> CommandBuilder {
         match self {
             PackageManager::Npm => self.build_npm_command(options),
@@ -207,8 +186,12 @@ impl NpmAnalyzer {
 }
 
 impl BuildAnalyzer for NpmAnalyzer {
-    fn name(&self) -> &str {
-        self.package_manager.as_str()
+    fn tech_stack(&self) -> TechStack {
+        match self.package_manager {
+            PackageManager::Npm => TechStack::Npm,
+            PackageManager::Pnpm => TechStack::Pnpm,
+            PackageManager::Yarn => TechStack::Yarn,
+        }
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -233,6 +216,10 @@ impl BuildAnalyzer for NpmAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 

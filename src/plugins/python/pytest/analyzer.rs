@@ -3,7 +3,8 @@
 
 use crate::core::{
     AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
-    ParsedTestOutput, SubCommand, TestAnalyzer, TestAnalyzerError, TestOptions, TestOutputParser,
+    ParsedTestOutput, SubCommand, TechStack, TestAnalyzer, TestAnalyzerError, TestOptions,
+    TestOutputParser,
 };
 
 use super::parser::PytestParser;
@@ -32,17 +33,19 @@ impl PytestAnalyzer {
         // Add tb=short for shorter traceback
         builder = builder.arg("--tb=short");
 
-        match options.subcommand {
-            Some(SubCommand::Pytest) => {
-                // Default pytest run
+        // Add additional flags based on subcommand name
+        if let Some(ref cmd) = options.subcommand {
+            match cmd.as_str() {
+                "test-quiet" => {
+                    builder = builder.arg("-q");
+                }
+                "test-verbose" => {
+                    builder = builder.arg("-vv");
+                }
+                _ => {
+                    // Default pytest run
+                }
             }
-            Some(SubCommand::PytestQuiet) => {
-                builder = builder.arg("-q");
-            }
-            Some(SubCommand::PytestVerbose) => {
-                builder = builder.arg("-vv");
-            }
-            _ => {}
         }
 
         builder
@@ -115,8 +118,8 @@ impl Default for PytestAnalyzer {
 }
 
 impl BuildAnalyzer for PytestAnalyzer {
-    fn name(&self) -> &str {
-        "pytest"
+    fn tech_stack(&self) -> TechStack {
+        TechStack::Pytest
     }
 
     fn supported_commands(&self) -> Vec<&str> {
@@ -158,6 +161,10 @@ impl BuildAnalyzer for PytestAnalyzer {
 
     fn parser(&self) -> &dyn OutputParser {
         &self.parser
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 

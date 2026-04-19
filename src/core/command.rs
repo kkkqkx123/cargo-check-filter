@@ -76,73 +76,22 @@ impl CommandBuilder {
         }
     }
 
-    /// Set command execution timeout
-    pub fn timeout(mut self, timeout: Duration) -> Self {
-        self.timeout = timeout;
-        self
-    }
-
     /// Add a single parameter
     pub fn arg(mut self, arg: impl Into<String>) -> Self {
         self.args.push(arg.into());
         self
     }
 
-    /// Add multiple parameters
-    pub fn args(mut self, args: Vec<String>) -> Self {
-        self.args.extend(args);
-        self
-    }
-
-    /// Add parameters based on conditions
-    pub fn condition(mut self, condition: bool, arg: impl Into<String>) -> Self {
-        if condition {
-            self.args.push(arg.into());
-        }
-        self
-    }
-
-    /// Set whether to output execution information
-    pub fn verbose(mut self, verbose: bool) -> Self {
-        self.verbose = verbose;
-        self
-    }
-
-    /// Build command vectors
-    pub fn build(self) -> Vec<String> {
-        let mut cmd = vec![self.program];
-        cmd.extend(self.args);
-        cmd
-    }
-
-    /// Get the program name (for cross-platform resolution)
-    fn resolve_program(&self) -> Result<String, AnalyzerError> {
-        // Attempt to resolve the command path
-        if let Some(resolved) = resolve_command(&self.program) {
-            return Ok(resolved.to_string_lossy().to_string());
-        }
-
-        // If parsing fails, return the original program name (let the system try)
-        Ok(self.program.clone())
-    }
-
     /// Execute command and capture output (with timeout)
     pub fn execute(&self) -> Result<String, AnalyzerError> {
-        let program = self.resolve_program()?;
+        let program = resolve_command(&self.program)
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| self.program.clone());
 
         if self.verbose {
             println!("Running: {} {}", program, self.args.join(" "));
         }
 
-        self.execute_with_timeout(&program, None)
-    }
-
-    /// Internal method: Execute commands with timeout control
-    fn execute_with_timeout(
-        &self,
-        program: &str,
-        dir: Option<&PathBuf>,
-    ) -> Result<String, AnalyzerError> {
         let (tx, rx) = mpsc::channel();
         let program = program.to_string();
         let args = self.args.clone();
@@ -174,153 +123,21 @@ impl CommandBuilder {
         let combined = format!("{}{}", stdout, stderr);
 
         if !output.status.success() {
-            let location = dir.map(|d| format!(" in directory {}", d.display()))
-                .unwrap_or_default();
             return Err(AnalyzerError::CommandFailed(format!(
-                "Command '{}' failed with exit code {:?}{}\nOutput: {}",
+                "Command '{}' failed with exit code {:?}\nOutput: {}",
                 self.program,
                 output.status.code(),
-                location,
                 combined.trim()
             )));
         }
 
         Ok(combined)
-    }
-
-    /// Executes the command in the specified directory and captures the output (with timeout)
-    pub fn execute_in_dir(&self, dir: &PathBuf) -> Result<String, AnalyzerError> {
-        let program = self.resolve_program()?;
-
-        if self.verbose {
-            println!(
-                "Running in {}: {} {}",
-                dir.display(),
-                program,
-                self.args.join(" ")
-            );
-        }
-
-        let (tx, rx) = mpsc::channel();
-        let program = program.to_string();
-        let args = self.args.clone();
-        let dir_for_thread = dir.clone();
-        let timeout = self.timeout;
-
-        thread::spawn(move || {
-            let output = Command::new(&program)
-                .args(&args)
-                .current_dir(&dir_for_thread)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .output();
-            let _ = tx.send(output);
-        });
-
-        let result = rx.recv_timeout(timeout).map_err(|_| {
-            AnalyzerError::Timeout(timeout)
-        })?;
-
-        let output = result.map_err(|e| {
-            AnalyzerError::CommandFailed(format!(
-                "Failed to execute {} in {}: {}. Hint: Make sure '{}' is installed and in PATH",
-                self.program,
-                dir.display(),
-                e,
-                self.program
-            ))
-        })?;
-
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let combined = format!("{}{}", stdout, stderr);
-
-        if !output.status.success() {
-            return Err(AnalyzerError::CommandFailed(format!(
-                "Command '{}' failed with exit code {:?} in directory {}\nOutput: {}",
-                self.program,
-                output.status.code(),
-                dir.display(),
-                combined.trim()
-            )));
-        }
-
-        Ok(combined)
-    }
-
-    /// Execute command without capturing output (with timeout)
-    pub fn execute_silent(&self) -> Result<(), AnalyzerError> {
-        let program = self.resolve_program()?;
-
-        if self.verbose {
-            println!("Running: {} {}", program, self.args.join(" "));
-        }
-
-        let (tx, rx) = mpsc::channel();
-        let program = program.to_string();
-        let args = self.args.clone();
-        let timeout = self.timeout;
-
-        thread::spawn(move || {
-            let output = Command::new(&program)
-                .args(&args)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .output();
-            let _ = tx.send(output);
-        });
-
-        let result = rx.recv_timeout(timeout).map_err(|_| {
-            AnalyzerError::Timeout(timeout)
-        })?;
-
-        let output = result.map_err(|e| {
-            AnalyzerError::CommandFailed(format!(
-                "Failed to execute {}: {}. Hint: Make sure '{}' is installed and in PATH",
-                self.program, e, self.program
-            ))
-        })?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AnalyzerError::CommandFailed(format!(
-                "Command '{}' failed with exit code {:?}\nStderr: {}",
-                self.program,
-                output.status.code(),
-                stderr.trim()
-            )));
-        }
-
-        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_build_command() {
-        let cmd = CommandBuilder::new("cargo")
-            .arg("check")
-            .arg("--all-targets")
-            .condition(true, "--verbose")
-            .condition(false, "--quiet")
-            .build();
-
-        assert_eq!(cmd.len(), 4);
-        assert_eq!(cmd[0], "cargo");
-        assert_eq!(cmd[1], "check");
-        assert_eq!(cmd[2], "--all-targets");
-        assert_eq!(cmd[3], "--verbose");
-    }
-
-    #[test]
-    fn test_command_builder_empty() {
-        let cmd = CommandBuilder::new("npm").build();
-        assert_eq!(cmd.len(), 1);
-        assert_eq!(cmd[0], "npm");
-    }
 
     #[test]
     fn test_resolve_command_cargo() {
