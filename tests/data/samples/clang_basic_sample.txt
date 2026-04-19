@@ -1,0 +1,12 @@
+src/main.cpp:10:5: error: use of undeclared identifier 'x'
+    int y = x + 1;
+            ^
+src/utils.cpp:25:12: warning: unused variable 'tmp' [-Wunused-variable]
+    int tmp = 0;
+           ^
+src/main.cpp:8:9: note: declared here
+    int x = 0;
+        ^
+src/math.cpp:42:8: error: no matching function for call to 'max'
+    return max(a, b);
+           ^~~

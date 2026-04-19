@@ -1,0 +1,7 @@
+D:\项目\cli\analyze-cargo\tests/data\fixtures\cpp-cmake-project\src/main.cpp:5:18: error: use of undeclared identifier 'undefined_var'
+    5 |     int result = undefined_var + 1;
+      |                  ^~~~~~~~~~~~~
+D:\项目\cli\analyze-cargo\tests/data\fixtures\cpp-cmake-project\src/main.cpp:10:12: error: use of undeclared identifier 'add'
+   10 |     return add(result, 1);
+      |            ^~~
+2 errors generated.

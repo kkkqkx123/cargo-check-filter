@@ -1,0 +1,12 @@
+src/main.cpp:10:5: error: 'x' was not declared in this scope
+   10 |     int y = x + 1;
+      |     ^~~~~
+src/utils.cpp:25:12: warning: unused variable 'tmp' [-Wunused-variable]
+   25 |     int tmp = 0;
+      |            ^~~
+src/math.cpp:42:8: note: suggested alternative: 'std::max'
+   42 |     return max(a, b);
+      |        ^~~
+src/main.cpp:15:20: error: invalid conversion from 'const char*' to 'int' [-fpermissive]
+   15 |     int s = "hello";
+      |             ^~~~~~~

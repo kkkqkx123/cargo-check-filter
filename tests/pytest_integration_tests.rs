@@ -36,7 +36,7 @@ fn run_pytest(args: &[&str], project_path: &PathBuf) -> Result<String, String> {
 
 #[test]
 fn test_pytest_output_parsing() {
-    use analyzer::plugins::pytest::parser::PytestParser;
+    use analyzer::plugins::python::pytest::parser::PytestParser;
     use analyzer::core::TestOutputParser;
 
     // Use sample output for consistent testing
@@ -88,7 +88,7 @@ fn test_pytest_output_parsing() {
 
 #[test]
 fn test_pytest_parser_with_sample() {
-    use analyzer::plugins::pytest::parser::PytestParser;
+    use analyzer::plugins::python::pytest::parser::PytestParser;
     use analyzer::core::TestOutputParser;
 
     let parser = PytestParser::new();
@@ -135,7 +135,7 @@ fn test_pytest_parser_with_sample() {
 
 #[test]
 fn test_pytest_parser_specific_patterns() {
-    use analyzer::plugins::pytest::parser::PytestParser;
+    use analyzer::plugins::python::pytest::parser::PytestParser;
 
     let parser = PytestParser::new();
 
@@ -165,7 +165,7 @@ fn test_pytest_parser_specific_patterns() {
 
 #[test]
 fn test_pytest_analyzer_applicable() {
-    use analyzer::plugins::pytest::analyzer::PytestAnalyzer;
+    use analyzer::plugins::python::pytest::analyzer::PytestAnalyzer;
     use analyzer::core::BuildAnalyzer;
 
     let analyzer = PytestAnalyzer::new();
@@ -182,7 +182,7 @@ fn test_pytest_analyzer_applicable() {
 
 #[test]
 fn test_pytest_analyzer_traits() {
-    use analyzer::plugins::pytest::analyzer::PytestAnalyzer;
+    use analyzer::plugins::python::pytest::analyzer::PytestAnalyzer;
     use analyzer::core::{BuildAnalyzer, TestAnalyzer};
 
     let analyzer = PytestAnalyzer::new();
@@ -199,7 +199,7 @@ fn test_pytest_analyzer_traits() {
 
 #[test]
 fn test_generate_pytest_report() {
-    use analyzer::plugins::pytest::parser::PytestParser;
+    use analyzer::plugins::python::pytest::parser::PytestParser;
     use analyzer::core::TestOutputParser;
 
     let parser = PytestParser::new();
@@ -248,7 +248,7 @@ fn test_generate_pytest_report() {
 
 #[test]
 fn test_pytest_with_filter() {
-    use analyzer::plugins::pytest::analyzer::PytestAnalyzer;
+    use analyzer::plugins::python::pytest::analyzer::PytestAnalyzer;
     use analyzer::core::{TestAnalyzer, TestOptions};
 
     if let Err(e) = ensure_pytest() {
@@ -292,7 +292,7 @@ fn test_pytest_with_filter() {
 
 #[test]
 fn test_pytest_summary_parsing() {
-    use analyzer::plugins::pytest::parser::PytestParser;
+    use analyzer::plugins::python::pytest::parser::PytestParser;
 
     let parser = PytestParser::new();
 

@@ -21,7 +21,7 @@ fn ensure_mypy() -> Result<(), String> {
 
 #[test]
 fn test_mypy_basic_output() {
-    use analyzer::plugins::mypy::parser::MypyParser;
+    use analyzer::plugins::python::mypy::parser::MypyParser;
     use analyzer::core::OutputParser;
 
     if let Err(e) = ensure_mypy() {
@@ -84,7 +84,7 @@ fn test_mypy_basic_output() {
 
 #[test]
 fn test_mypy_strict_output() {
-    use analyzer::plugins::mypy::parser::MypyParser;
+    use analyzer::plugins::python::mypy::parser::MypyParser;
     use analyzer::core::OutputParser;
 
     if ensure_mypy().is_err() {
@@ -135,7 +135,7 @@ fn test_mypy_strict_output() {
 
 #[test]
 fn test_mypy_specific_file() {
-    use analyzer::plugins::mypy::parser::MypyParser;
+    use analyzer::plugins::python::mypy::parser::MypyParser;
     use analyzer::core::OutputParser;
 
     if ensure_mypy().is_err() {
@@ -180,7 +180,7 @@ fn test_mypy_specific_file() {
 
 #[test]
 fn test_mypy_with_ignore_missing_imports() {
-    use analyzer::plugins::mypy::parser::MypyParser;
+    use analyzer::plugins::python::mypy::parser::MypyParser;
     use analyzer::core::OutputParser;
 
     if ensure_mypy().is_err() {

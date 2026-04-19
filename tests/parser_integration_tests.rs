@@ -10,9 +10,9 @@ use common::{samples_dir, generate_report};
 
 // Importing the parser from src
 use analyzer::core::{IssueLevel, OutputParser};
-use analyzer::plugins::mypy::parser::MypyParser;
+use analyzer::plugins::python::mypy::parser::MypyParser;
 use analyzer::plugins::npm::parser::NpmParser;
-use analyzer::plugins::maven::parser::MavenParser;
+use analyzer::plugins::java::maven::parser::MavenParser;
 
 /// Get sample file path
 fn get_sample_file(name: &str) -> PathBuf {

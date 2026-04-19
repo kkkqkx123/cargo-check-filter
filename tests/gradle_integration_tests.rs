@@ -32,7 +32,7 @@ fn get_gradle_cmd(project_path: &PathBuf) -> String {
 
 #[test]
 fn test_gradle_compile_output() {
-    use analyzer::plugins::gradle::parser::GradleParser;
+    use analyzer::plugins::java::gradle::parser::GradleParser;
     use analyzer::core::OutputParser;
 
     if let Err(e) = ensure_gradle() {
@@ -106,7 +106,7 @@ fn test_gradle_compile_output() {
 
 #[test]
 fn test_gradle_test_output() {
-    use analyzer::plugins::gradle::parser::GradleParser;
+    use analyzer::plugins::java::gradle::parser::GradleParser;
     use analyzer::core::OutputParser;
 
     if let Err(e) = ensure_gradle() {
@@ -168,7 +168,7 @@ fn test_gradle_test_output() {
 #[test]
 fn test_validate_gradle_outputs() {
     use analyzer::core::{AnalysisResult, IssueLevel, OutputParser};
-    use analyzer::plugins::gradle::parser::GradleParser;
+    use analyzer::plugins::java::gradle::parser::GradleParser;
 
     let parser = GradleParser::new();
 
@@ -228,7 +228,7 @@ fn test_validate_gradle_outputs() {
 
 #[test]
 fn test_gradle_parser_specific_patterns() {
-    use analyzer::plugins::gradle::parser::GradleParser;
+    use analyzer::plugins::java::gradle::parser::GradleParser;
     use analyzer::core::OutputParser;
 
     let parser = GradleParser::new();

@@ -20,7 +20,7 @@ fn ensure_maven() -> Result<(), String> {
 
 #[test]
 fn test_maven_compile_output() {
-    use analyzer::plugins::maven::parser::MavenParser;
+    use analyzer::plugins::java::maven::parser::MavenParser;
     use analyzer::core::OutputParser;
 
     if let Err(e) = ensure_maven() {
@@ -66,8 +66,8 @@ fn test_maven_compile_output() {
     println!("{}", output);
 
     // Validating the Maven Output Format
-    // 格式: [ERROR] /path/to/File.java:[line,col] error: message
-    // 格式: [WARNING] /path/to/File.java:[line,col] warning: message
+    // Format: [ERROR] /path/to/File.java:[line,col] error: message
+    // Format: [WARNING] /path/to/File.java:[line,col] warning: message
     let lines: Vec<&str> = output.lines().collect();
     let has_error_lines = lines.iter().any(|line: &&str| {
         line.trim().starts_with("[ERROR]") || line.trim().starts_with("[WARNING]")
@@ -92,7 +92,7 @@ fn test_maven_compile_output() {
 
 #[test]
 fn test_maven_test_output() {
-    use analyzer::plugins::maven::parser::MavenParser;
+    use analyzer::plugins::java::maven::parser::MavenParser;
     use analyzer::core::OutputParser;
 
     if let Err(e) = ensure_maven() {
@@ -152,7 +152,7 @@ fn test_maven_test_output() {
 #[test]
 fn test_validate_maven_outputs() {
     use analyzer::core::{AnalysisResult, IssueLevel, OutputParser};
-    use analyzer::plugins::maven::parser::MavenParser;
+    use analyzer::plugins::java::maven::parser::MavenParser;
 
     let parser = MavenParser::new();
 
@@ -188,7 +188,7 @@ fn test_validate_maven_outputs() {
 
 #[test]
 fn test_maven_parser_specific_patterns() {
-    use analyzer::plugins::maven::parser::MavenParser;
+    use analyzer::plugins::java::maven::parser::MavenParser;
     use analyzer::core::OutputParser;
 
     let parser = MavenParser::new();

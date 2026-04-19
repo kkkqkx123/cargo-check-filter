@@ -1,6 +1,8 @@
 //! Test Common Module
 //! Provides test utilities and shared logic
 
+pub mod vs_env;
+
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
