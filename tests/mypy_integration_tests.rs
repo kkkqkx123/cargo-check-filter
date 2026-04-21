@@ -2,7 +2,6 @@
 //! Execute actual mypy commands, verify parsing logic matches actual output format
 
 use std::path::PathBuf;
-use std::process::Command;
 
 mod common;
 use common::{fixtures_dir, is_command_available, raw_output_dir, run_command, save_raw_output, generate_report};
@@ -251,17 +250,15 @@ fn test_validate_mypy_outputs() {
     // Read and validate saved mypy output files
     let output_dir = raw_output_dir();
 
-    for entry in std::fs::read_dir(&output_dir).expect("Failed to read output directory") {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            let filename = path.file_name().unwrap_or_default().to_string_lossy();
+    for entry in std::fs::read_dir(&output_dir).expect("Failed to read output directory").flatten() {
+        let path = entry.path();
+        let filename = path.file_name().unwrap_or_default().to_string_lossy();
 
-            if filename.starts_with("mypy_") && path.extension().map(|e| e == "txt").unwrap_or(false)
-            {
-                let content = std::fs::read_to_string(&path).expect("Failed to read output file");
-                println!("Validating: {}", path.display());
-                validate_mypy_output(&content);
-            }
+        if filename.starts_with("mypy_") && path.extension().map(|e| e == "txt").unwrap_or(false)
+        {
+            let content = std::fs::read_to_string(&path).expect("Failed to read output file");
+            println!("Validating: {}", path.display());
+            validate_mypy_output(&content);
         }
     }
 }

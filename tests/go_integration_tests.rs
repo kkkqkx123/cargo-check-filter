@@ -85,10 +85,8 @@ fn test_go_build_output() {
     for line in &lines {
         if !line.starts_with('#') && line.contains(':') {
             let parts: Vec<&str> = line.splitn(4, ':').collect();
-            if parts.len() >= 3 {
-                if parts[1].trim().parse::<u32>().is_ok() {
-                    println!("  Found issue: {}", line);
-                }
+            if parts.len() >= 3 && parts[1].trim().parse::<u32>().is_ok() {
+                println!("  Found issue: {}", line);
             }
         }
     }
@@ -136,12 +134,8 @@ fn test_go_vet_output() {
     for line in output.lines() {
         if !line.starts_with('#') && line.contains(':') {
             let parts: Vec<&str> = line.splitn(5, ':').collect();
-            if parts.len() >= 4 {
-                if parts[1].trim().parse::<u32>().is_ok() {
-                    if parts[2].trim().parse::<u32>().is_ok() {
-                        println!("  Found vet issue: {}", line);
-                    }
-                }
+            if parts.len() >= 4 && parts[1].trim().parse::<u32>().is_ok() && parts[2].trim().parse::<u32>().is_ok() {
+                println!("  Found vet issue: {}", line);
             }
         }
     }

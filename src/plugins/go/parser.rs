@@ -7,19 +7,14 @@ use crate::core::{
 };
 
 /// Go command type to distinguish output formats
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum GoCommandType {
+    #[default]
     Build,
     Vet,
     Test,
     GolangciLint,
     Unknown,
-}
-
-impl Default for GoCommandType {
-    fn default() -> Self {
-        GoCommandType::Unknown
-    }
 }
 
 pub struct GoParser {

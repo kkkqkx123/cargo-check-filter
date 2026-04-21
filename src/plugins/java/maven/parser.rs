@@ -26,11 +26,11 @@ impl MavenParser {
         };
 
         // Remove the [ERROR] or [WARNING] prefix.
-        let content = if trimmed.starts_with("[ERROR]") {
-            trimmed[7..].trim()
-        } else {
-            trimmed[9..].trim()
-        };
+        let content = trimmed
+            .strip_prefix("[ERROR]")
+            .or_else(|| trimmed.strip_prefix("[WARNING]"))
+            .map(|s| s.trim())
+            .unwrap_or(trimmed);
 
         // Parsing file paths and locations
         // 格式: /path/to/File.java:[10,5] error: message
@@ -74,13 +74,9 @@ impl MavenParser {
             // Parses row and column numbers, format: 10,5] or 10].
             let coords = coords.trim_end_matches(']');
             let parts: Vec<&str> = coords.split(',').collect();
-            if parts.len() >= 1 {
+            if !parts.is_empty() {
                 let line_num = parts[0].trim().parse::<u32>().ok()?;
-                let col_num = if parts.len() >= 2 {
-                    parts[1].trim().parse::<u32>().ok()?
-                } else {
-                    0
-                };
+                let col_num = parts.get(1).and_then(|p| p.trim().parse::<u32>().ok()).unwrap_or(0);
                 return Some((file_path.to_string(), line_num, col_num));
             }
         }

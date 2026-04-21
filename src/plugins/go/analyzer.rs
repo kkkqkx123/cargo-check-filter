@@ -25,7 +25,7 @@ impl GoAnalyzer {
         match options.subcommand {
             Some(SubCommand::Vet) => self.create_go_vet_command(),
             Some(SubCommand::Lint) => self.create_golangci_lint_command(),
-            Some(SubCommand::Build) | _ => self.create_go_build_command(),
+            _ => self.create_go_build_command(),
         }
     }
 

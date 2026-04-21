@@ -661,19 +661,17 @@ impl NpmParser {
         let mut failed = 0;
         let ignored = 0;
 
-        // Look back a few rows from the current row
-        for i in start_index..(start_index + 5).min(lines.len()) {
-            let line = lines[i];
+        let passed_regex = regex::Regex::new(r"Tests\s+(\d+)\s+passed").ok()?;
+        let failed_regex = regex::Regex::new(r"(\d+)\s+failed").ok()?;
 
+        // Look back a few rows from the current row
+        for line in lines.iter().skip(start_index).take(5) {
             // 匹配 "Tests 5 passed (5)"
-            if let Some(caps) = regex::Regex::new(r"Tests\s+(\d+)\s+passed")
-                .ok()?
-                .captures(line)
-            {
+            if let Some(caps) = passed_regex.captures(line) {
                 passed = caps.get(1)?.as_str().parse().ok()?;
             }
             // Number of failed matches
-            if let Some(caps) = regex::Regex::new(r"(\d+)\s+failed").ok()?.captures(line) {
+            if let Some(caps) = failed_regex.captures(line) {
                 failed = caps.get(1)?.as_str().parse().ok()?;
             }
         }

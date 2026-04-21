@@ -68,7 +68,7 @@ impl Reporter for JsonReporter {
                 json.push_str(&format!("      \"code\": \"{}\",\n", code));
             }
             json.push_str(&format!("      \"message\": \"{}\",\n", issue.message.replace('"', "\\\"")));
-            json.push_str(&format!("      \"location\": {{\n"));
+            json.push_str("      \"location\": {\n");
             json.push_str(&format!("        \"file\": \"{}\"", issue.location.file_path.replace('"', "\\\"")));
             if let Some(line) = issue.location.line_number {
                 json.push_str(&format!(",\n        \"line\": {}", line));

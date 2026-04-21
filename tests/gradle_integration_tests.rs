@@ -1,12 +1,12 @@
 //! Gradle Integration Testing
 //! Execute the actual Gradle commands to verify that the parsing logic matches the actual output format
 
-use std::path::PathBuf;
+use std::path::Path;
 
 mod common;
 use common::{fixtures_dir, is_command_available, run_command, save_raw_output, read_sample, generate_report};
 
-fn gradle_project_path() -> PathBuf {
+fn gradle_project_path() -> std::path::PathBuf {
     fixtures_dir().join("gradle-project")
 }
 
@@ -19,13 +19,13 @@ fn ensure_gradle() -> Result<(), String> {
 }
 
 /// Get the appropriate gradle command for the project
-fn get_gradle_cmd(project_path: &PathBuf) -> String {
+fn get_gradle_cmd(project_path: &Path) -> String {
     // Check for gradlew in project directory
     let gradlew_path = project_path.join(if cfg!(windows) { "gradlew.bat" } else { "gradlew" });
     if gradlew_path.exists() {
         return gradlew_path.to_string_lossy().to_string();
     }
-    
+
     // Fall back to system gradle
     "gradle".to_string()
 }

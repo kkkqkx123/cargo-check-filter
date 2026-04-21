@@ -1,11 +1,13 @@
 //! Test Common Module
 //! Provides test utilities and shared logic
 
+#![cfg(test)]
+
 pub mod vs_env;
 
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 /// Get project root directory
@@ -27,11 +29,15 @@ pub fn raw_output_dir() -> PathBuf {
 }
 
 /// Get samples output directory
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn samples_dir() -> PathBuf {
     data_dir().join("samples")
 }
 
 /// Get reports output directory
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn reports_dir() -> PathBuf {
     let dir = data_dir().join("reports");
     fs::create_dir_all(&dir).expect("Failed to create reports directory");
@@ -39,11 +45,15 @@ pub fn reports_dir() -> PathBuf {
 }
 
 /// Get fixtures directory
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn fixtures_dir() -> PathBuf {
     data_dir().join("fixtures")
 }
 
 /// Save raw command output to file
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn save_raw_output(name: &str, content: &str) -> PathBuf {
     let output_path = raw_output_dir().join(format!("{}.txt", name));
     fs::write(&output_path, content).expect("Failed to write raw output file");
@@ -52,6 +62,8 @@ pub fn save_raw_output(name: &str, content: &str) -> PathBuf {
 }
 
 /// Read sample file content
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn read_sample(name: &str) -> String {
     let sample_path = samples_dir().join(format!("{}.txt", name));
     fs::read_to_string(&sample_path)
@@ -59,6 +71,8 @@ pub fn read_sample(name: &str) -> String {
 }
 
 /// Generate Markdown report
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn generate_report(
     name: &str,
     tool_name: &str,
@@ -143,6 +157,8 @@ pub fn generate_report(
 }
 
 /// Generate test report for test frameworks (pytest, cargo test, etc.)
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn generate_test_report(
     name: &str,
     tool_name: &str,
@@ -288,6 +304,8 @@ pub fn generate_test_report(
 
 /// Resolve command full path (cross-platform)
 /// On Windows, prioritize .cmd, .bat, .exe extensions
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn resolve_command(cmd: &str) -> Option<PathBuf> {
     // If it's already a path, return directly
     if cmd.contains('/') || cmd.contains('\\') {
@@ -330,11 +348,15 @@ pub fn resolve_command(cmd: &str) -> Option<PathBuf> {
 }
 
 /// Check if command is available
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn is_command_available(cmd: &str) -> bool {
     resolve_command(cmd).is_some()
 }
 
 /// Run command and return output (using resolved full path)
+#[cfg(test)]
+#[allow(dead_code)]
 pub fn run_command(cmd: &str, args: &[&str], cwd: &PathBuf) -> Result<String, String> {
     // Resolve command path
     let cmd_path = resolve_command(cmd)

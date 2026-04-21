@@ -2,7 +2,6 @@
 //! Test CppParser for GCC, Clang, and MSVC output formats
 
 use std::fs;
-use std::path::PathBuf;
 
 mod common;
 use common::samples_dir;

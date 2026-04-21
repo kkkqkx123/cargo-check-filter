@@ -258,20 +258,18 @@ fn test_validate_npm_outputs() {
     // Read and validate saved npm output files
     let output_dir = raw_output_dir();
 
-    for entry in std::fs::read_dir(&output_dir).expect("Failed to read output directory") {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            let filename = path.file_name().unwrap_or_default().to_string_lossy();
+    for entry in std::fs::read_dir(&output_dir).expect("Failed to read output directory").flatten() {
+        let path = entry.path();
+        let filename = path.file_name().unwrap_or_default().to_string_lossy();
 
-            if filename.starts_with("npm_") && path.extension().map(|e| e == "txt").unwrap_or(false) {
-                let content = std::fs::read_to_string(&path).expect("Failed to read output file");
-                println!("Validating: {}", path.display());
+        if filename.starts_with("npm_") && path.extension().map(|e| e == "txt").unwrap_or(false) {
+            let content = std::fs::read_to_string(&path).expect("Failed to read output file");
+            println!("Validating: {}", path.display());
 
-                if filename.contains("eslint") {
-                    validate_eslint_output(&content);
-                } else if filename.contains("typecheck") {
-                    validate_typescript_output(&content);
-                }
+            if filename.contains("eslint") {
+                validate_eslint_output(&content);
+            } else if filename.contains("typecheck") {
+                validate_typescript_output(&content);
             }
         }
     }

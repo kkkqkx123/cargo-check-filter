@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 mod common;
-use common::{fixtures_dir, is_command_available, run_command, generate_report};
+use common::{fixtures_dir, is_command_available, run_command, generate_report, save_raw_output};
 
 /// Check if a command is available
 fn ensure_command(cmd: &str) -> Result<(), String> {

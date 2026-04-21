@@ -122,7 +122,7 @@ impl AnalysisResult {
         // Statistics by document
         self.issues_by_file
             .entry(issue.location.file_path.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(issue);
 
         // Record uniqueness model

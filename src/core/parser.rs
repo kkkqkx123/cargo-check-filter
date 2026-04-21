@@ -168,7 +168,7 @@ impl BaseParser {
                     let col_num = loc_parts[1].trim().parse::<u32>().ok()?;
 
                     if after_paren.starts_with(':') {
-                        let rest = &after_paren[1..].trim();
+                        let rest = after_paren.strip_prefix(':').map(|s| s.trim()).unwrap_or(after_paren);
                         let level = self.detect_level(rest)?;
 
                         let (code, message) = if let Some(colon_pos) = rest.find(':') {

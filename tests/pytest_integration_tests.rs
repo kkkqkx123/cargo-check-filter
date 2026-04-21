@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 
 mod common;
-use common::{fixtures_dir, is_command_available, run_command, save_raw_output, read_sample, generate_report, generate_test_report};
+use common::{fixtures_dir, is_command_available, save_raw_output, read_sample, generate_report, generate_test_report};
 
 fn python_project_path() -> PathBuf {
     fixtures_dir().join("python-project")
@@ -19,19 +19,6 @@ fn ensure_pytest() -> Result<(), String> {
         }
     }
     Ok(())
-}
-
-/// Run pytest command and return output
-fn run_pytest(args: &[&str], project_path: &PathBuf) -> Result<String, String> {
-    // Try pytest directly first
-    if is_command_available("pytest") {
-        run_command("pytest", args, project_path)
-    } else {
-        // Fall back to python -m pytest
-        let mut full_args = vec!["-m", "pytest"];
-        full_args.extend(args);
-        run_command("python", &full_args, project_path)
-    }
 }
 
 #[test]

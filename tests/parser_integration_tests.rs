@@ -396,46 +396,44 @@ fn test_all_sample_files_parsable() {
     let mut parsed_count = 0;
     let mut failed_files = Vec::new();
 
-    for entry in fs::read_dir(&samples_dir).expect("Failed to read samples directory") {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            if path.extension().map(|e| e == "txt").unwrap_or(false) {
-                let filename = path.file_stem().unwrap_or_default().to_string_lossy();
-                let content = fs::read_to_string(&path).expect("Failed to read file");
+    for entry in fs::read_dir(&samples_dir).expect("Failed to read samples directory").flatten() {
+        let path = entry.path();
+        if path.extension().map(|e| e == "txt").unwrap_or(false) {
+            let filename = path.file_stem().unwrap_or_default().to_string_lossy();
+            let content = fs::read_to_string(&path).expect("Failed to read file");
 
-                // Choose the appropriate parser based on the filename
-                let issues = if filename.starts_with("mypy") {
-                    let parser = MypyParser::new();
-                    OutputParser::parse(&parser, &content)
-                } else if filename.starts_with("npm") {
-                    let parser = NpmParser::new();
-                    OutputParser::parse(&parser, &content)
-                } else if filename.starts_with("maven") {
-                    let parser = MavenParser::new();
-                    OutputParser::parse(&parser, &content)
+            // Choose the appropriate parser based on the filename
+            let issues = if filename.starts_with("mypy") {
+                let parser = MypyParser::new();
+                OutputParser::parse(&parser, &content)
+            } else if filename.starts_with("npm") {
+                let parser = NpmParser::new();
+                OutputParser::parse(&parser, &content)
+            } else if filename.starts_with("maven") {
+                let parser = MavenParser::new();
+                OutputParser::parse(&parser, &content)
+            } else {
+                continue;
+            };
+
+            // Verify parsing results
+            if !issues.is_empty() {
+                // Verify that at least one Issue is structured correctly
+                let valid = issues.iter().any(|i| {
+                    !i.message.is_empty()
+                        && !i.location.file_path.is_empty()
+                        && i.location.line_number.is_some()
+                });
+
+                if valid {
+                    parsed_count += 1;
+                    println!("✓ {}: parsed {} valid issues", filename, issues.len());
                 } else {
-                    continue;
-                };
-
-                // Verify parsing results
-                if !issues.is_empty() {
-                    // Verify that at least one Issue is structured correctly
-                    let valid = issues.iter().any(|i| {
-                        !i.message.is_empty()
-                            && !i.location.file_path.is_empty()
-                            && i.location.line_number.is_some()
-                    });
-
-                    if valid {
-                        parsed_count += 1;
-                        println!("✓ {}: parsed {} valid issues", filename, issues.len());
-                    } else {
-                        failed_files.push(filename.to_string());
-                    }
-                } else {
-                    // The null result may also be correct (if there are no errors)
-                    println!("! {}: no issues parsed (may be correct)", filename);
+                    failed_files.push(filename.to_string());
                 }
+            } else {
+                // The null result may also be correct (if there are no errors)
+                println!("! {}: no issues parsed (may be correct)", filename);
             }
         }
     }
