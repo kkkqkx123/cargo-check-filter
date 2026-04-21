@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 mod common;
-use common::{fixtures_dir, is_command_available, raw_output_dir, run_command, save_raw_output, generate_report};
+use common::{fixtures_dir, is_command_available, run_command, generate_report};
 
 /// Check if a command is available
 fn ensure_command(cmd: &str) -> Result<(), String> {
@@ -193,7 +193,7 @@ fn test_compiler_detection() {
     // Test GCC detection from version output
     if is_command_available("g++") {
         let version_output = Command::new("g++")
-            .args(&["--version"])
+            .args(["--version"])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
             .unwrap_or_default();
@@ -206,7 +206,7 @@ fn test_compiler_detection() {
     // Test Clang detection from version output
     if is_command_available("clang++") {
         let version_output = Command::new("clang++")
-            .args(&["--version"])
+            .args(["--version"])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
             .unwrap_or_default();
@@ -237,7 +237,7 @@ int main() {
 
     if is_command_available("g++") {
         let output = Command::new("g++")
-            .args(&["-Wall", "-c", test_cpp.to_str().unwrap(), "-o", "/dev/null"])
+            .args(["-Wall", "-c", test_cpp.to_str().unwrap(), "-o", "/dev/null"])
             .output();
 
         if let Ok(result) = output {

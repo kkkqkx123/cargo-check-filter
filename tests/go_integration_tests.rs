@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 
 mod common;
-use common::{fixtures_dir, is_command_available, raw_output_dir, run_command, save_raw_output, generate_report, generate_test_report};
+use common::{fixtures_dir, is_command_available, run_command, save_raw_output, generate_report, generate_test_report};
 
 fn go_project_path() -> PathBuf {
     fixtures_dir().join("go-project")
@@ -86,7 +86,7 @@ fn test_go_build_output() {
         if !line.starts_with('#') && line.contains(':') {
             let parts: Vec<&str> = line.splitn(4, ':').collect();
             if parts.len() >= 3 {
-                if let Ok(_) = parts[1].trim().parse::<u32>() {
+                if parts[1].trim().parse::<u32>().is_ok() {
                     println!("  Found issue: {}", line);
                 }
             }
@@ -137,8 +137,8 @@ fn test_go_vet_output() {
         if !line.starts_with('#') && line.contains(':') {
             let parts: Vec<&str> = line.splitn(5, ':').collect();
             if parts.len() >= 4 {
-                if let Ok(_) = parts[1].trim().parse::<u32>() {
-                    if let Ok(_) = parts[2].trim().parse::<u32>() {
+                if parts[1].trim().parse::<u32>().is_ok() {
+                    if parts[2].trim().parse::<u32>().is_ok() {
                         println!("  Found vet issue: {}", line);
                     }
                 }

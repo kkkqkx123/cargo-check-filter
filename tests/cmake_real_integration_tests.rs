@@ -1,18 +1,18 @@
 //! CMake Real Integration Tests
 //! Execute actual CMake commands with real compilers to verify parsing
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::fs;
 
 mod common;
 use common::{
-    fixtures_dir, raw_output_dir, save_raw_output, generate_report,
+    fixtures_dir, save_raw_output, generate_report,
     vs_env::{is_vs_dev_shell_available, run_with_vs_env, check_cmake, check_msvc, get_cmake_generator}
 };
 
 use analyzer::core::OutputParser;
 use analyzer::plugins::cpp::cmake::parser::CMakeParser;
-use analyzer::plugins::cpp::parser::{CppParser, CompilerType};
+use analyzer::plugins::cpp::parser::CppParser;
 
 /// Get the CMake test project path
 fn cmake_project_path() -> PathBuf {
@@ -20,7 +20,7 @@ fn cmake_project_path() -> PathBuf {
 }
 
 /// Setup build directory
-fn setup_build_dir(project_path: &PathBuf) -> PathBuf {
+fn setup_build_dir(project_path: &Path) -> PathBuf {
     let build_dir = project_path.join("build_test");
     // Clean and recreate
     if build_dir.exists() {

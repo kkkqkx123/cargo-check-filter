@@ -5,7 +5,7 @@ pub mod vs_env;
 
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// Get project root directory
@@ -19,6 +19,7 @@ pub fn data_dir() -> PathBuf {
 }
 
 /// Get raw command output directory (generated at runtime)
+#[allow(dead_code)]
 pub fn raw_output_dir() -> PathBuf {
     let dir = data_dir().join("raw_output");
     fs::create_dir_all(&dir).expect("Failed to create raw_output directory");

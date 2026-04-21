@@ -27,19 +27,19 @@ fn test_cmake_parser_basic() {
 
     // Check for CMake errors
     let cmake_errors: Vec<_> = issues.iter()
-        .filter(|i| i.code.as_ref().map_or(false, |c| c.contains("CMake Error")))
+        .filter(|i| i.code.as_ref().is_some_and(|c| c.contains("CMake Error")))
         .collect();
     assert!(!cmake_errors.is_empty(), "Should have CMake errors");
 
     // Check for CMake warnings
     let cmake_warnings: Vec<_> = issues.iter()
-        .filter(|i| i.code.as_ref().map_or(false, |c| c.contains("CMake Warning")))
+        .filter(|i| i.code.as_ref().is_some_and(|c| c.contains("CMake Warning")))
         .collect();
     assert!(!cmake_warnings.is_empty(), "Should have CMake warnings");
 
     // Check for compiler errors (parsed by CppParser)
     let compiler_errors: Vec<_> = issues.iter()
-        .filter(|i| matches!(i.level, IssueLevel::Error) && i.code.as_ref().map_or(true, |c| !c.contains("CMake")))
+        .filter(|i| matches!(i.level, IssueLevel::Error) && i.code.as_ref().is_none_or(|c| !c.contains("CMake")))
         .collect();
 
     println!("✓ CMake parser correctly parsed {} issues ({} CMake errors, {} CMake warnings, {} compiler issues)",

@@ -1,7 +1,6 @@
 //! Parser Integration Tests
 //! Verify that parsers can correctly parse actual command output
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 

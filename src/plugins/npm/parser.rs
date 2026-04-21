@@ -127,7 +127,7 @@ impl NpmParser {
                 let rest = parts[2..].join(":");
 
                 let rest_parts: Vec<&str> =
-                    rest.splitn(2, |c: char| c == '-' || c == ':').collect();
+                    rest.splitn(2, ['-', ':']).collect();
                 if rest_parts.len() >= 2 {
                     let col_num = rest_parts[0].trim().parse::<u32>().ok()?;
                     let level_msg = rest_parts[1].trim();
@@ -587,7 +587,8 @@ impl NpmParser {
                 let time = if time_str.contains("ms") {
                     time_str
                         .trim()
-                        .trim_end_matches("ms")
+                        .strip_suffix("ms")
+                        .unwrap_or("")
                         .trim()
                         .parse::<f64>()
                         .map(|t| t / 1000.0)
@@ -595,7 +596,8 @@ impl NpmParser {
                 } else if time_str.contains('s') {
                     time_str
                         .trim()
-                        .trim_end_matches('s')
+                        .strip_suffix('s')
+                        .unwrap_or("")
                         .trim()
                         .parse::<f64>()
                         .ok()
@@ -616,7 +618,7 @@ impl NpmParser {
         if parts.len() >= 2 {
             let last = parts.last().unwrap();
             if last.ends_with("ms") {
-                if let Ok(time) = last[..last.len() - 2].parse::<f64>() {
+                if let Ok(time) = last.strip_suffix("ms").unwrap_or("").parse::<f64>() {
                     let name = parts[..parts.len() - 1].join(" ");
                     return (name, Some(time / 1000.0));
                 }
@@ -636,8 +638,8 @@ impl NpmParser {
         let caps = re.captures(line)?;
 
         let passed: usize = caps.get(1)?.as_str().parse().ok()?;
-        let failed: usize = caps.get(2).map(|m| m.as_str().parse().ok()).flatten().unwrap_or(0);
-        let ignored: usize = caps.get(3).map(|m| m.as_str().parse().ok()).flatten().unwrap_or(0);
+        let failed: usize = caps.get(2).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
+        let ignored: usize = caps.get(3).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
 
         Some(TestSummary {
             total: passed + failed + ignored,

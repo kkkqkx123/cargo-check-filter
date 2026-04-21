@@ -2,50 +2,72 @@
 
 ## Summary
 
-- **Total Errors**: 0
-- **Total Warnings**: 57
-- **Total Issues**: 57
-- **Unique Error Patterns**: 0
-- **Unique Warning Patterns**: 42
-- **Files with Issues**: 20
+- **Total Errors**: 4
+- **Total Warnings**: 39
+- **Total Issues**: 43
+- **Unique Error Patterns**: 1
+- **Unique Warning Patterns**: 33
+- **Files with Issues**: 17
 
 ## Error Statistics
 
-**Total Errors**: 0
+**Total Errors**: 4
+
+### Error Type Breakdown
+
+- **error[E0425]**: 4 errors
+
+### Files with Errors (Top 10)
+
+- `tests\cpp_integration_tests.rs`: 4 errors
 
 ## Warning Statistics
 
-**Total Warnings**: 57
+**Total Warnings**: 39
 
 ### Warning Type Breakdown
 
-- **warning**: 57 warnings
+- **warning**: 39 warnings
 
 ### Files with Warnings (Top 10)
 
 - `tests\common\mod.rs`: 11 warnings
 - `tests\common\vs_env.rs`: 8 warnings
-- `src\plugins\npm\parser.rs`: 7 warnings
-- `tests\cpp_integration_tests.rs`: 4 warnings
-- `tests\go_integration_tests.rs`: 4 warnings
-- `tests\cmake_real_integration_tests.rs`: 3 warnings
-- `tests\cmake_parser_tests.rs`: 3 warnings
-- `tests\mypy_integration_tests.rs`: 2 warnings
-- `src\plugins\cargo\parser.rs`: 2 warnings
+- `tests\go_integration_tests.rs`: 3 warnings
+- `src\plugins\npm\parser.rs`: 3 warnings
 - `src\plugins\java\maven\parser.rs`: 2 warnings
+- `tests\mypy_integration_tests.rs`: 2 warnings
+- `src\core\types.rs`: 1 warnings
+- `src\core\reporter\json.rs`: 1 warnings
+- `tests\pytest_integration_tests.rs`: 1 warnings
+- `tests\parser_integration_tests.rs`: 1 warnings
+
+## Detailed Error Categorization
+
+### error[E0425]: cannot find function `save_raw_output` in this scope: not found in this scope
+
+**Total Occurrences**: 4  
+**Unique Files**: 1
+
+#### `tests\cpp_integration_tests.rs`: 4 occurrences
+
+- Line 48: cannot find function `save_raw_output` in this scope: not found in this scope
+- Line 103: cannot find function `save_raw_output` in this scope: not found in this scope
+- Line 158: cannot find function `save_raw_output` in this scope: not found in this scope
+- ... 1 more occurrences in this file
 
 ## Detailed Warning Categorization
 
-### warning: function `generate_test_report` is never used
+### warning: useless use of `format!`
 
-**Total Occurrences**: 57  
-**Unique Files**: 20
+**Total Occurrences**: 39  
+**Unique Files**: 16
 
 #### `tests\common\mod.rs`: 11 occurrences
 
-- Line 145: function `generate_test_report` is never used
-- Line 29: function `samples_dir` is never used
-- Line 54: function `read_sample` is never used
+- Line 8: unused import: `Path`
+- Line 42: function `fixtures_dir` is never used
+- Line 47: function `save_raw_output` is never used
 - ... 8 more occurrences in this file
 
 #### `tests\common\vs_env.rs`: 8 occurrences
@@ -55,38 +77,17 @@
 - Line 17: function `run_with_vs_env` is never used
 - ... 5 more occurrences in this file
 
-#### `src\plugins\npm\parser.rs`: 7 occurrences
+#### `tests\go_integration_tests.rs`: 3 occurrences
 
-- Line 130: this manual char comparison can be written more succinctly: help: consider using an array of `char`: `['-', ':']`
-- Line 619: stripping a suffix manually
-- Line 639: called `map(..).flatten()` on `Option`: help: try replacing `map` with `and_then` and remove the `.flatten()`: `and_then(|m| m.as_str().parse().ok())`
-- ... 4 more occurrences in this file
+- Line 88: this `if` statement can be collapsed
+- Line 139: this `if` statement can be collapsed
+- Line 140: this `if` statement can be collapsed
 
-#### `tests\go_integration_tests.rs`: 4 occurrences
+#### `src\plugins\npm\parser.rs`: 3 occurrences
 
-- Line 7: unused import: `raw_output_dir`
-- Line 89: redundant pattern matching, consider using `is_ok()`
-- Line 140: redundant pattern matching, consider using `is_ok()`
-- ... 1 more occurrences in this file
-
-#### `tests\cpp_integration_tests.rs`: 4 occurrences
-
-- Line 8: unused import: `raw_output_dir`
-- Line 196: the borrowed expression implements the required traits: help: change this to: `["--version"]`
-- Line 209: the borrowed expression implements the required traits: help: change this to: `["--version"]`
-- ... 1 more occurrences in this file
-
-#### `tests\cmake_parser_tests.rs`: 3 occurrences
-
-- Line 30: this `map_or` can be simplified
-- Line 36: this `map_or` can be simplified
-- Line 42: this `map_or` can be simplified
-
-#### `tests\cmake_real_integration_tests.rs`: 3 occurrences
-
-- Line 9: unused import: `raw_output_dir`
-- Line 15: unused import: `CompilerType`
-- Line 23: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do: help: change this to: `&Path`
+- Line 665: the loop variable `i` is only used to index `lines`
+- Line 669: compiling a regex in a loop
+- Line 676: compiling a regex in a loop
 
 #### `tests\mypy_integration_tests.rs`: 2 occurrences
 
@@ -96,51 +97,45 @@
 #### `src\plugins\java\maven\parser.rs`: 2 occurrences
 
 - Line 30: stripping a prefix manually
-- Line 77: length comparison to one: help: using `!is_empty` is clearer and more explicit: `!parts.is_empty()`
+- Line 77: length comparison to one
 
-#### `src\plugins\cargo\parser.rs`: 2 occurrences
+#### `src\core\reporter\json.rs`: 1 occurrences
 
-- Line 76: stripping a prefix manually
-- Line 255: stripping a suffix manually
-
-#### `tests\parser_integration_tests.rs`: 2 occurrences
-
-- Line 4: unused import: `std::collections::HashMap`
-- Line 400: unnecessary `if let` since only the `Ok` variant of the iterator element is used
-
-#### `tests\gradle_integration_tests.rs`: 1 occurrences
-
-- Line 22: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do: help: change this to: `&Path`
-
-#### `src\core\types.rs`: 1 occurrences
-
-- Line 125: use of `or_insert_with` to construct default value: help: try: `or_default()`
-
-#### `src\core\parser.rs`: 1 occurrences
-
-- Line 171: stripping a prefix manually
-
-#### `tests\pytest_integration_tests.rs`: 1 occurrences
-
-- Line 25: function `run_pytest` is never used
-
-#### `tests\cpp_parser_tests.rs`: 1 occurrences
-
-- Line 5: unused import: `std::path::PathBuf`
+- Line 71: useless use of `format!`
 
 #### `src\plugins\go\parser.rs`: 1 occurrences
 
 - Line 19: this `impl` can be derived
 
-#### `src\core\reporter\json.rs`: 1 occurrences
+#### `src\core\types.rs`: 1 occurrences
 
-- Line 71: useless use of `format!`: help: consider using `.to_string()`: `"      \"location\": {\n".to_string()`
+- Line 125: use of `or_insert_with` to construct default value
+
+#### `tests\cpp_parser_tests.rs`: 1 occurrences
+
+- Line 5: unused import: `std::path::PathBuf`
+
+#### `tests\parser_integration_tests.rs`: 1 occurrences
+
+- Line 399: unnecessary `if let` since only the `Ok` variant of the iterator element is used
 
 #### `src\plugins\go\analyzer.rs`: 1 occurrences
 
 - Line 28: wildcard pattern covers any other pattern as it will match anyway
 
+#### `src\core\parser.rs`: 1 occurrences
+
+- Line 171: stripping a prefix manually
+
+#### `tests\gradle_integration_tests.rs`: 1 occurrences
+
+- Line 22: writing `&PathBuf` instead of `&Path` involves a new object where a slice will do: help: change this to: `&Path`
+
 #### `tests\npm_integration_tests.rs`: 1 occurrences
 
 - Line 261: unnecessary `if let` since only the `Ok` variant of the iterator element is used
+
+#### `tests\pytest_integration_tests.rs`: 1 occurrences
+
+- Line 25: function `run_pytest` is never used
 

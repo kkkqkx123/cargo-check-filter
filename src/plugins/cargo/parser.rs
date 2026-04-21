@@ -72,8 +72,8 @@ impl CargoParser {
             let next_line = &lines[start_index + 1];
             let trimmed = next_line.trim();
 
-            if trimmed.starts_with("-->") {
-                let location_part = trimmed[3..].trim();
+            if let Some(location_part) = trimmed.strip_prefix("-->") {
+                let location_part = location_part.trim();
 
                 if let Some(location) = self.parse_cargo_location(location_part) {
                     let mut issue = Issue::new(level, desc.to_string(), location);
@@ -251,11 +251,7 @@ impl CargoParser {
 
         // Try to parse the execution time from extra
         let execution_time = extra.and_then(|e| {
-            if e.ends_with("s") {
-                e[..e.len() - 1].parse().ok()
-            } else {
-                None
-            }
+            e.strip_suffix('s').unwrap_or(e).parse().ok()
         });
 
         Some(TestCase {
