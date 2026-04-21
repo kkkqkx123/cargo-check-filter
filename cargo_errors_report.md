@@ -3,11 +3,11 @@
 ## Summary
 
 - **Total Errors**: 0
-- **Total Warnings**: 8
-- **Total Issues**: 8
+- **Total Warnings**: 3
+- **Total Issues**: 3
 - **Unique Error Patterns**: 0
-- **Unique Warning Patterns**: 8
-- **Files with Issues**: 1
+- **Unique Warning Patterns**: 3
+- **Files with Issues**: 2
 
 ## Error Statistics
 
@@ -15,27 +15,30 @@
 
 ## Warning Statistics
 
-**Total Warnings**: 8
+**Total Warnings**: 3
 
 ### Warning Type Breakdown
 
-- **warning**: 8 warnings
+- **warning**: 3 warnings
 
 ### Files with Warnings (Top 10)
 
-- `tests\common\mod.rs`: 8 warnings
+- `src\core\config.rs`: 2 warnings
+- `src\plugins\mod.rs`: 1 warnings
 
 ## Detailed Warning Categorization
 
-### warning: function `samples_dir` is never used
+### warning: function `create_registry` is never used
 
-**Total Occurrences**: 8  
-**Unique Files**: 1
+**Total Occurrences**: 3  
+**Unique Files**: 2
 
-#### `tests\common\mod.rs`: 8 occurrences
+#### `src\core\config.rs`: 2 occurrences
 
-- Line 33: function `samples_dir` is never used
-- Line 155: function `generate_test_report` is never used
-- Line 62: function `read_sample` is never used
-- ... 5 more occurrences in this file
+- Line 167: this `if` statement can be collapsed
+- Line 145: methods `is_command_enabled` and `get_available_commands` are never used
+
+#### `src\plugins\mod.rs`: 1 occurrences
+
+- Line 14: function `create_registry` is never used
 

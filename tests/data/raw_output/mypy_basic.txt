@@ -1,6 +1,7 @@
 setup.py:1:1: error: Library stubs not installed for "setuptools"  [import-untyped]
 setup.py:1:1: note: Hint: "python3 -m pip install types-setuptools"
 setup.py:1:1: note: (or run "mypy --install-types" to install all missing stub packages)
+setup.py:1:1: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
 src\main.py:14:18: error: Unsupported operand types for + ("int" and "str")  [operator]
 src\main.py:26:1: error: Function is missing a type annotation  [no-untyped-def]
 src\main.py:40:16: error: Argument 1 to "len" has incompatible type "Optional[str]"; expected "Sized"  [arg-type]
@@ -22,6 +23,7 @@ src\utils.py:96:20: error: Argument 1 to "append" of "list" has incompatible typ
 src\utils.py:100:14: error: Unsupported operand types for + ("None" and "int")  [operator]
 src\utils.py:100:14: note: Left operand is of type "Optional[int]"
 tests\test_utils.py:3:1: error: Cannot find implementation or library stub for module named "pytest"  [import-not-found]
+tests\test_utils.py:3:1: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
 tests\test_utils.py:7:1: error: Function is missing a return type annotation  [no-untyped-def]
 tests\test_utils.py:7:1: note: Use "-> None" if function does not return a value
 tests\test_utils.py:14:1: error: Function is missing a return type annotation  [no-untyped-def]
@@ -31,7 +33,6 @@ tests\test_utils.py:24:5: note: Use "-> None" if function does not return a valu
 tests\test_utils.py:28:5: error: Function is missing a return type annotation  [no-untyped-def]
 tests\test_utils.py:28:5: note: Use "-> None" if function does not return a value
 tests\test_example.py:3:1: error: Cannot find implementation or library stub for module named "pytest"  [import-not-found]
-tests\test_example.py:3:1: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
 tests\test_example.py:7:1: error: Function is missing a return type annotation  [no-untyped-def]
 tests\test_example.py:7:1: note: Use "-> None" if function does not return a value
 tests\test_example.py:13:1: error: Function is missing a return type annotation  [no-untyped-def]

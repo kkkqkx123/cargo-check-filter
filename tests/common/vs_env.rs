@@ -2,23 +2,21 @@
 //! Provides utilities to activate VS Dev Shell for MSVC compiler access
 
 #![cfg(test)]
+#![allow(dead_code)]
 
 use std::path::PathBuf;
 use std::process::Command;
 
 /// Path to the VS Dev Shell launcher script
-#[allow(dead_code)]
 const VS_DEV_SHELL_PATH: &str = r"D:\softwares\Visual Studio\Common7\Tools\Launch-VsDevShell.ps1";
 
 /// Check if VS Dev Shell is available
-#[allow(dead_code)]
 pub fn is_vs_dev_shell_available() -> bool {
     PathBuf::from(VS_DEV_SHELL_PATH).exists()
 }
 
 /// Run a command with VS environment activated
 /// This executes the command through PowerShell with VS Dev Shell pre-activated
-#[allow(dead_code)]
 pub fn run_with_vs_env(cmd: &str, args: &[&str], cwd: &PathBuf) -> Result<String, String> {
     if !is_vs_dev_shell_available() {
         return Err(format!(
@@ -63,7 +61,6 @@ pub fn run_with_vs_env(cmd: &str, args: &[&str], cwd: &PathBuf) -> Result<String
 }
 
 /// Check if CMake is available (with or without VS environment)
-#[allow(dead_code)]
 pub fn check_cmake() -> Result<PathBuf, String> {
     // First try to find cmake directly
     if let Some(path) = super::resolve_command("cmake") {
@@ -84,7 +81,6 @@ pub fn check_cmake() -> Result<PathBuf, String> {
 }
 
 /// Check if MSVC compiler is available
-#[allow(dead_code)]
 pub fn check_msvc() -> bool {
     // Check for cl.exe
     super::is_command_available("cl") || {
@@ -108,7 +104,6 @@ pub fn check_msvc() -> bool {
 }
 
 /// Get the appropriate CMake generator for the current environment
-#[allow(dead_code)]
 pub fn get_cmake_generator() -> &'static str {
     #[cfg(windows)]
     {

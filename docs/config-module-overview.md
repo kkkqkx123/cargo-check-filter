@@ -101,8 +101,6 @@ Config::load(project_path)
 
 #### 命令查询
 - `get_command_exec(tech_stack, command_name)` - 获取指定技术栈的命令执行字符串
-- `is_command_enabled(tech_stack, command_name)` - 检查命令是否启用
-- `get_available_commands(tech_stack)` - 获取技术栈的所有可用命令
 
 ### 5. 内置默认命令
 
@@ -199,15 +197,6 @@ let config = Config::load(Path::new(".")).unwrap_or_default();
 // 获取命令执行字符串
 let cmd = config.get_command_exec("cargo", "check");
 // 返回: Some("cargo check")
-
-// 检查命令是否启用
-if config.is_command_enabled("npm", "lint") {
-    // 执行 lint 命令
-}
-
-// 获取所有可用命令
-let commands = config.get_available_commands("cargo");
-// 返回: ["check", "clippy", "clippy-all", "check-test", "test"]
 ```
 
 ## 测试覆盖
@@ -218,8 +207,6 @@ let commands = config.get_available_commands("cargo");
 - `test_embedded_defaults` - 测试内置默认值加载
 - `test_merge` - 测试配置合并
 - `test_get_command_exec` - 测试命令获取
-- `test_is_command_enabled` - 测试命令启用检查
-- `test_get_available_commands` - 测试可用命令列表
 - `test_tech_stack_override` - 测试技术栈覆盖
 
 ### 集成测试（`tests/config_integration_tests.rs`）
@@ -227,8 +214,6 @@ let commands = config.get_available_commands("cargo");
 - `test_registry_with_config` - 测试带配置的插件注册
 - `test_registry_without_config` - 测试无配置的插件注册
 - `test_config_get_command_exec` - 测试命令执行获取
-- `test_config_is_command_enabled` - 测试命令启用状态
-- `test_config_get_available_commands` - 测试可用命令
 - `test_config_merge` - 测试配置合并
 - `test_tech_stack_override` - 测试技术栈覆盖
 

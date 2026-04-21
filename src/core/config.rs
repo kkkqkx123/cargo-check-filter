@@ -141,48 +141,6 @@ impl Config {
         None
     }
 
-    /// Check if a command is enabled for the given tech stack
-    pub fn is_command_enabled(&self, tech_stack: &str, command_name: &str) -> bool {
-        // First check tech_stack specific command
-        if let Some(stack_config) = self.tech_stacks.get(tech_stack) {
-            if let Some(cmd_config) = stack_config.commands.get(command_name) {
-                return cmd_config.enabled;
-            }
-        }
-
-        // Then check global command
-        if let Some(cmd_config) = self.commands.get(command_name) {
-            return cmd_config.enabled;
-        }
-
-        false
-    }
-
-    /// Get all available command names for a tech stack
-    pub fn get_available_commands(&self, tech_stack: &str) -> Vec<String> {
-        let mut commands = std::collections::HashSet::new();
-
-        // Add global commands that apply to this tech stack
-        for (name, cmd_config) in &self.commands {
-            if cmd_config.enabled {
-                if cmd_config.tech_stacks.contains(&tech_stack.to_string()) {
-                    commands.insert(name.clone());
-                }
-            }
-        }
-
-        // Add tech_stack specific commands
-        if let Some(stack_config) = self.tech_stacks.get(tech_stack) {
-            for (name, cmd_config) in &stack_config.commands {
-                if cmd_config.enabled {
-                    commands.insert(name.clone());
-                }
-            }
-        }
-
-        commands.into_iter().collect()
-    }
-
     /// Built-in defaults
     fn embedded_defaults() -> Self {
         let mut commands = HashMap::new();
@@ -445,28 +403,6 @@ mod tests {
         // Test non-existent command
         let cmd = config.get_command_exec("cargo", "nonexistent");
         assert_eq!(cmd, None);
-    }
-
-    #[test]
-    fn test_is_command_enabled() {
-        let config = Config::embedded_defaults();
-
-        assert!(config.is_command_enabled("cargo", "check"));
-        assert!(config.is_command_enabled("npm", "lint"));
-    }
-
-    #[test]
-    fn test_get_available_commands() {
-        let config = Config::embedded_defaults();
-
-        let cargo_commands = config.get_available_commands("cargo");
-        assert!(cargo_commands.contains(&"check".to_string()));
-        assert!(cargo_commands.contains(&"clippy".to_string()));
-        assert!(cargo_commands.contains(&"test".to_string()));
-
-        let npm_commands = config.get_available_commands("npm");
-        assert!(npm_commands.contains(&"lint".to_string()));
-        assert!(npm_commands.contains(&"type-check".to_string()));
     }
 
     #[test]

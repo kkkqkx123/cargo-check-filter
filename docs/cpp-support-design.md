@@ -696,16 +696,23 @@ pub mod gcc;
 pub mod clang;
 pub mod msvc;
 
-pub fn create_registry() -> PluginRegistry {
+pub fn create_registry_with_config(config: Option<Config>) -> PluginRegistry {
     let mut registry = PluginRegistry::new();
 
     // 现有插件...
 
     // 注册 C++ 插件（无优先级顺序，完全由用户指定）
-    registry.register(Box::new(cmake::CMakeAnalyzer::new()));
-    registry.register(Box::new(gcc::GccAnalyzer::new()));
-    registry.register(Box::new(clang::ClangAnalyzer::new()));
-    registry.register(Box::new(msvc::MsvcAnalyzer::new()));
+    if let Some(ref cfg) = config {
+        registry.register(Box::new(cmake::CMakeAnalyzer::new().with_config(cfg.clone())));
+        registry.register(Box::new(gcc::GccAnalyzer::new().with_config(cfg.clone())));
+        registry.register(Box::new(clang::ClangAnalyzer::new().with_config(cfg.clone())));
+        registry.register(Box::new(msvc::MsvcAnalyzer::new().with_config(cfg.clone())));
+    } else {
+        registry.register(Box::new(cmake::CMakeAnalyzer::new()));
+        registry.register(Box::new(gcc::GccAnalyzer::new()));
+        registry.register(Box::new(clang::ClangAnalyzer::new()));
+        registry.register(Box::new(msvc::MsvcAnalyzer::new()));
+    }
 
     registry
 }

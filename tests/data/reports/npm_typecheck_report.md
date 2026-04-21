@@ -35,4 +35,4 @@ View raw command output: [samples/npm_typecheck_sample.txt](samples/npm_typechec
 
 ---
 
-*Report generated at: 2026-04-21 20:15:20*
+*Report generated at: 2026-04-21 21:58:19*

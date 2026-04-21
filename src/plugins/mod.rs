@@ -10,11 +10,6 @@ pub mod python;
 
 use crate::core::{Config, PluginRegistry};
 
-/// Create and configure the plug-in registry
-pub fn create_registry() -> PluginRegistry {
-    create_registry_with_config(None)
-}
-
 /// Create and configure the plug-in registry with optional config
 pub fn create_registry_with_config(config: Option<Config>) -> PluginRegistry {
     let mut registry = PluginRegistry::new();

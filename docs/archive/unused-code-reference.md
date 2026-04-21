@@ -257,7 +257,7 @@ impl PluginRegistry {
 **使用场景**：
 ```rust
 // 自动检测项目类型
-let registry = create_registry();
+let registry = create_registry_with_config(None);
 let applicable = registry.detect(Path::new("."));
 for analyzer in applicable {
     println!("Detected: {}", analyzer.name());
@@ -343,7 +343,7 @@ if args.detect {
    - CargoParser 只被内部使用，不需要公开导出
 
 2. **`main.rs`**：`use core::PluginRegistry`
-   - 通过 `plugins::create_registry()` 间接使用
+   - 通过 `plugins::create_registry_with_config()` 间接使用
 
 3. **`plugins/mod.rs`**：`use crate::core::BuildAnalyzer`
    - 只在类型签名中使用，实际代码未直接使用
@@ -361,3 +361,4 @@ if args.detect {
 | 已删除 | 3 | 多余导入 |
 
 这些未使用的代码是架构设计的一部分，为后续扩展提供了基础。在实际添加新功能时，这些代码会被自然使用。
+

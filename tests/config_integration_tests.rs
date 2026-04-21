@@ -55,30 +55,6 @@ fn test_config_get_command_exec() {
 }
 
 #[test]
-fn test_config_is_command_enabled() {
-    let config = Config::load(std::path::Path::new(".")).unwrap();
-
-    assert!(config.is_command_enabled("cargo", "check"));
-    assert!(config.is_command_enabled("npm", "lint"));
-    assert!(!config.is_command_enabled("cargo", "nonexistent"));
-}
-
-#[test]
-fn test_config_get_available_commands() {
-    let config = Config::load(std::path::Path::new(".")).unwrap();
-
-    let cargo_commands = config.get_available_commands("cargo");
-    assert!(!cargo_commands.is_empty());
-    assert!(cargo_commands.contains(&"check".to_string()));
-    assert!(cargo_commands.contains(&"clippy".to_string()));
-
-    let npm_commands = config.get_available_commands("npm");
-    assert!(!npm_commands.is_empty());
-    assert!(npm_commands.contains(&"lint".to_string()));
-    assert!(npm_commands.contains(&"type-check".to_string()));
-}
-
-#[test]
 fn test_config_merge() {
     let mut base = Config::load(std::path::Path::new(".")).unwrap();
 
