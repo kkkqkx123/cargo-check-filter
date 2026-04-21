@@ -54,7 +54,6 @@ E        +  where 5.0 = divide(10, 2)
 
 tests/test_example.py:35: AssertionError
 
-FAILED tests/test_example.py::test_divide_failure - AssertionError: assert 5.0 == 6
 ============= 8 passed, 1 skipped, 1 xfailed, 1 failed in 0.15s =============
 ```
 
@@ -64,4 +63,4 @@ View raw command output: [raw_output/pytest.txt](raw_output/pytest.txt)
 
 ---
 
-*Report generated at: 2026-04-19 15:10:44*
+*Report generated at: 2026-04-19 20:30:32*

@@ -2,7 +2,7 @@
 //! Parses CMake configuration and build output
 
 use regex::Regex;
-use crate::core::{Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
+use crate::core::{Issue, IssueLevel, Location, OutputParser};
 use crate::plugins::cpp::parser::{CppParser, CompilerType};
 
 pub struct CMakeParser {
@@ -157,33 +157,4 @@ impl OutputParser for CMakeParser {
     }
 }
 
-impl StreamingOutputParser for CMakeParser {
-    fn is_issue_start(&self, line: &str) -> bool {
-        // CMake errors
-        if line.starts_with("CMake Error") || line.starts_with("CMake Warning") {
-            return true;
-        }
 
-        // Compiler errors - try generic detection
-        line.contains(": error:")
-            || line.contains(": warning:")
-            || line.contains("): error")
-            || line.contains("): warning")
-            || line.contains("): fatal error")
-    }
-
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
-        if start_index >= lines.len() {
-            return (None, start_index);
-        }
-
-        let line = &lines[start_index];
-        let issues = <Self as OutputParser>::parse(self, line);
-
-        if let Some(issue) = issues.into_iter().next() {
-            (Some(issue), start_index + 1)
-        } else {
-            (None, start_index + 1)
-        }
-    }
-}

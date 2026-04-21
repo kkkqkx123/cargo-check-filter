@@ -2,7 +2,7 @@
 //! Parsing the output of go build, go vet, go test, golangci-lint
 
 use crate::core::{
-    Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, StreamingOutputParser, TestCase,
+    Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, TestCase,
     TestOutputParser, TestStatus, TestSummary,
 };
 
@@ -426,60 +426,7 @@ impl OutputParser for GoParser {
     }
 }
 
-impl StreamingOutputParser for GoParser {
-    fn is_issue_start(&self, line: &str) -> bool {
-        let trimmed = line.trim();
 
-        // Skip package lines and empty lines
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            return false;
-        }
-
-        // Check for file:line:col: pattern
-        let parts: Vec<&str> = trimmed.split(':').collect();
-        if parts.len() >= 3 {
-            // Try to parse line and column numbers
-            if parts[1].trim().parse::<u32>().is_ok() {
-                return true;
-            }
-        }
-
-        false
-    }
-
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
-        if start_index >= lines.len() {
-            return (None, start_index);
-        }
-
-        let line = &lines[start_index];
-
-        // Auto-detect command type if not set
-        let command_type = if self.command_type == GoCommandType::Unknown {
-            self.detect_command_type(line)
-        } else {
-            self.command_type
-        };
-
-        let issue = match command_type {
-            GoCommandType::Build => self.parse_go_build_error(line),
-            GoCommandType::Vet => self.parse_go_vet_error(line),
-            GoCommandType::GolangciLint => self.parse_golangci_lint_error(line),
-            _ => {
-                // Try all parsers
-                if let Some(issue) = self.parse_golangci_lint_error(line) {
-                    Some(issue)
-                } else if let Some(issue) = self.parse_go_vet_error(line) {
-                    Some(issue)
-                } else {
-                    self.parse_go_build_error(line)
-                }
-            }
-        };
-
-        (issue, start_index + 1)
-    }
-}
 
 impl TestOutputParser for GoParser {
     fn parse_test_output(&self, output: &str) -> ParsedTestOutput {
@@ -602,17 +549,6 @@ ok  	example.com/myproject	0.061s
         assert_eq!(summary.passed, 2);
         assert_eq!(summary.failed, 1);
         assert_eq!(summary.ignored, 1);
-    }
-
-    #[test]
-    fn test_is_issue_start() {
-        let parser = GoParser::new();
-
-        assert!(parser.is_issue_start("./main.go:10:5: error"));
-        assert!(parser.is_issue_start("main.go:20:3: warning"));
-        assert!(!parser.is_issue_start("# command-line-arguments"));
-        assert!(!parser.is_issue_start(""));
-        assert!(!parser.is_issue_start("some random text"));
     }
 
     #[test]

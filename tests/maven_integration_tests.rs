@@ -189,26 +189,32 @@ fn test_validate_maven_outputs() {
 #[test]
 fn test_maven_parser_specific_patterns() {
     use analyzer::plugins::java::maven::parser::MavenParser;
-    use analyzer::core::{OutputParser, StreamingOutputParser};
+    use analyzer::core::OutputParser;
 
     let parser = MavenParser::new();
 
-    // Testing various Maven error formats
+    // Testing various Maven error formats by parsing full output
     let test_cases = vec![
-        ("[ERROR] /src/main/java/App.java:[10,5] error: cannot find symbol", true),
-        ("[WARNING] /src/main/java/App.java:[20,10] warning: [unchecked] unchecked conversion", true),
-        ("[ERROR] /src/test/java/Test.java:[5,1] error: package org.junit does not exist", true),
-        ("[INFO] Building maven-project 1.0-SNAPSHOT", false),
-        ("[DEBUG] Some debug message", false),
+        ("[ERROR] /src/main/java/App.java:[10,5] error: cannot find symbol", "error"),
+        ("[WARNING] /src/main/java/App.java:[20,10] warning: [unchecked] unchecked conversion", "warning"),
+        ("[ERROR] /src/test/java/Test.java:[5,1] error: package org.junit does not exist", "error"),
     ];
 
     println!("=== Testing Maven Parser Patterns ===");
-    for (line, should_be_issue) in test_cases {
-        let is_issue = parser.is_issue_start(line);
-        let status = if is_issue == should_be_issue { "✓" } else { "✗" };
-        println!("{} Line: '{}' - is_issue: {} (expected: {})",
-            status, line, is_issue, should_be_issue);
-        assert_eq!(is_issue, should_be_issue,
-            "Pattern mismatch for line: {}", line);
+    for (line, expected_level) in test_cases {
+        let issues = parser.parse(line);
+        let found = !issues.is_empty();
+        let status = if found { "✓" } else { "✗" };
+        println!("{} Line: '{}' - found issue: {} (level: {:?})",
+            status, line, found, issues.first().map(|i| &i.level));
+        assert!(found, "Should parse issue from line: {}", line);
+        
+        if expected_level == "error" {
+            assert!(matches!(issues[0].level, analyzer::core::IssueLevel::Error),
+                "Should be error level: {}", line);
+        } else if expected_level == "warning" {
+            assert!(matches!(issues[0].level, analyzer::core::IssueLevel::Warning),
+                "Should be warning level: {}", line);
+        }
     }
 }

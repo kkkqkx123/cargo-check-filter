@@ -6,7 +6,7 @@ use std::fs;
 mod common;
 use common::samples_dir;
 
-use analyzer::core::{IssueLevel, OutputParser, StreamingOutputParser};
+use analyzer::core::{IssueLevel, OutputParser};
 use analyzer::plugins::cpp::cmake::parser::CMakeParser;
 
 /// Read sample file content
@@ -122,28 +122,7 @@ src/utils.cpp:25:12: warning: unused variable 'tmp' [-Wunused-variable]
     println!("✓ CMake with compiler output parsing works correctly");
 }
 
-#[test]
-fn test_cmake_is_issue_start() {
-    let parser = CMakeParser::new();
 
-    // CMake errors and warnings
-    assert!(parser.is_issue_start("CMake Error at CMakeLists.txt:10:"));
-    assert!(parser.is_issue_start("CMake Warning at cmake/module.cmake:25:"));
-
-    // Compiler issues (GCC/Clang style)
-    assert!(parser.is_issue_start("src/main.cpp:10:5: error:"));
-    assert!(parser.is_issue_start("src/main.cpp:10:5: warning:"));
-
-    // Compiler issues (MSVC style)
-    assert!(parser.is_issue_start("src\\main.cpp(10,5): error C2065:"));
-    assert!(parser.is_issue_start("src\\main.cpp(10,5): warning C4101:"));
-
-    // Not issues
-    assert!(!parser.is_issue_start("[ 50%] Building CXX object"));
-    assert!(!parser.is_issue_start("   10 |     int x = 0;"));
-
-    println!("✓ CMake is_issue_start detection works correctly");
-}
 
 #[test]
 fn test_empty_output() {

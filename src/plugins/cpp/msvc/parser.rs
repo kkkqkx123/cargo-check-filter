@@ -1,7 +1,7 @@
 //! MSVC Output Parser
 //! Parses Microsoft Visual C++ compiler output
 
-use crate::core::{Issue, OutputParser, StreamingOutputParser};
+use crate::core::{Issue, OutputParser};
 use crate::plugins::cpp::parser::CppParser;
 
 pub struct MsvcParser {
@@ -29,12 +29,4 @@ impl OutputParser for MsvcParser {
     }
 }
 
-impl StreamingOutputParser for MsvcParser {
-    fn is_issue_start(&self, line: &str) -> bool {
-        self.inner.is_issue_start(line)
-    }
 
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
-        self.inner.parse_issue(lines, start_index)
-    }
-}

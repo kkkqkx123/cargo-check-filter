@@ -2,7 +2,7 @@
 //! Parsing the output of npm/pnpm/yarn lint and type-check
 
 use crate::core::{
-    BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, StreamingOutputParser,
+    BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput,
     TestCase, TestOutputParser, TestStatus, TestSummary,
 };
 
@@ -324,6 +324,7 @@ impl Default for NpmParser {
 }
 
 impl OutputParser for NpmParser {
+    // Custom parse implementation for NPM output
     fn parse(&self, output: &str) -> Vec<Issue> {
         let lines: Vec<String> = output.lines().map(|s| s.to_string()).collect();
         let mut issues = Vec::new();
@@ -378,68 +379,6 @@ impl OutputParser for NpmParser {
         }
 
         issues
-    }
-}
-
-impl StreamingOutputParser for NpmParser {
-    fn is_issue_start(&self, line: &str) -> bool {
-        let trimmed = line.trim();
-
-        // ESLint format: starts with a number and is formatted as "line:col level message"
-        if trimmed.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
-            if trimmed.contains(':') {
-                let parts: Vec<&str> = trimmed.split(':').collect();
-                if parts.len() >= 2 {
-                    let after_first = parts[1].trim();
-                    return after_first
-                        .chars()
-                        .next()
-                        .map(|c| c.is_ascii_digit())
-                        .unwrap_or(false);
-                }
-            }
-        }
-
-        // TypeScript format: file path followed by parentheses
-        if trimmed.contains(".ts(")
-            || trimmed.contains(".tsx(")
-            || trimmed.contains(".js(")
-            || trimmed.contains(".jsx(")
-        {
-            return true;
-        }
-
-        // NPM Error Format
-        if trimmed.starts_with("npm error") {
-            return true;
-        }
-
-        // Common Error Format
-        trimmed.to_uppercase().starts_with("ERROR")
-    }
-
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
-        if start_index >= lines.len() {
-            return (None, start_index);
-        }
-
-        let line = &lines[start_index];
-
-        if let Some(issue) = self.parse_typescript_format(line) {
-            return (Some(issue), start_index + 1);
-        }
-
-        // Parsing NPM Errors
-        if let Some(issue) = self.parse_npm_error(line) {
-            return (Some(issue), start_index + 1);
-        }
-
-        // Resolving missing NPM dependencies
-        if let Some(issue) = self.parse_npm_missing_dep(line) {
-            return (Some(issue), start_index + 1);
-        }
-
-        self.parse_eslint_format(lines, start_index)
     }
 }
 

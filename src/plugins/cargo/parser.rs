@@ -2,7 +2,7 @@
 //Parsing the output of cargo check/clippy/test Parsing output from cargo check/clippy/test
 
 use crate::core::{
-    BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput, StreamingOutputParser,
+    BaseParser, Issue, IssueLevel, Location, OutputParser, ParsedTestOutput,
     TestCase, TestOutputParser, TestStatus, TestSummary,
 };
 
@@ -127,6 +127,7 @@ impl Default for CargoParser {
 }
 
 impl OutputParser for CargoParser {
+    // Custom parse implementation for Cargo output
     fn parse(&self, output: &str) -> Vec<Issue> {
         let lines: Vec<String> = output.lines().map(|s| s.to_string()).collect();
         let mut issues = Vec::new();
@@ -147,19 +148,6 @@ impl OutputParser for CargoParser {
         }
 
         issues
-    }
-}
-
-impl StreamingOutputParser for CargoParser {
-    fn is_issue_start(&self, line: &str) -> bool {
-        line.starts_with("error:")
-            || line.starts_with("warning:")
-            || (line.contains(": error") && line.contains(":"))
-            || (line.contains(": warning") && line.contains(":"))
-    }
-
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
-        self.parse_multiline_error(lines, start_index)
     }
 }
 

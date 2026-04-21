@@ -1,7 +1,7 @@
 //! Gradle Output Parser
 //! Parsing the output of Gradle compile/test
 
-use crate::core::{Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
+use crate::core::{Issue, IssueLevel, Location, OutputParser};
 
 pub struct GradleParser;
 
@@ -159,33 +159,7 @@ impl OutputParser for GradleParser {
     }
 }
 
-impl StreamingOutputParser for GradleParser {
-    fn is_issue_start(&self, line: &str) -> bool {
-        let trimmed = line.trim();
 
-        // Check for file location pattern
-        if let Some(colon_pos) = trimmed.find(':') {
-            let after_first_colon = &trimmed[colon_pos + 1..];
-            if let Some(second_colon_pos) = after_first_colon.find(':') {
-                let potential_line_num = &after_first_colon[..second_colon_pos];
-                if potential_line_num.trim().parse::<u32>().is_ok() {
-                    let after_second_colon = &after_first_colon[second_colon_pos + 1..];
-                    return after_second_colon.to_lowercase().contains("error")
-                        || after_second_colon.to_lowercase().contains("warning");
-                }
-            }
-        }
-
-        // Check for ERROR prefix
-        trimmed.starts_with("ERROR:")
-            || trimmed.starts_with("error:")
-            || trimmed.contains("FAILED")
-    }
-
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
-        self.parse_multiline_issue(lines, start_index)
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -230,13 +204,4 @@ mod tests {
         assert_eq!(issue.location.line_number, Some(15));
     }
 
-    #[test]
-    fn test_is_issue_start() {
-        let parser = GradleParser::new();
-
-        assert!(parser.is_issue_start("/path/File.java:10: error: message"));
-        assert!(parser.is_issue_start("/path/File.java:20: warning: message"));
-        assert!(parser.is_issue_start("ERROR: something failed"));
-        assert!(!parser.is_issue_start("Some normal output"));
-    }
 }

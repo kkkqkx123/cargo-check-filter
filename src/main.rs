@@ -190,8 +190,8 @@ fn run_analysis(
     let _parser = analyzer.parser();
     println!("Using parser: {}", std::any::type_name_of_val(_parser));
 
-    // The StreamingOutputParser trait is implemented by various parsers
-    // and provides streaming/line-by-line parsing capabilities
+    // The OutputParser trait is implemented by various parsers
+    // and provides line-by-line parsing capabilities via template method pattern
 
     match analyzer.analyze(options) {
         Ok(result) => {

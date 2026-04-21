@@ -7,7 +7,7 @@ use std::path::PathBuf;
 mod common;
 use common::samples_dir;
 
-use analyzer::core::{IssueLevel, OutputParser, StreamingOutputParser};
+use analyzer::core::{IssueLevel, OutputParser};
 use analyzer::plugins::cpp::parser::{CppParser, CompilerType};
 
 /// Read sample file content
@@ -151,25 +151,7 @@ fn test_compiler_type_detection() {
     println!("✓ Compiler type detection works correctly");
 }
 
-#[test]
-fn test_is_issue_start() {
-    let gcc_parser = CppParser::with_gcc();
-    let msvc_parser = CppParser::with_msvc();
 
-    // GCC/Clang style
-    assert!(gcc_parser.is_issue_start("file.cpp:10:5: error: something"));
-    assert!(gcc_parser.is_issue_start("file.cpp:10:5: warning: something"));
-    assert!(gcc_parser.is_issue_start("file.cpp:10:5: note: something"));
-    assert!(!gcc_parser.is_issue_start("   10 |     int x = 0;"));
-
-    // MSVC style
-    assert!(msvc_parser.is_issue_start("file.cpp(10,5): error C2065: something"));
-    assert!(msvc_parser.is_issue_start("file.cpp(10,5): warning C4101: something"));
-    assert!(msvc_parser.is_issue_start("file.cpp(10): fatal error C1083: something"));
-    assert!(!msvc_parser.is_issue_start("   10 |     int x = 0;"));
-
-    println!("✓ Issue start detection works correctly");
-}
 
 #[test]
 fn test_gcc_parser_with_error_code() {

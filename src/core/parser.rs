@@ -5,27 +5,17 @@ use super::types::{Issue, IssueLevel, Location};
 
 /// Output parser trait
 /// Implement this trait to support the new technology stack output format
+///
+/// This trait uses the template method pattern - it provides a default
+/// implementation of `parse()` that calls the abstract methods
+/// `is_issue_start()` and `parse_issue()`. Implementors can override
+/// `parse()` for completely custom behavior, or just implement the
+/// abstract methods for standard streaming parsing.
 pub trait OutputParser: Send + Sync {
     /// Parses command output to extract all problem information
-    fn parse(&self, output: &str) -> Vec<Issue>;
-}
-
-/// Streaming output parser trait
-/// For parsers that support incremental/line-by-line parsing
-/// Provides a default implementation of `parse()` using streaming methods
-///
-/// Note: This trait is designed as an "extension trait" - it enhances OutputParser
-/// with a default implementation. The trait itself may appear unused in code,
-/// but its methods (is_issue_start, parse_issue) are used by implementing parsers.
-pub trait StreamingOutputParser: OutputParser {
-    /// Check if a row is the starting row of the problem
-    fn is_issue_start(&self, line: &str) -> bool;
-
-    /// Parsing one-line question information
-    /// Returns the parsed Issue and the number of lines of text consumed.
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize);
-
-    /// Default implementation: use streaming methods to parse entire output
+    ///
+    /// Default implementation uses streaming parsing via `is_issue_start`
+    /// and `parse_issue`. Override this method for custom parsing logic.
     fn parse(&self, output: &str) -> Vec<Issue> {
         let lines: Vec<String> = output.lines().map(String::from).collect();
         let mut issues = Vec::new();
@@ -39,11 +29,40 @@ pub trait StreamingOutputParser: OutputParser {
                 }
                 i += consumed;
             } else {
+                // Hook method: allow subclasses to handle single lines
+                if let Some(issue) = self.parse_single_line(&lines[i]) {
+                    issues.push(issue);
+                }
                 i += 1;
             }
         }
 
         issues
+    }
+
+    /// Check if a row is the starting row of the problem
+    ///
+    /// Required for the default `parse()` implementation.
+    /// Return false if using a custom `parse()` implementation.
+    fn is_issue_start(&self, _line: &str) -> bool {
+        false
+    }
+
+    /// Parsing one-line question information
+    /// Returns the parsed Issue and the number of lines of text consumed.
+    ///
+    /// Required for the default `parse()` implementation.
+    fn parse_issue(&self, _lines: &[String], _start_index: usize) -> (Option<Issue>, usize) {
+        (None, 1)
+    }
+
+    /// Hook method for parsing a single line
+    ///
+    /// Called by the default `parse()` implementation for lines that
+    /// are not identified as issue starts. Override to add single-line
+    /// parsing logic. Default implementation returns None.
+    fn parse_single_line(&self, _line: &str) -> Option<Issue> {
+        None
     }
 }
 

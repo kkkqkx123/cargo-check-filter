@@ -1,7 +1,7 @@
 //! Maven Output Parser
 //Parsing the output of Maven compile/test Parsing the output of Maven compile/test
 
-use crate::core::{Issue, IssueLevel, Location, OutputParser, StreamingOutputParser};
+use crate::core::{Issue, IssueLevel, Location, OutputParser};
 
 pub struct MavenParser;
 
@@ -169,16 +169,7 @@ impl OutputParser for MavenParser {
     }
 }
 
-impl StreamingOutputParser for MavenParser {
-    fn is_issue_start(&self, line: &str) -> bool {
-        let trimmed = line.trim();
-        trimmed.starts_with("[ERROR]") || trimmed.starts_with("[WARNING]")
-    }
 
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
-        self.parse_multiline_issue(lines, start_index)
-    }
-}
 
 #[cfg(test)]
 mod tests {

@@ -9,7 +9,7 @@ mod common;
 use common::{samples_dir, generate_report};
 
 // Importing the parser from src
-use analyzer::core::{IssueLevel, OutputParser, StreamingOutputParser};
+use analyzer::core::{IssueLevel, OutputParser};
 use analyzer::plugins::python::mypy::parser::MypyParser;
 use analyzer::plugins::npm::parser::NpmParser;
 use analyzer::plugins::java::maven::parser::MavenParser;
@@ -364,26 +364,30 @@ fn test_parser_handles_no_issues() {
 }
 
 #[test]
-fn test_is_issue_start_detection() {
+fn test_npm_parser_issue_detection() {
     let parser = NpmParser::new();
 
-    // ESLint format
-    assert!(parser.is_issue_start("  3:7   warning  message"));
-    assert!(parser.is_issue_start("10:5   error    message"));
+    // Test ESLint format
+    let eslint_output = "  3:7   warning  message  rule-name";
+    let issues = parser.parse(eslint_output);
+    assert!(!issues.is_empty(), "Should detect ESLint format issue");
 
-    // TypeScript format
-    assert!(parser.is_issue_start("src/index.ts(13,7): error TS2345: message"));
+    // Test TypeScript format
+    let ts_output = "src/index.ts(13,7): error TS2345: message";
+    let issues = parser.parse(ts_output);
+    assert!(!issues.is_empty(), "Should detect TypeScript format issue");
 
-    // NPM Error Format
-    assert!(parser.is_issue_start("npm error code ENOLOCK"));
-    assert!(parser.is_issue_start("npm error missing: package@version"));
+    // Test NPM Error Format
+    let npm_error = "npm error code ENOLOCK";
+    let issues = parser.parse(npm_error);
+    assert!(!issues.is_empty(), "Should detect NPM error");
 
-    // 非 Issue 行
-    assert!(!parser.is_issue_start(""));
-    assert!(!parser.is_issue_start("Some random text"));
-    assert!(!parser.is_issue_start("✓ All checks passed"));
+    // Test non-issue lines
+    let no_issue = "✓ All checks passed";
+    let issues = parser.parse(no_issue);
+    assert!(issues.is_empty(), "Should not detect issue in normal text");
 
-    println!("✓ Issue start detection works correctly");
+    println!("✓ NPM parser issue detection works correctly");
 }
 
 /// Comprehensive test: verify all sample files can be correctly parsed

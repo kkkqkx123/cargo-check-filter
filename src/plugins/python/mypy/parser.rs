@@ -1,7 +1,7 @@
 //! Mypy Output Parser
 //! Parsing the output of mypy
 
-use crate::core::{BaseParser, Issue, OutputParser, StreamingOutputParser};
+use crate::core::{BaseParser, Issue, OutputParser};
 
 pub struct MypyParser {
     base: BaseParser,
@@ -34,6 +34,7 @@ impl Default for MypyParser {
 }
 
 impl OutputParser for MypyParser {
+    // Custom parse implementation for Mypy output
     fn parse(&self, output: &str) -> Vec<Issue> {
         let lines: Vec<String> = output.lines().map(|s| s.to_string()).collect();
         let mut issues = Vec::new();
@@ -45,28 +46,6 @@ impl OutputParser for MypyParser {
         }
 
         issues
-    }
-}
-
-impl StreamingOutputParser for MypyParser {
-    fn is_issue_start(&self, line: &str) -> bool {
-        let parts: Vec<&str> = line.split(':').collect();
-        if parts.len() >= 4 {
-            let level_part = parts[parts.len() - 2].trim().to_lowercase();
-            level_part == "error" || level_part == "warning" || level_part == "note"
-        } else {
-            false
-        }
-    }
-
-    fn parse_issue(&self, lines: &[String], start_index: usize) -> (Option<Issue>, usize) {
-        if start_index >= lines.len() {
-            return (None, start_index);
-        }
-
-        let line = &lines[start_index];
-        let issue = self.parse_single_line(line);
-        (issue, start_index + 1)
     }
 }
 
