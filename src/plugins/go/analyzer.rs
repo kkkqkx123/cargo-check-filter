@@ -2,7 +2,7 @@
 //! Run go build, go vet, go test, golangci-lint and parse the output
 
 use crate::core::{
-    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
+    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, Config, OutputParser,
     ParsedTestOutput, SubCommand, TechStack, TestAnalyzer, TestAnalyzerError, TestOptions,
     TestOutputParser,
 };
@@ -11,17 +11,34 @@ use super::parser::GoParser;
 
 pub struct GoAnalyzer {
     parser: GoParser,
+    config: Option<Config>,
 }
 
 impl GoAnalyzer {
     pub fn new() -> Self {
         Self {
             parser: GoParser::new(),
+            config: None,
         }
+    }
+
+    pub fn with_config(mut self, config: Config) -> Self {
+        self.config = Some(config);
+        self
     }
 
     /// Create command builder based on subcommand
     fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder {
+        let command_name = options.subcommand.as_ref().map(|s| s.as_str()).unwrap_or("build");
+
+        // Try to get command from config first
+        if let Some(ref config) = self.config {
+            if let Some(exec_str) = config.get_command_exec("go", command_name) {
+                return CommandBuilder::from_exec_string(&exec_str);
+            }
+        }
+
+        // Fallback to hardcoded commands
         match options.subcommand {
             Some(SubCommand::Vet) => self.create_go_vet_command(),
             Some(SubCommand::Lint) => self.create_golangci_lint_command(),

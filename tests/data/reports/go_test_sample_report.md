@@ -42,4 +42,4 @@ View raw command output: [samples/go_test_sample.txt](samples/go_test_sample.txt
 
 ---
 
-*Report generated at: 2026-04-19 20:30:22*
+*Report generated at: 2026-04-21 20:14:11*

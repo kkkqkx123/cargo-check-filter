@@ -12,7 +12,7 @@
 
 ## Issue Details (Grouped by File)
 
-### D:\项目\cli\analyze-cargo\tests/data\fixtures\cpp-cmake-project\src/main.cpp
+### D:\项目\cli\analyzer\tests/data\fixtures\cpp-cmake-project\src/main.cpp
 
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
@@ -25,4 +25,4 @@ View raw command output: [raw_output/clang_compile.txt](raw_output/clang_compile
 
 ---
 
-*Report generated at: 2026-04-19 20:30:14*
+*Report generated at: 2026-04-21 20:13:55*

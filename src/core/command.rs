@@ -76,6 +76,20 @@ impl CommandBuilder {
         }
     }
 
+    /// Create a command builder from an execution string (e.g., "cargo check --all-targets")
+    pub fn from_exec_string(exec_str: &str) -> Self {
+        let parts: Vec<&str> = exec_str.split_whitespace().collect();
+        if parts.is_empty() {
+            return Self::new("");
+        }
+
+        let mut builder = Self::new(parts[0]);
+        for arg in &parts[1..] {
+            builder = builder.arg(*arg);
+        }
+        builder
+    }
+
     /// Add a single parameter
     pub fn arg(mut self, arg: impl Into<String>) -> Self {
         self.args.push(arg.into());

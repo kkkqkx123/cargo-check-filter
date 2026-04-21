@@ -2,7 +2,7 @@
 //! Run gradle compile/test and parse the output
 
 use crate::core::{
-    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
+    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, Config, OutputParser,
     SubCommand, TechStack,
 };
 
@@ -10,17 +10,34 @@ use super::parser::GradleParser;
 
 pub struct GradleAnalyzer {
     parser: GradleParser,
+    config: Option<Config>,
 }
 
 impl GradleAnalyzer {
     pub fn new() -> Self {
         Self {
             parser: GradleParser::new(),
+            config: None,
         }
+    }
+
+    pub fn with_config(mut self, config: Config) -> Self {
+        self.config = Some(config);
+        self
     }
 
     /// Creating a command builder
     fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder {
+        let command_name = options.subcommand.as_ref().map(|s| s.as_str()).unwrap_or("compile");
+
+        // Try to get command from config first
+        if let Some(ref config) = self.config {
+            if let Some(exec_str) = config.get_command_exec("gradle", command_name) {
+                return CommandBuilder::from_exec_string(&exec_str);
+            }
+        }
+
+        // Fallback to hardcoded commands
         let mut builder = CommandBuilder::new("gradle");
 
         match options.subcommand {

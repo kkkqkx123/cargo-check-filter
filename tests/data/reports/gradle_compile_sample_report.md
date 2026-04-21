@@ -12,12 +12,6 @@
 
 ## Issue Details (Grouped by File)
 
-### /Users/user/project/src/main/java/com/example/Utils.java
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 22 | 0 | Warning | [deprecation] getYear() in Date has been deprecated |
-
 ### /Users/user/project/src/main/java/com/example/Broken.java
 
 | Line | Column | Level | Message |
@@ -30,11 +24,11 @@
 | 12 | 0 | Error | cannot find symbol |
 | 5 | 0 | Error | class Broken is public, should be declared in a file named Broken.java |
 
-### /Users/user/project/src/main/java/com/example/App.java
+### /Users/user/project/src/main/kotlin/App.kt
 
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
-| 15 | 0 | Warning | [unchecked] unchecked conversion |
+| 10 | 0 | Error | unresolved reference: undefinedFunction |
 
 ### build.gradle
 
@@ -43,11 +37,17 @@
 | - | - | Error | > Task :compileJava FAILED |
 | - | - | Error | BUILD FAILED in 2s |
 
-### /Users/user/project/src/main/kotlin/App.kt
+### /Users/user/project/src/main/java/com/example/Utils.java
 
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
-| 10 | 0 | Error | unresolved reference: undefinedFunction |
+| 22 | 0 | Warning | [deprecation] getYear() in Date has been deprecated |
+
+### /Users/user/project/src/main/java/com/example/App.java
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 15 | 0 | Warning | [unchecked] unchecked conversion |
 
 ## Raw Output
 
@@ -55,4 +55,4 @@ View raw command output: [samples/gradle_compile_sample.txt](samples/gradle_comp
 
 ---
 
-*Report generated at: 2026-04-19 20:30:22*
+*Report generated at: 2026-04-21 20:14:14*

@@ -2,7 +2,7 @@
 //! Run pytest and parse the output
 
 use crate::core::{
-    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
+    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, Config, OutputParser,
     ParsedTestOutput, TechStack, TestAnalyzer, TestAnalyzerError, TestOptions,
     TestOutputParser,
 };
@@ -11,17 +11,34 @@ use super::parser::PytestParser;
 
 pub struct PytestAnalyzer {
     parser: PytestParser,
+    config: Option<Config>,
 }
 
 impl PytestAnalyzer {
     pub fn new() -> Self {
         Self {
             parser: PytestParser::new(),
+            config: None,
         }
+    }
+
+    pub fn with_config(mut self, config: Config) -> Self {
+        self.config = Some(config);
+        self
     }
 
     /// Create command builder for pytest
     fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder {
+        let command_name = options.subcommand.as_ref().map(|s| s.as_str()).unwrap_or("test");
+
+        // Try to get command from config first
+        if let Some(ref config) = self.config {
+            if let Some(exec_str) = config.get_command_exec("pytest", command_name) {
+                return CommandBuilder::from_exec_string(&exec_str);
+            }
+        }
+
+        // Fallback to hardcoded commands
         let mut builder = CommandBuilder::new("pytest");
 
         // Add verbose flag for detailed output

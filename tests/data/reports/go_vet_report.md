@@ -12,6 +12,12 @@
 
 ## Issue Details (Grouped by File)
 
+### cmd\myapp\main.go
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 22 | 28 | Warning | fmt.Printf format %d has arg "hello" of wrong type string |
+
 ### internal\config\config_test.go
 
 | Line | Column | Level | Message |
@@ -19,16 +25,10 @@
 | 7 | 2 | Warning | missing go.sum entry for module providing package github.com/stretchr/testify/assert |
 | 7 | 2 | Warning | missing go.sum entry for module providing package github.com/stretchr/testify/assert |
 
-### cmd\myapp\main.go
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 22 | 28 | Warning | fmt.Printf format %d has arg "hello" of wrong type string |
-
 ## Raw Output
 
 View raw command output: [raw_output/go_vet.txt](raw_output/go_vet.txt)
 
 ---
 
-*Report generated at: 2026-04-19 20:30:22*
+*Report generated at: 2026-04-21 20:14:14*

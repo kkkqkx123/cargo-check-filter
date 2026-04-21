@@ -2,7 +2,7 @@
 //! Runs CMake configuration and build, then parses output
 
 use crate::core::{
-    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, SubCommand,
+    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, Config, SubCommand,
     OutputParser, TechStack,
 };
 
@@ -10,16 +10,33 @@ use super::parser::CMakeParser;
 
 pub struct CMakeAnalyzer {
     parser: CMakeParser,
+    config: Option<Config>,
 }
 
 impl CMakeAnalyzer {
     pub fn new() -> Self {
         Self {
             parser: CMakeParser::new(),
+            config: None,
         }
     }
 
+    pub fn with_config(mut self, config: Config) -> Self {
+        self.config = Some(config);
+        self
+    }
+
     fn create_command_builder(&self, options: &AnalyzeOptions) -> CommandBuilder {
+        let command_name = options.subcommand.as_ref().map(|s| s.as_str()).unwrap_or("check");
+
+        // Try to get command from config first
+        if let Some(ref config) = self.config {
+            if let Some(exec_str) = config.get_command_exec("cmake", command_name) {
+                return CommandBuilder::from_exec_string(&exec_str);
+            }
+        }
+
+        // Fallback to hardcoded commands
         let mut builder = CommandBuilder::new("cmake");
 
         // Get source directory (default to current directory)

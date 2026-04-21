@@ -12,12 +12,6 @@
 
 ## Issue Details (Grouped by File)
 
-### pkg/utils/math.go
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 20 | 16 | Warning | Error return value of `os.Open` is not checked |
-
 ### internal/config/config.go
 
 | Line | Column | Level | Message |
@@ -34,10 +28,16 @@
 | 21 | 10 | Warning | Error return value of `os.Setenv` is not checked |
 | 23 | 2 | Warning | `cfg` is unused |
 
+### pkg/utils/math.go
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 20 | 16 | Warning | Error return value of `os.Open` is not checked |
+
 ## Raw Output
 
 View raw command output: [samples/golangci_lint_sample.txt](samples/golangci_lint_sample.txt)
 
 ---
 
-*Report generated at: 2026-04-19 20:30:22*
+*Report generated at: 2026-04-21 20:14:11*

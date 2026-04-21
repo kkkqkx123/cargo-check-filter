@@ -119,6 +119,70 @@ impl Config {
         Ok(config)
     }
 
+    /// Get the command execution string for the given tech stack and command name
+    /// Priority: tech_stack specific command > global command
+    pub fn get_command_exec(&self, tech_stack: &str, command_name: &str) -> Option<String> {
+        // First check tech_stack specific command
+        if let Some(stack_config) = self.tech_stacks.get(tech_stack) {
+            if let Some(cmd_config) = stack_config.commands.get(command_name) {
+                if cmd_config.enabled {
+                    return Some(cmd_config.exec.clone());
+                }
+            }
+        }
+
+        // Then check global command
+        if let Some(cmd_config) = self.commands.get(command_name) {
+            if cmd_config.enabled {
+                return Some(cmd_config.exec.clone());
+            }
+        }
+
+        None
+    }
+
+    /// Check if a command is enabled for the given tech stack
+    pub fn is_command_enabled(&self, tech_stack: &str, command_name: &str) -> bool {
+        // First check tech_stack specific command
+        if let Some(stack_config) = self.tech_stacks.get(tech_stack) {
+            if let Some(cmd_config) = stack_config.commands.get(command_name) {
+                return cmd_config.enabled;
+            }
+        }
+
+        // Then check global command
+        if let Some(cmd_config) = self.commands.get(command_name) {
+            return cmd_config.enabled;
+        }
+
+        false
+    }
+
+    /// Get all available command names for a tech stack
+    pub fn get_available_commands(&self, tech_stack: &str) -> Vec<String> {
+        let mut commands = std::collections::HashSet::new();
+
+        // Add global commands that apply to this tech stack
+        for (name, cmd_config) in &self.commands {
+            if cmd_config.enabled {
+                if cmd_config.tech_stacks.contains(&tech_stack.to_string()) {
+                    commands.insert(name.clone());
+                }
+            }
+        }
+
+        // Add tech_stack specific commands
+        if let Some(stack_config) = self.tech_stacks.get(tech_stack) {
+            for (name, cmd_config) in &stack_config.commands {
+                if cmd_config.enabled {
+                    commands.insert(name.clone());
+                }
+            }
+        }
+
+        commands.into_iter().collect()
+    }
+
     /// Built-in defaults
     fn embedded_defaults() -> Self {
         let mut commands = HashMap::new();
@@ -276,7 +340,7 @@ impl Config {
     }
 
     /// Merge another configuration (high priority overrides low priority)
-    fn merge(&mut self, other: Self) {
+    pub fn merge(&mut self, other: Self) {
         // Merge Global Configuration
         if other.global.default_format != default_format() {
             self.global.default_format = other.global.default_format;
@@ -364,5 +428,66 @@ mod tests {
 
         let check_cmd = base.commands.get("check");
         assert_eq!(check_cmd.unwrap().exec, "cargo check --all-targets");
+    }
+
+    #[test]
+    fn test_get_command_exec() {
+        let config = Config::embedded_defaults();
+
+        // Test getting global command
+        let cmd = config.get_command_exec("cargo", "check");
+        assert_eq!(cmd, Some("cargo check".to_string()));
+
+        // Test getting command for different tech stack
+        let cmd = config.get_command_exec("npm", "lint");
+        assert_eq!(cmd, Some("npm run lint".to_string()));
+
+        // Test non-existent command
+        let cmd = config.get_command_exec("cargo", "nonexistent");
+        assert_eq!(cmd, None);
+    }
+
+    #[test]
+    fn test_is_command_enabled() {
+        let config = Config::embedded_defaults();
+
+        assert!(config.is_command_enabled("cargo", "check"));
+        assert!(config.is_command_enabled("npm", "lint"));
+    }
+
+    #[test]
+    fn test_get_available_commands() {
+        let config = Config::embedded_defaults();
+
+        let cargo_commands = config.get_available_commands("cargo");
+        assert!(cargo_commands.contains(&"check".to_string()));
+        assert!(cargo_commands.contains(&"clippy".to_string()));
+        assert!(cargo_commands.contains(&"test".to_string()));
+
+        let npm_commands = config.get_available_commands("npm");
+        assert!(npm_commands.contains(&"lint".to_string()));
+        assert!(npm_commands.contains(&"type-check".to_string()));
+    }
+
+    #[test]
+    fn test_tech_stack_override() {
+        let mut config = Config::embedded_defaults();
+
+        // Add tech_stack specific override
+        let mut stack_config = TechStackConfig::default();
+        stack_config.commands.insert(
+            "check".to_string(),
+            CommandConfig {
+                exec: "cargo check --all-targets --all-features".to_string(),
+                description: Some("Custom check".to_string()),
+                tech_stacks: vec![],
+                enabled: true,
+            },
+        );
+        config.tech_stacks.insert("cargo".to_string(), stack_config);
+
+        // Tech_stack specific command should take precedence
+        let cmd = config.get_command_exec("cargo", "check");
+        assert_eq!(cmd, Some("cargo check --all-targets --all-features".to_string()));
     }
 }

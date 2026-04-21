@@ -32,8 +32,8 @@ fn main() {
     // Parse arguments
     let (tech_stack, options) = parse_arguments(&args, &config);
 
-    // Creating a plug-in registry
-    let registry = plugins::create_registry();
+    // Creating a plug-in registry with config
+    let registry = plugins::create_registry_with_config(Some(config.clone()));
 
     // Get the corresponding analyzer
     let analyzer = match registry.get(tech_stack) {

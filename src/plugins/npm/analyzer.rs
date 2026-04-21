@@ -2,7 +2,7 @@
 //! Run the npm/pnpm/yarn command and parse the output
 
 use crate::core::{
-    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, OutputParser,
+    AnalysisResult, AnalyzeOptions, AnalyzerError, BuildAnalyzer, CommandBuilder, Config, OutputParser,
     ParsedTestOutput, SubCommand, TechStack, TestAnalyzer, TestAnalyzerError, TestOptions,
     TestOutputParser,
 };
@@ -27,7 +27,25 @@ pub enum PackageManager {
 }
 
 impl PackageManager {
-    fn build_command(&self, options: &AnalyzeOptions) -> CommandBuilder {
+    fn as_str(&self) -> &str {
+        match self {
+            PackageManager::Npm => "npm",
+            PackageManager::Pnpm => "pnpm",
+            PackageManager::Yarn => "yarn",
+        }
+    }
+
+    fn build_command(&self, options: &AnalyzeOptions, config: &Option<Config>) -> CommandBuilder {
+        let command_name = options.subcommand.as_ref().map(|s| s.as_str()).unwrap_or("lint");
+
+        // Try to get command from config first
+        if let Some(ref cfg) = config {
+            if let Some(exec_str) = cfg.get_command_exec(self.as_str(), command_name) {
+                return CommandBuilder::from_exec_string(&exec_str);
+            }
+        }
+
+        // Fallback to hardcoded commands
         match self {
             PackageManager::Npm => self.build_npm_command(options),
             PackageManager::Pnpm => self.build_pnpm_command(options),
@@ -102,6 +120,7 @@ impl PackageManager {
 pub struct NpmAnalyzer {
     parser: NpmParser,
     package_manager: PackageManager,
+    config: Option<Config>,
 }
 
 impl NpmAnalyzer {
@@ -109,7 +128,13 @@ impl NpmAnalyzer {
         Self {
             parser: NpmParser::new(),
             package_manager,
+            config: None,
         }
+    }
+
+    pub fn with_config(mut self, config: Config) -> Self {
+        self.config = Some(config);
+        self
     }
 
     pub fn npm() -> Self {
@@ -203,7 +228,7 @@ impl BuildAnalyzer for NpmAnalyzer {
     }
 
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
-        let builder = self.package_manager.build_command(options);
+        let builder = self.package_manager.build_command(options, &self.config);
         let output = builder.execute()?;
 
         println!("Parsing output...");
