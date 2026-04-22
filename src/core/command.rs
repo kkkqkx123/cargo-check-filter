@@ -2,7 +2,7 @@
 //! Provides unified command construction and execution functions and supports cross-platform command lookup
 
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Command, Stdio, ExitStatus};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -11,6 +11,51 @@ use super::analyzer::AnalyzerError;
 
 /// Default command timeout (5 minutes)
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(300);
+
+/// Command execution result
+/// Contains the output and success status of the command
+#[derive(Debug)]
+pub struct CommandOutput {
+    /// Standard output (available for testing and external use)
+    #[allow(dead_code)]
+    pub stdout: String,
+    /// Standard error (available for testing and external use)
+    #[allow(dead_code)]
+    pub stderr: String,
+    /// Combined stdout and stderr
+    pub combined: String,
+    pub status: ExitStatus,
+}
+
+impl CommandOutput {
+    /// Check if the command was successful
+    pub fn success(&self) -> bool {
+        self.status.success()
+    }
+
+    /// Get the exit code
+    pub fn code(&self) -> Option<i32> {
+        self.status.code()
+    }
+
+    /// Get stdout output (available for testing and external use)
+    #[allow(dead_code)]
+    pub fn stdout(&self) -> &str {
+        &self.stdout
+    }
+
+    /// Get stderr output (available for testing and external use)
+    #[allow(dead_code)]
+    pub fn stderr(&self) -> &str {
+        &self.stderr
+    }
+
+    /// Get combined stdout and stderr output
+    #[allow(dead_code)]
+    pub fn combined(&self) -> &str {
+        &self.combined
+    }
+}
 
 /// Get full path to commands (cross-platform)
 /// On Windows, executable extensions such as.cmd, .bat, and.exe are first found
@@ -97,7 +142,15 @@ impl CommandBuilder {
     }
 
     /// Execute command and capture output (with timeout)
+    /// Returns the combined stdout and stderr output
     pub fn execute(&self) -> Result<String, AnalyzerError> {
+        let output = self.execute_with_status()?;
+        Ok(output.combined)
+    }
+
+    /// Execute command and capture output with full status information
+    /// This allows callers to check if the command succeeded and handle failures appropriately
+    pub fn execute_with_status(&self) -> Result<CommandOutput, AnalyzerError> {
         let program = resolve_command(&self.program)
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| self.program.clone());
@@ -132,20 +185,16 @@ impl CommandBuilder {
             ))
         })?;
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
         let combined = format!("{}{}", stdout, stderr);
 
-        if !output.status.success() {
-            return Err(AnalyzerError::CommandFailed(format!(
-                "Command '{}' failed with exit code {:?}\nOutput: {}",
-                self.program,
-                output.status.code(),
-                combined.trim()
-            )));
-        }
-
-        Ok(combined)
+        Ok(CommandOutput {
+            stdout,
+            stderr,
+            combined,
+            status: output.status,
+        })
     }
 }
 

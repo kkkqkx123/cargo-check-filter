@@ -14,5 +14,8 @@ pub use parser::*;
 pub use analyzer::*;
 pub use reporter::*;
 pub use command::CommandBuilder;
+// CommandOutput is exported for testing and external use
+#[allow(unused_imports)]
+pub use command::CommandOutput;
 pub use test_analyzer::*;
 pub use config::Config;

@@ -229,11 +229,20 @@ impl BuildAnalyzer for NpmAnalyzer {
 
     fn analyze(&self, options: &AnalyzeOptions) -> Result<AnalysisResult, AnalyzerError> {
         let builder = self.package_manager.build_command(options, &self.config);
-        let output = builder.execute()?;
+        let output = builder.execute_with_status()?;
 
         println!("Parsing output...");
-        let issues = self.parser.parse(&output);
+        let issues = self.parser.parse(&output.combined);
         println!("Found {} issues", issues.len());
+
+        // If command failed but no issues were found, output the full raw output
+        // to help diagnose parsing or environment issues
+        if !output.success() && issues.is_empty() {
+            eprintln!("\n=== Command failed with exit code {:?} but no issues were parsed ===", output.code());
+            eprintln!("=== Raw output (stdout + stderr) ===");
+            eprintln!("{}", output.combined);
+            eprintln!("=== End of raw output ===\n");
+        }
 
         let result = AnalysisResult::from_issues(issues);
         Ok(self.filter_issues(result, options))

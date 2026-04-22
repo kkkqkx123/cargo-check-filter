@@ -12,11 +12,12 @@
 
 ## Issue Details (Grouped by File)
 
-### internal/config/config.go
+### ./cmd/myapp/main.go
 
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
-| 15 | 15 | Warning | return value of os.Setenv is not checked |
+| 18 | 14 | Warning | Printf format %d has arg "hello" of wrong type string |
+| 21 | 10 | Warning | return value of os.Setenv is not checked |
 
 ### pkg/utils/math.go
 
@@ -24,12 +25,11 @@
 |------|--------|-------|---------|
 | 20 | 16 | Warning | return value of os.Open is not checked |
 
-### ./cmd/myapp/main.go
+### internal/config/config.go
 
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
-| 18 | 14 | Warning | Printf format %d has arg "hello" of wrong type string |
-| 21 | 10 | Warning | return value of os.Setenv is not checked |
+| 15 | 15 | Warning | return value of os.Setenv is not checked |
 
 ## Raw Output
 

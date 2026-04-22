@@ -220,7 +220,26 @@ pub struct TestSummary {
     pub ignored: usize,
     pub measured: usize,
     pub filtered: usize,
+    /// Execution time in seconds (available for external use)
+    #[allow(dead_code)]
     pub execution_time: Option<f64>,
+}
+
+impl TestSummary {
+    /// Get execution time in seconds if available (available for external use)
+    #[allow(dead_code)]
+    pub fn execution_time(&self) -> Option<f64> {
+        self.execution_time
+    }
+
+    /// Get execution time formatted as string (available for external use)
+    #[allow(dead_code)]
+    pub fn execution_time_formatted(&self) -> String {
+        match self.execution_time {
+            Some(time) => format!("{:.2}s", time),
+            None => "N/A".to_string(),
+        }
+    }
 }
 
 /// Extending AnalysisResult to support test information

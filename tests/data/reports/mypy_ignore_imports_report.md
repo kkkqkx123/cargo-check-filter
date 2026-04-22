@@ -41,20 +41,6 @@
 | 28 | 5 | Error | Function is missing a return type annotation  [no-untyped-def] |
 | 28 | 5 | Info | Use "-> None" if function does not return a value |
 
-### src\utils.py
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 9 | 5 | Error | Returning Any from function declared to return "dict[Any, Any]"  [no-any-return] |
-| 41 | 1 | Error | Function is missing a type annotation  [no-untyped-def] |
-| 70 | 5 | Error | Function is missing a type annotation for one or more arguments  [no-untyped-def] |
-| 71 | 9 | Error | Returning Any from function declared to return "str"  [no-any-return] |
-| 87 | 5 | Error | Function is missing a type annotation for one or more arguments  [no-untyped-def] |
-| 92 | 1 | Error | Function is missing a return type annotation  [no-untyped-def] |
-| 96 | 20 | Error | Argument 1 to "append" of "list" has incompatible type "str"; expected "int"  [arg-type] |
-| 100 | 14 | Error | Unsupported operand types for + ("None" and "int")  [operator] |
-| 100 | 14 | Info | Left operand is of type "Optional[int]" |
-
 ### tests\test_example.py
 
 | Line | Column | Level | Message |
@@ -75,6 +61,20 @@
 | 44 | 1 | Info | Use "-> None" if function does not return a value |
 | 50 | 1 | Error | Function is missing a return type annotation  [no-untyped-def] |
 | 50 | 1 | Info | Use "-> None" if function does not return a value |
+
+### src\utils.py
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 9 | 5 | Error | Returning Any from function declared to return "dict[Any, Any]"  [no-any-return] |
+| 41 | 1 | Error | Function is missing a type annotation  [no-untyped-def] |
+| 70 | 5 | Error | Function is missing a type annotation for one or more arguments  [no-untyped-def] |
+| 71 | 9 | Error | Returning Any from function declared to return "str"  [no-any-return] |
+| 87 | 5 | Error | Function is missing a type annotation for one or more arguments  [no-untyped-def] |
+| 92 | 1 | Error | Function is missing a return type annotation  [no-untyped-def] |
+| 96 | 20 | Error | Argument 1 to "append" of "list" has incompatible type "str"; expected "int"  [arg-type] |
+| 100 | 14 | Error | Unsupported operand types for + ("None" and "int")  [operator] |
+| 100 | 14 | Info | Left operand is of type "Optional[int]" |
 
 ## Raw Output
 

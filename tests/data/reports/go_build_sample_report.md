@@ -12,12 +12,6 @@
 
 ## Issue Details (Grouped by File)
 
-### pkg/utils/math.go
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 20 | 16 | Error | undefined: os |
-
 ### internal/config/config.go
 
 | Line | Column | Level | Message |
@@ -32,6 +26,12 @@
 | 18 | 14 | Warning | cannot use "hello" |
 | 21 | 10 | Warning | os.Setenv call has possible formatting directive %s |
 | 23 | 2 | Error | cfg declared but not used |
+
+### pkg/utils/math.go
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 20 | 16 | Error | undefined: os |
 
 ## Raw Output
 

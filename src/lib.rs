@@ -8,5 +8,5 @@ pub mod plugins;
 // Re-export common types
 pub use core::{
     AnalyzeOptions, AnalyzerError, BaseParser, BuildAnalyzer,
-    CommandBuilder, Issue, IssueLevel, Location, OutputParser, ReportFormat, SubCommand,
+    CommandBuilder, CommandOutput, Issue, IssueLevel, Location, OutputParser, ReportFormat, SubCommand,
 };

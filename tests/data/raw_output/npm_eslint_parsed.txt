@@ -1,0 +1,5 @@
+
+src/index.js:1:1: error: Missing semicolon semi
+src/index.js:2:5: warning: Unused variable 'foo' no-unused-vars
+
+2 problems (1 error, 1 warning)

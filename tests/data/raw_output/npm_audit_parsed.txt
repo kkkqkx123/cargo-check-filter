@@ -1,0 +1,6 @@
+
+npm error code EAUDIT
+npm error audit No lockfile found
+npm error A complete log of this run can be found in: /path/to/log
+
+found 0 vulnerabilities
