@@ -1,44 +1,31 @@
 # Cargo Check Error Analysis Report
 
+## Filter Settings
+
+- **No filters applied**
+
 ## Summary
 
-- **Total Errors**: 0
-- **Total Warnings**: 3
-- **Total Issues**: 3
-- **Unique Error Patterns**: 0
-- **Unique Warning Patterns**: 3
-- **Files with Issues**: 2
+- **Total Issues**: 1
+- **Errors**: 0
+- **Warnings**: 1
+- **Files with Issues**: 1
 
-## Error Statistics
 
-**Total Errors**: 0
+## Warnings
 
-## Warning Statistics
+### Warning Types
 
-**Total Warnings**: 3
+- **warning**: 1
 
-### Warning Type Breakdown
+### Files with Warnings
 
-- **warning**: 3 warnings
+- `src\core\types.rs`: 1
 
-### Files with Warnings (Top 10)
+## Warning Details
 
-- `src\core\config.rs`: 2 warnings
-- `src\plugins\mod.rs`: 1 warnings
+### warning: field [identifier] is never read
 
-## Detailed Warning Categorization
+**Occurrences**: 1
 
-### warning: function `create_registry` is never used
-
-**Total Occurrences**: 3  
-**Unique Files**: 2
-
-#### `src\core\config.rs`: 2 occurrences
-
-- Line 167: this `if` statement can be collapsed
-- Line 145: methods `is_command_enabled` and `get_available_commands` are never used
-
-#### `src\plugins\mod.rs`: 1 occurrences
-
-- Line 14: function `create_registry` is never used
-
+- `src\core\types.rs`: 1

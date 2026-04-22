@@ -135,10 +135,6 @@ pub fn generate_report(
         report.push_str(&format!("View raw command output: [{}]({})\n\n", path, path));
     }
 
-    // Generation timestamp
-    report.push_str("---\n\n");
-    report.push_str(&format!("*Report generated at: {}*\n", chrono::Local::now().format("%Y-%m-%d %H:%M:%S")));
-
     fs::write(&report_path, report).expect("Failed to write report file");
     println!("Report saved to: {}", report_path.display());
     report_path
@@ -176,9 +172,6 @@ pub fn generate_test_report(
     report.push_str(&format!("- **Failed**: {}\n", test_output.failed_tests.len()));
     report.push_str(&format!("- **Skipped/Ignored**: {}\n", test_output.ignored_tests.len()));
 
-    if let Some(ref summary) = test_output.test_summary {
-        report.push_str(&format!("- **Execution Time**: {:.2}s\n", summary.execution_time.unwrap_or(0.0)));
-    }
     report.push('\n');
 
     // Failed tests details
@@ -213,18 +206,15 @@ pub fn generate_test_report(
     // Passed tests
     if !test_output.passed_tests.is_empty() {
         report.push_str("## Passed Tests\n\n");
-        report.push_str("| Test Name | File | Execution Time |\n");
-        report.push_str("|-----------|------|----------------|\n");
+        report.push_str("| Test Name | File |\n");
+        report.push_str("|-----------|------|\n");
 
         for test in &test_output.passed_tests {
             let file = test.location.as_ref()
                 .map(|l| l.file_path.as_str())
                 .unwrap_or("-");
-            let time = test.execution_time
-                .map(|t| format!("{:.3}s", t))
-                .unwrap_or_else(|| "-".to_string());
 
-            report.push_str(&format!("| {} | {} | {} |\n", test.name, file, time));
+            report.push_str(&format!("| {} | {} |\n", test.name, file));
         }
         report.push('\n');
     }
@@ -278,10 +268,6 @@ pub fn generate_test_report(
         report.push_str("## Raw Output\n\n");
         report.push_str(&format!("View raw command output: [{}]({})\n\n", path, path));
     }
-
-    // Generation timestamp
-    report.push_str("---\n\n");
-    report.push_str(&format!("*Report generated at: {}*\n", chrono::Local::now().format("%Y-%m-%d %H:%M:%S")));
 
     fs::write(&report_path, report).expect("Failed to write report file");
     println!("Test report saved to: {}", report_path.display());

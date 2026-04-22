@@ -8,7 +8,6 @@
 - **Passed**: 7
 - **Failed**: 1
 - **Skipped/Ignored**: 2
-- **Execution Time**: 0.15s
 
 ## Failed Tests
 
@@ -18,15 +17,15 @@
 
 ## Passed Tests
 
-| Test Name | File | Execution Time |
-|-----------|------|----------------|
-| test_add_positive_numbers | tests/test_example.py | 0.010s |
-| test_add_negative_numbers | tests/test_example.py | 0.010s |
-| test_add_zero | tests/test_example.py | 0.010s |
-| test_divide_normal | tests/test_example.py | 0.010s |
-| test_divide_by_zero | tests/test_example.py | 0.010s |
-| test_multiply | tests/test_utils.py | 0.010s |
-| test_subtract | tests/test_utils.py | 0.010s |
+| Test Name | File |
+|-----------|------|
+| test_add_positive_numbers | tests/test_example.py |
+| test_add_negative_numbers | tests/test_example.py |
+| test_add_zero | tests/test_example.py |
+| test_divide_normal | tests/test_example.py |
+| test_divide_by_zero | tests/test_example.py |
+| test_multiply | tests/test_utils.py |
+| test_subtract | tests/test_utils.py |
 
 ## Skipped/Ignored Tests
 
@@ -61,6 +60,3 @@ tests/test_example.py:35: AssertionError
 
 View raw command output: [raw_output/pytest.txt](raw_output/pytest.txt)
 
----
-
-*Report generated at: 2026-04-21 21:58:19*

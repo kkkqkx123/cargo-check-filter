@@ -14,6 +14,3 @@
 
 View raw command output: [raw_output/cmake_configure_msvc.txt](raw_output/cmake_configure_msvc.txt)
 
----
-
-*Report generated at: 2026-04-21 21:58:04*

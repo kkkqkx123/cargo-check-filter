@@ -8,27 +8,26 @@
 - **Passed**: 15
 - **Failed**: 0
 - **Skipped/Ignored**: 1
-- **Execution Time**: 0.00s
 
 ## Passed Tests
 
-| Test Name | File | Execution Time |
-|-----------|------|----------------|
-| TestAdd | - | 0.000s |
-| TestAdd/positive_numbers | - | 0.000s |
-| TestAdd/with_zero | - | 0.000s |
-| TestAdd/negative_numbers | - | 0.000s |
-| TestAdd/mixed_signs | - | 0.000s |
-| TestDivide | - | 0.000s |
-| TestDivide/normal_division | - | 0.000s |
-| TestDivide/division_by_one | - | 0.000s |
-| TestDivide/division_by_zero | - | 0.000s |
-| TestProcessData | - | 0.000s |
-| TestLoad | - | 0.000s |
-| TestLoad_DefaultPort | - | 0.000s |
-| TestValidate | - | 0.000s |
-| TestValidate/valid_config | - | 0.000s |
-| TestValidate/missing_database_url | - | 0.000s |
+| Test Name | File |
+|-----------|------|
+| TestAdd | - |
+| TestAdd/positive_numbers | - |
+| TestAdd/with_zero | - |
+| TestAdd/negative_numbers | - |
+| TestAdd/mixed_signs | - |
+| TestDivide | - |
+| TestDivide/normal_division | - |
+| TestDivide/division_by_one | - |
+| TestDivide/division_by_zero | - |
+| TestProcessData | - |
+| TestLoad | - |
+| TestLoad_DefaultPort | - |
+| TestValidate | - |
+| TestValidate/valid_config | - |
+| TestValidate/missing_database_url | - |
 
 ## Skipped/Ignored Tests
 
@@ -40,6 +39,3 @@
 
 View raw command output: [samples/go_test_sample.txt](samples/go_test_sample.txt)
 
----
-
-*Report generated at: 2026-04-21 21:58:07*

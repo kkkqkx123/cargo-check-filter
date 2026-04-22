@@ -200,9 +200,6 @@ impl Reporter for MarkdownReporter {
             if summary.filtered > 0 {
                 report.push_str(&format!("- **Filtered out**: {}\n", summary.filtered));
             }
-            if let Some(time) = summary.execution_time {
-                report.push_str(&format!("- **Duration**: {:.2}s\n", time));
-            }
             report.push('\n');
         }
 

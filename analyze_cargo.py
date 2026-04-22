@@ -284,52 +284,48 @@ def generate_markdown_report(categorized_errors: Dict[str, Dict[str, List[Tuple[
     
     # Overall statistics
     report.append("## Summary\n")
-    report.append(f"- **Total Errors**: {total_errors}")
-    report.append(f"- **Total Warnings**: {total_warnings}")
     report.append(f"- **Total Issues**: {total_errors + total_warnings}")
-    report.append(f"- **Unique Error Patterns**: {len(errors)}")
-    report.append(f"- **Unique Warning Patterns**: {len(warnings)}")
+    report.append(f"- **Errors**: {total_errors}")
+    report.append(f"- **Warnings**: {total_warnings}")
     report.append(f"- **Files with Issues**: {len(file_stats)}\n")
     
     # Error type statistics (only if there are errors)
     if errors:
-        report.append("## Error Statistics\n")
-        report.append(f"**Total Errors**: {total_errors}\n")
+        report.append("## Errors\n")
         
         if error_type_stats:
-            report.append("### Error Type Breakdown\n")
+            report.append("### Error Types\n")
             for error_type, count in sorted(error_type_stats.items(), key=lambda x: x[1], reverse=True):
-                report.append(f"- **{error_type}**: {count} errors")
+                report.append(f"- **{error_type}**: {count}")
         
         # File statistics for errors
         error_file_stats = {file: count for file, count in file_stats.items() 
                            if any(file in files for files in errors.values())}
         if error_file_stats:
-            report.append("\n### Files with Errors (Top 10)\n")
+            report.append("\n### Files with Errors\n")
             for file_path, count in sorted(error_file_stats.items(), key=lambda x: x[1], reverse=True)[:10]:
-                report.append(f"- `{file_path}`: {count} errors")
+                report.append(f"- `{file_path}`: {count}")
     
     # Warning type statistics (only if there are warnings)
     if warnings:
-        report.append("\n## Warning Statistics\n")
-        report.append(f"**Total Warnings**: {total_warnings}\n")
+        report.append("\n## Warnings\n")
         
         if warning_type_stats:
-            report.append("### Warning Type Breakdown\n")
+            report.append("### Warning Types\n")
             for warning_type, count in sorted(warning_type_stats.items(), key=lambda x: x[1], reverse=True):
-                report.append(f"- **{warning_type}**: {count} warnings")
+                report.append(f"- **{warning_type}**: {count}")
         
         # File statistics for warnings
         warning_file_stats = {file: count for file, count in file_stats.items() 
                              if any(file in files for files in warnings.values())}
         if warning_file_stats:
-            report.append("\n### Files with Warnings (Top 10)\n")
+            report.append("\n### Files with Warnings\n")
             for file_path, count in sorted(warning_file_stats.items(), key=lambda x: x[1], reverse=True)[:10]:
-                report.append(f"- `{file_path}`: {count} warnings")
+                report.append(f"- `{file_path}`: {count}")
     
     # Detailed error categorization
     if errors:
-        report.append("\n## Detailed Error Categorization\n")
+        report.append("\n## Error Details\n")
         
         # Sort errors by total occurrences
         sorted_errors = sorted(
@@ -340,32 +336,18 @@ def generate_markdown_report(categorized_errors: Dict[str, Dict[str, List[Tuple[
         
         for category_key, files in sorted_errors:
             total_occurrences = sum(len(lines) for lines in files.values())
-            unique_files = len(files)
             
             report.append(f"### {category_key}\n")
-            report.append(f"**Total Occurrences**: {total_occurrences}  ") 
-            report.append(f"**Unique Files**: {unique_files}\n")
+            report.append(f"**Occurrences**: {total_occurrences}\n")
             
             # Show files with this error pattern
             for file_path, lines in sorted(files.items(), key=lambda x: len(x[1]), reverse=True):
                 file_count = len(lines)
-                report.append(f"#### `{file_path}`: {file_count} occurrences\n")
-                
-                # Show first few examples
-                max_examples = min(3, file_count)
-                for i, (line_num, col_num, original_desc) in enumerate(lines[:max_examples]):
-                    report.append(f"- Line {line_num}: {original_desc}")
-                
-                if file_count > max_examples:
-                    report.append(f"- ... {file_count - max_examples} more occurrences in this file")
-                
-                report.append("")
-            
-            report.append("")
+                report.append(f"- `{file_path}`: {file_count}")
     
     # Detailed warning categorization
     if warnings:
-        report.append("\n## Detailed Warning Categorization\n")
+        report.append("\n## Warning Details\n")
         
         # Sort warnings by total occurrences
         sorted_warnings = sorted(
@@ -376,28 +358,14 @@ def generate_markdown_report(categorized_errors: Dict[str, Dict[str, List[Tuple[
         
         for category_key, files in sorted_warnings:
             total_occurrences = sum(len(lines) for lines in files.values())
-            unique_files = len(files)
             
             report.append(f"### {category_key}\n")
-            report.append(f"**Total Occurrences**: {total_occurrences}  ") 
-            report.append(f"**Unique Files**: {unique_files}\n")
+            report.append(f"**Occurrences**: {total_occurrences}\n")
             
             # Show files with this warning pattern
             for file_path, lines in sorted(files.items(), key=lambda x: len(x[1]), reverse=True):
                 file_count = len(lines)
-                report.append(f"#### `{file_path}`: {file_count} occurrences\n")
-                
-                # Show first few examples
-                max_examples = min(3, file_count)
-                for i, (line_num, col_num, original_desc) in enumerate(lines[:max_examples]):
-                    report.append(f"- Line {line_num}: {original_desc}")
-                
-                if file_count > max_examples:
-                    report.append(f"- ... {file_count - max_examples} more occurrences in this file")
-                
-                report.append("")
-            
-            report.append("")
+                report.append(f"- `{file_path}`: {file_count}")
     
     return '\n'.join(report)
 

@@ -12,17 +12,17 @@
 
 ## Issue Details (Grouped by File)
 
-### pkg/utils/math.go
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| 20 | 16 | Warning | return value of os.Open is not checked |
-
 ### internal/config/config.go
 
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
 | 15 | 15 | Warning | return value of os.Setenv is not checked |
+
+### pkg/utils/math.go
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| 20 | 16 | Warning | return value of os.Open is not checked |
 
 ### ./cmd/myapp/main.go
 
@@ -35,6 +35,3 @@
 
 View raw command output: [samples/go_vet_sample.txt](samples/go_vet_sample.txt)
 
----
-
-*Report generated at: 2026-04-21 21:58:07*
