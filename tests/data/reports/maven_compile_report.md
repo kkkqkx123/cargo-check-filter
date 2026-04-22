@@ -12,23 +12,6 @@
 
 ## Issue Details (Grouped by File)
 
-### pom.xml
-
-| Line | Column | Level | Message |
-|------|--------|-------|---------|
-| - | - | Warning | List rawList = new ArrayList(); |
-| - | - | Warning | ^ |
-| - | - | Warning | private static java.util.List rawList = new java.util.ArrayList(); |
-| - | - | Warning | ^ |
-| - | - | Warning | int year = date.getYear(); |
-| - | - | Warning | ^ |
-| - | - | Warning | int month = date.getMonth(); |
-| - | - | Warning | ^ |
-| - | - | Warning | int day = date.getDate(); |
-| - | - | Warning | ^ |
-| - | - | Error | Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.10.1:compile (default-compile) on project maven-test-project: Compilation failure: Compilation failure: |
-| - | - | Error | -> [Help 1] |
-
 ### D:\project\test\fixtures\maven-project\src\main\java\com\example\Broken.java
 
 | Line | Column | Level | Message |
@@ -45,6 +28,23 @@
 | Line | Column | Level | Message |
 |------|--------|-------|---------|
 | 18 | 9 | Warning | [unchecked] unchecked conversion |
+
+### pom.xml
+
+| Line | Column | Level | Message |
+|------|--------|-------|---------|
+| - | - | Warning | List rawList = new ArrayList(); |
+| - | - | Warning | ^ |
+| - | - | Warning | private static java.util.List rawList = new java.util.ArrayList(); |
+| - | - | Warning | ^ |
+| - | - | Warning | int year = date.getYear(); |
+| - | - | Warning | ^ |
+| - | - | Warning | int month = date.getMonth(); |
+| - | - | Warning | ^ |
+| - | - | Warning | int day = date.getDate(); |
+| - | - | Warning | ^ |
+| - | - | Error | Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.10.1:compile (default-compile) on project maven-test-project: Compilation failure: Compilation failure: |
+| - | - | Error | -> [Help 1] |
 
 ### D:\project\test\fixtures\maven-project\src\main\java\com\example\Utils.java
 

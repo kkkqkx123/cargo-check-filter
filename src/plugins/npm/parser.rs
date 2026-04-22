@@ -83,6 +83,7 @@ impl NpmParser {
 
         // Resolution Levels and Messages
         // 格式: "warning message rule-name" 或 "error message rule-name"
+        // Also support format: "warning  message  rule-name" (multiple spaces)
         let level_msg_parts: Vec<&str> = after_col.splitn(2, |c: char| c.is_whitespace()).collect();
         if level_msg_parts.is_empty() {
             return (None, start_index + 1);
@@ -96,10 +97,13 @@ impl NpmParser {
             _ => return (None, start_index + 1),
         };
 
-        // Extract message (remove rule name)
+        // Extract message and rule
+        // Format: "message  @typescript-eslint/no-unused-vars"
+        // or: "'parseAndValidateAgentLoopConfig' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars"
         let message = if level_msg_parts.len() > 1 {
             let msg_and_rule = level_msg_parts[1].trim();
-            self.base.extract_message(msg_and_rule)
+            // Try to extract rule name from the end (format: "message  rule-name")
+            self.extract_eslint_message(msg_and_rule)
         } else {
             String::new()
         };
@@ -116,6 +120,303 @@ impl NpmParser {
         };
 
         (Some(Issue::new(level, message, location)), start_index + 1)
+    }
+
+    /// Extract ESLint message, separating the rule name from the message
+    /// Format: "message text  @typescript-eslint/rule-name" or "message rule-name"
+    fn extract_eslint_message(&self, msg_and_rule: &str) -> String {
+        // Look for rule name pattern at the end (e.g., "@typescript-eslint/no-unused-vars" or "rule-name")
+        // Rule names typically contain "/" and may be prefixed with "@"
+        // First try with double space (verbose format)
+        if let Some(last_double_space) = msg_and_rule.rfind("  ") {
+            let potential_rule = &msg_and_rule[last_double_space + 2..];
+            if potential_rule.contains('/') || potential_rule.starts_with('@') {
+                // This looks like a rule name, return just the message
+                return msg_and_rule[..last_double_space].trim().to_string();
+            }
+        }
+        
+        // Try with single space, but check if the last part looks like a rule name
+        // A rule name typically contains "-" (kebab-case) and may contain "/"
+        if let Some(last_space) = msg_and_rule.rfind(' ') {
+            let potential_rule = &msg_and_rule[last_space + 1..];
+            // Check if it looks like a rule name: contains "-" or "/" or "@"
+            let looks_like_rule = potential_rule.contains('-') 
+                || potential_rule.contains('/') 
+                || potential_rule.starts_with('@');
+            
+            if looks_like_rule {
+                return msg_and_rule[..last_space].trim().to_string();
+            }
+        }
+        
+        // If no rule pattern found, return the whole thing
+        msg_and_rule.to_string()
+    }
+
+    /// Remove ANSI escape codes from output
+    fn strip_ansi_codes(&self, text: &str) -> String {
+        let mut result = String::new();
+        let mut chars = text.chars().peekable();
+        
+        while let Some(ch) = chars.next() {
+            if ch == '\x1b' {
+                // Start of ANSI escape sequence
+                if chars.peek() == Some(&'[') {
+                    // CSI sequence: ESC [ ... letter
+                    chars.next(); // consume '['
+                    // Skip until we find a letter (end of sequence)
+                    while let Some(&next_ch) = chars.peek() {
+                        chars.next();
+                        if next_ch.is_ascii_alphabetic() {
+                            break;
+                        }
+                    }
+                } else if chars.peek() == Some(&']') {
+                    // OSC sequence: ESC ] ... BEL or ESC \
+                    chars.next(); // consume ']'
+                    while let Some(&next_ch) = chars.peek() {
+                        chars.next();
+                        if next_ch == '\x07' || next_ch == '\x1b' {
+                            if next_ch == '\x1b' && chars.peek() == Some(&'\\') {
+                                chars.next();
+                            }
+                            break;
+                        }
+                    }
+                }
+                // Skip other escape sequences (like ESC ( ), ESC ) )
+                else if let Some(&next_ch) = chars.peek() {
+                    if next_ch == '(' || next_ch == ')' || next_ch == '#' {
+                        chars.next();
+                        if let Some(&_final_ch) = chars.peek() {
+                            chars.next();
+                        }
+                    }
+                }
+            } else {
+                result.push(ch);
+            }
+        }
+        
+        result
+    }
+
+    /// Strip turbo prefixes from output lines
+    /// Handles multiple turbo formats:
+    /// - "web:lint:    4:7   error    ..." -> "    4:7   error    ..."
+    /// - "@scope/pkg#lint:    4:7   error    ..." -> "    4:7   error    ..."
+    /// - "┌─ @scope/pkg#lint > ..." (TUI border lines) -> "" (remove)
+    pub fn strip_turbo_prefixes(&self, output: &str) -> String {
+        // First, strip ANSI codes
+        let clean_output = self.strip_ansi_codes(output);
+        
+        // Process lines and handle merged/split lines
+        let lines: Vec<String> = clean_output.lines().map(|s| s.to_string()).collect();
+        let processed_lines = self.merge_and_clean_lines(&lines);
+        
+        processed_lines
+            .into_iter()
+            .filter_map(|line| {
+                let trimmed = line.trim();
+                
+                // Skip empty lines
+                if trimmed.is_empty() {
+                    return None;
+                }
+                
+                // Skip TUI border/decoration lines
+                if trimmed.starts_with('╭') || trimmed.starts_with('╰') || 
+                   trimmed.starts_with('┌') || trimmed.starts_with('└') ||
+                   trimmed.starts_with('│') || trimmed.starts_with('─') ||
+                   trimmed.starts_with('├') || trimmed.starts_with('┤') ||
+                   trimmed.starts_with('•') || trimmed.starts_with('>') ||
+                   trimmed.starts_with('✖') || trimmed.starts_with('━') ||
+                   trimmed.starts_with('┏') || trimmed.starts_with('┗') ||
+                   trimmed.starts_with('┃') || trimmed.starts_with('┣') ||
+                   trimmed.starts_with('┫') || trimmed.starts_with('╋') ||
+                   trimmed.starts_with('┳') || trimmed.starts_with('┻') {
+                    if trimmed.contains("error") || trimmed.contains("warning") {
+                        // Keep summary lines
+                    } else {
+                        return None;
+                    }
+                }
+                
+                // Skip cache hit lines
+                if trimmed.contains("cache hit") || trimmed.contains("replaying logs") {
+                    return None;
+                }
+                
+                // Skip update notification lines
+                if trimmed.contains("Update available") || 
+                   trimmed.contains("Changelog:") ||
+                   trimmed.contains("Follow @turborepo") {
+                    return None;
+                }
+                
+                // Skip command echo lines
+                if trimmed.starts_with('>') && (trimmed.contains("eslint") || trimmed.contains("@graph-agent")) {
+                    return None;
+                }
+                
+                // Handle format: "@scope/package#task:" (pnpm workspace style with hash)
+                // This must be checked before the colon format because @scope/pkg#task: has a #
+                if line.starts_with('@') && line.contains('#') {
+                    if let Some(hash_pos) = line.find('#') {
+                        if let Some(colon_pos) = line[hash_pos..].find(':') {
+                            let full_prefix_end = hash_pos + colon_pos + 1;
+                            if full_prefix_end < line.len() {
+                                return Some(line[full_prefix_end..].to_string());
+                            }
+                        }
+                    }
+                }
+                
+                // Handle format: "@scope/package:task:" (scoped package with colon separator)
+                // Format: @graph-agent/common-utils:lint:content
+                if line.starts_with('@') {
+                    if let Some(first_colon) = line.find(':') {
+                        let after_first = &line[first_colon + 1..];
+                        if let Some(second_colon) = after_first.find(':') {
+                            let between_colons = &after_first[..second_colon];
+                            if between_colons.parse::<u32>().is_err() {
+                                let content_start = first_colon + 1 + second_colon + 1;
+                                if content_start <= line.len() {
+                                    return Some(line[content_start..].to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Handle format: "package:task:" (standard turbo style for non-scoped packages)
+                if !line.starts_with('@') {
+                    if let Some(first_colon) = line.find(':') {
+                        let before_first = &line[..first_colon];
+                        
+                        if before_first.contains('/') || before_first.contains('\\') {
+                            return Some(line.to_string());
+                        }
+                        
+                        if let Some(second_colon) = line[first_colon + 1..].find(':') {
+                            let second_colon_pos = first_colon + 1 + second_colon;
+                            let between_colons = &line[first_colon + 1..second_colon_pos];
+                            
+                            if between_colons.parse::<u32>().is_ok() {
+                                return Some(line.to_string());
+                            }
+                            
+                            if second_colon_pos + 1 <= line.len() {
+                                return Some(line[second_colon_pos + 1..].to_string());
+                            }
+                        }
+                    }
+                }
+                
+                Some(line.to_string())
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+    
+    /// Merge lines that have been split or concatenated incorrectly
+    /// Handles cases where:
+    /// 1. Rule names are split across lines: "@typescript-eslint/no-ex" + "xplicit-any"
+    /// 2. File paths are concatenated with previous lines: "...rule-nameD:\path\file.ts"
+    fn merge_and_clean_lines(&self, lines: &[String]) -> Vec<String> {
+        let mut result: Vec<String> = Vec::new();
+        let mut i = 0;
+        
+        while i < lines.len() {
+            let line = &lines[i];
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                i += 1;
+                continue;
+            }
+            
+            // Check if this line ends with a partial rule name that should be merged with next line
+            // Pattern: line ends with "@typescript-eslint/no-ex" and next line starts with "xplicit-any"
+            if i + 1 < lines.len() {
+                let next_line = &lines[i + 1];
+                let next_trimmed = next_line.trim();
+                
+                // Check for split rule names
+                let line_ends_with_partial = trimmed.ends_with("/no-ex") || 
+                    trimmed.ends_with("/no-unus") || 
+                    trimmed.ends_with("/no-expl") ||
+                    trimmed.ends_with("/no-impl") ||
+                    trimmed.ends_with("/requ") ||
+                    trimmed.ends_with("/no-un") ||
+                    trimmed.ends_with("licit-") ||
+                    trimmed.ends_with("used-") ||
+                    trimmed.ends_with("plicit-") ||
+                    trimmed.ends_with("quired-") ||
+                    trimmed.ends_with("nused-") ||
+                    trimmed.ends_with("vars ") ||
+                    trimmed.ends_with("any ");
+                
+                let next_starts_with_continuation = next_trimmed.starts_with("xplicit-any") ||
+                    next_trimmed.starts_with("ed-vars") ||
+                    next_trimmed.starts_with("icit-any") ||
+                    next_trimmed.starts_with("icit-any") ||
+                    next_trimmed.starts_with("ire") ||
+                    next_trimmed.starts_with("ed-v") ||
+                    next_trimmed.starts_with("ars") ||
+                    next_trimmed.starts_with("ny");
+                
+                if line_ends_with_partial && next_starts_with_continuation {
+                    // Merge the lines
+                    let merged = format!("{}{}", line, next_line);
+                    result.push(merged);
+                    i += 2;
+                    continue;
+                }
+            }
+            
+            // Check if this line has a file path concatenated at the end
+            // Pattern: "...rule-nameD:\path\file.ts" -> split into "...rule-name" and "D:\path\file.ts"
+            if let Some(path_start) = trimmed.find("D:\\") {
+                // Check if there's content before the path (like a rule name without space)
+                if path_start > 0 {
+                    let before_path = &trimmed[..path_start];
+                    let path_part = &trimmed[path_start..];
+                    
+                    // If before_path doesn't end with space, it's likely concatenated
+                    if !before_path.ends_with(' ') && !before_path.ends_with('\t') {
+                        // Add the rule part to previous line if exists, or as separate line
+                        if let Some(last) = result.last_mut() {
+                            *last = format!("{} {}", last.trim(), before_path.trim());
+                        } else {
+                            result.push(before_path.to_string());
+                        }
+                        // Add the path as a new line
+                        result.push(path_part.to_string());
+                        i += 1;
+                        continue;
+                    }
+                }
+            }
+            
+            // Check for Unix-style paths too
+            if trimmed.contains('/') && !trimmed.starts_with("@") {
+                // Find the last potential rule name before a path
+                if let Some(pos) = trimmed.rfind("  /") {
+                    let potential_rule = &trimmed[pos + 2..];
+                    if potential_rule.contains('/') && !potential_rule.contains(':') {
+                        // This might be a split line, try to find where path starts
+                    }
+                }
+            }
+            
+            result.push(line.clone());
+            i += 1;
+        }
+        
+        result
     }
 
     fn parse_typescript_format(&self, line: &str) -> Option<Issue> {
@@ -326,7 +627,11 @@ impl Default for NpmParser {
 impl OutputParser for NpmParser {
     // Custom parse implementation for NPM output
     fn parse(&self, output: &str) -> Vec<Issue> {
-        let lines: Vec<String> = output.lines().map(|s| s.to_string()).collect();
+        // Pre-process: strip turbo prefixes from lines
+        // Turbo format: "web:lint:    4:7   error    ..."
+        let processed_output = self.strip_turbo_prefixes(output);
+        
+        let lines: Vec<String> = processed_output.lines().map(|s| s.to_string()).collect();
         let mut issues = Vec::new();
         let mut i = 0;
 
@@ -747,5 +1052,135 @@ mod tests {
         assert_eq!(issue.location.column_number, Some(5));
         assert_eq!(issue.message, "Message");
         assert_eq!(next_index, 2);
+    }
+
+    #[test]
+    fn test_strip_turbo_prefixes() {
+        let parser = NpmParser::new();
+        
+        // Test basic turbo prefix stripping
+        let input = "web:lint:    4:7   error    'unusedVariable' is assigned a value but never used  @typescript-eslint/no-unused-vars";
+        let result = parser.strip_turbo_prefixes(input);
+        assert_eq!(result, "    4:7   error    'unusedVariable' is assigned a value but never used  @typescript-eslint/no-unused-vars");
+        
+        // Test multi-line output
+        let input = "web:lint: line 1\nweb:lint:    4:7   error    message  rule\nnormal line";
+        let result = parser.strip_turbo_prefixes(input);
+        assert_eq!(result, " line 1\n    4:7   error    message  rule\nnormal line");
+        
+        // Test with task name containing hyphen
+        let input = "docs:type-check:    1:1   error    message  rule";
+        let result = parser.strip_turbo_prefixes(input);
+        assert_eq!(result, "    1:1   error    message  rule");
+    }
+
+    #[test]
+    fn test_parse_with_turbo_prefix() {
+        let parser = NpmParser::new();
+        
+        // Test parsing output with turbo prefixes
+        let output = r#"web:lint: src/index.ts
+web:lint:    4:7   error    'unusedVariable' is assigned a value but never used  @typescript-eslint/no-unused-vars
+web:lint:    7:24  warning  'unusedParam' is defined but never used              @typescript-eslint/no-unused-vars"#;
+        
+        let issues = parser.parse(output);
+        assert_eq!(issues.len(), 2, "Should parse 2 issues with turbo prefix");
+        
+        let first = &issues[0];
+        assert_eq!(first.location.line_number, Some(4));
+        assert!(matches!(first.level, IssueLevel::Error));
+        
+        let second = &issues[1];
+        assert_eq!(second.location.line_number, Some(7));
+        assert!(matches!(second.level, IssueLevel::Warning));
+    }
+
+    #[test]
+    fn test_parse_turbo_tui_format() {
+        let parser = NpmParser::new();
+        
+        // Test parsing output with turbo TUI format (from user's real output)
+        let output = r#"┌─ @graph-agent/storage#lint > cache hit, replaying logs f184635148ed46e6 
+
+> @graph-agent/storage@1.0.0 lint D:\project\packages\storage
+> eslint . --ext .ts
+
+
+D:\project\packages\storage\src\json\base-json-storage.ts
+   16:3   warning  'CompressionResult' is defined but never used  @typescript-eslint/no-unused-vars
+   422:17  warning  'id' is assigned a value but never used        @typescript-eslint/no-unused-vars
+
+✖ 7 problems (0 errors, 7 warnings)
+└─ @graph-agent/storage#lint ──"#;
+        
+        let issues = parser.parse(output);
+        assert_eq!(issues.len(), 2, "Should parse 2 ESLint issues from turbo TUI output, found {}", issues.len());
+        
+        let first = &issues[0];
+        assert_eq!(first.location.file_path, "D:\\project\\packages\\storage\\src\\json\\base-json-storage.ts");
+        assert_eq!(first.location.line_number, Some(16));
+        assert_eq!(first.location.column_number, Some(3));
+        assert!(matches!(first.level, IssueLevel::Warning));
+        assert!(first.message.contains("CompressionResult"));
+        
+        let second = &issues[1];
+        assert_eq!(second.location.line_number, Some(422));
+        assert_eq!(second.location.column_number, Some(17));
+        assert!(matches!(second.level, IssueLevel::Warning));
+        assert!(second.message.contains("id"));
+    }
+
+    #[test]
+    fn test_strip_turbo_tui_borders() {
+        let parser = NpmParser::new();
+        
+        // Test TUI border lines are stripped
+        let input = "┌─ @graph-agent/storage#lint > cache hit, replaying logs";
+        let result = parser.strip_turbo_prefixes(input);
+        assert_eq!(result, "");
+        
+        // Test border lines with content are kept
+        let input = "│   16:3   warning  'CompressionResult' is defined but never used";
+        let result = parser.strip_turbo_prefixes(input);
+        assert!(result.contains("warning"));
+        
+        // Test scoped package format
+        let input = "@graph-agent/storage#lint:   16:3   warning  message  rule";
+        let result = parser.strip_turbo_prefixes(input);
+        assert_eq!(result, "   16:3   warning  message  rule");
+    }
+
+    #[test]
+    fn test_parse_eslint_compact_format() {
+        let parser = NpmParser::new();
+        
+        // Test ESLint compact format: file:line:col: level message
+        let line = "src/index.js:1:1: error: Missing semicolon semi";
+        let issue = parser.parse_typescript_format(line);
+        
+        assert!(issue.is_some(), "Should parse ESLint compact format");
+        let issue = issue.unwrap();
+        assert_eq!(issue.location.file_path, "src/index.js");
+        assert_eq!(issue.location.line_number, Some(1));
+        assert_eq!(issue.location.column_number, Some(1));
+        assert!(matches!(issue.level, IssueLevel::Error));
+        assert!(issue.message.contains("Missing semicolon"));
+    }
+
+    #[test]
+    fn test_parse_eslint_compact_format_warning() {
+        let parser = NpmParser::new();
+        
+        // Test ESLint compact format with warning
+        let line = "src/index.js:2:5: warning: Unused variable 'foo' no-unused-vars";
+        let issue = parser.parse_typescript_format(line);
+        
+        assert!(issue.is_some(), "Should parse ESLint compact format warning");
+        let issue = issue.unwrap();
+        assert_eq!(issue.location.file_path, "src/index.js");
+        assert_eq!(issue.location.line_number, Some(2));
+        assert_eq!(issue.location.column_number, Some(5));
+        assert!(matches!(issue.level, IssueLevel::Warning));
+        assert!(issue.message.contains("Unused variable"));
     }
 }

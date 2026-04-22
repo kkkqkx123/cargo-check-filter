@@ -41,7 +41,16 @@ impl PackageManager {
         // Try to get command from config first
         if let Some(ref cfg) = config {
             if let Some(exec_str) = cfg.get_command_exec(self.as_str(), command_name) {
-                return CommandBuilder::from_exec_string(&exec_str);
+                // Convert the exec string to use the correct package manager
+                let converted = self.convert_command(&exec_str);
+                return CommandBuilder::from_exec_string(&converted);
+            }
+            // Also check for "npm" tech_stack config as fallback (shared npm/pnpm/yarn configs)
+            if *self != PackageManager::Npm {
+                if let Some(exec_str) = cfg.get_command_exec("npm", command_name) {
+                    let converted = self.convert_command(&exec_str);
+                    return CommandBuilder::from_exec_string(&converted);
+                }
             }
         }
 
@@ -50,6 +59,36 @@ impl PackageManager {
             PackageManager::Npm => self.build_npm_command(options),
             PackageManager::Pnpm => self.build_pnpm_command(options),
             PackageManager::Yarn => self.build_yarn_command(options),
+        }
+    }
+
+    /// Convert a command string from npm format to the current package manager format
+    /// e.g., "npm run lint" -> "pnpm lint" for pnpm
+    fn convert_command(&self, exec_str: &str) -> String {
+        match self {
+            PackageManager::Npm => exec_str.to_string(),
+            PackageManager::Pnpm => {
+                // Convert "npm run <script>" to "pnpm <script>"
+                // Convert "npm <cmd>" to "pnpm <cmd>"
+                if exec_str.starts_with("npm run ") {
+                    exec_str.replacen("npm run ", "pnpm ", 1)
+                } else if exec_str.starts_with("npm ") {
+                    exec_str.replacen("npm ", "pnpm ", 1)
+                } else {
+                    exec_str.to_string()
+                }
+            }
+            PackageManager::Yarn => {
+                // Convert "npm run <script>" to "yarn <script>"
+                // Convert "npm <cmd>" to "yarn <cmd>"
+                if exec_str.starts_with("npm run ") {
+                    exec_str.replacen("npm run ", "yarn ", 1)
+                } else if exec_str.starts_with("npm ") {
+                    exec_str.replacen("npm ", "yarn ", 1)
+                } else {
+                    exec_str.to_string()
+                }
+            }
         }
     }
 

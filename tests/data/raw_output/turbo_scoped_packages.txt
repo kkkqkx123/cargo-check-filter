@@ -1,0 +1,16 @@
+┌─ @graph-agent/script-executors#lint > cache hit, replaying logs 30d596d992b3838b
+
+> @graph-agent/script-executors@1.0.0 lint D:\project\packages\script-executors
+> eslint . --ext .ts
+
+
+D:\project\packages\script-executors\src\core\base\BaseScriptExecutor.ts
+   167:12  warning  'script' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\project\packages\script-executors\src\core\types.ts
+   6:3  warning  'Script' is defined but never used  @typescript-eslint/no-unused-vars
+   8:3  warning  'ScriptExecutionOptions' is defined but never used  @typescript-eslint/no-unused-vars
+   9:3  warning  'ScriptExecutionResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 4 problems (0 errors, 4 warnings)
+└─ @graph-agent/script-executors#lint ──

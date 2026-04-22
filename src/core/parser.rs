@@ -158,6 +158,14 @@ impl BaseParser {
         
         if let Some(open_paren) = trimmed.find('(') {
             if let Some(close_paren) = trimmed.find(')') {
+                // Ensure close_paren is after open_paren
+                if close_paren <= open_paren {
+                    return None;
+                }
+                // Ensure we don't go out of bounds
+                if close_paren + 1 >= trimmed.len() {
+                    return None;
+                }
                 let file_path = &trimmed[..open_paren].trim();
                 let location_part = &trimmed[open_paren + 1..close_paren];
                 let after_paren = &trimmed[close_paren + 1..].trim();
@@ -172,6 +180,10 @@ impl BaseParser {
                         let level = self.detect_level(rest)?;
 
                         let (code, message) = if let Some(colon_pos) = rest.find(':') {
+                            // Ensure we don't go out of bounds
+                            if colon_pos + 1 >= rest.len() {
+                                return None;
+                            }
                             let before_colon = rest[..colon_pos].trim();
                             let msg_part = rest[colon_pos + 1..].trim();
                             

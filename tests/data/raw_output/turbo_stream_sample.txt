@@ -1,0 +1,19 @@
+
+web:lint: 
+web:lint: > web@1.0.0 lint
+web:lint: > eslint src/
+web:lint: 
+web:lint: D:\project\apps\web\src\index.ts
+web:lint:   4:7   error  'unusedVariable' is assigned a value but never used  @typescript-eslint/no-unused-vars
+web:lint:   7:24  error  'unusedParam' is defined but never used              @typescript-eslint/no-unused-vars
+web:lint: 
+web:lint: ✖ 2 problems (2 errors, 0 warnings)
+web:lint: 
+web:lint: ERROR: command finished with error: command (D:\project\apps\web) pnpm run lint exited (1)
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    1.234s 
+Failed:    web#lint
+
+ ERROR  run failed: command  exited (1)

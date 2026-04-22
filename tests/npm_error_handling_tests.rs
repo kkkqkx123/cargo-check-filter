@@ -291,3 +291,71 @@ fn test_pnpm_analyzer_execution() {
     // Should complete without error
     assert!(result.is_ok(), "Pnpm analyzer should complete without error");
 }
+
+#[test]
+fn test_npm_parser_eslint_verbose_format() {
+    use analyzer::plugins::npm::parser::NpmParser;
+    use analyzer::core::OutputParser;
+    
+    // Test ESLint verbose format with file path on separate line
+    // This is the format used by turbo and other tools
+    let eslint_verbose_output = r#"D:\项目\agent\graph-agent\apps\cli-app\src\commands\agent\index.ts
+    13:31  warning  'parseAndValidateAgentLoopConfig' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    14:10  warning  'readFileSync' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+    83:32  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+    92:22  warning  'error' is defined but never used                                      @typescript-eslint/no-unused-vars
+   177:32  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+
+D:\项目\agent\graph-agent\apps\cli-app\src\commands\agent\utils.ts
+    10:5   error    'foo' is assigned a value but never used                              @typescript-eslint/no-unused-vars
+"#;
+    
+    let parser = NpmParser::new();
+    let issues = parser.parse(eslint_verbose_output);
+    
+    // Should parse all 6 issues
+    assert_eq!(issues.len(), 6, "Should parse 6 issues from ESLint verbose output");
+    
+    // Verify first issue details
+    let first_issue = &issues[0];
+    assert_eq!(first_issue.location.file_path, "D:\\项目\\agent\\graph-agent\\apps\\cli-app\\src\\commands\\agent\\index.ts");
+    assert_eq!(first_issue.location.line_number, Some(13));
+    assert_eq!(first_issue.location.column_number, Some(31));
+    assert!(matches!(first_issue.level, analyzer::core::IssueLevel::Warning));
+    assert!(first_issue.message.contains("parseAndValidateAgentLoopConfig"));
+    
+    // Verify second file's issue
+    let last_issue = &issues[5];
+    assert_eq!(last_issue.location.file_path, "D:\\项目\\agent\\graph-agent\\apps\\cli-app\\src\\commands\\agent\\utils.ts");
+    assert_eq!(last_issue.location.line_number, Some(10));
+    assert!(matches!(last_issue.level, analyzer::core::IssueLevel::Error));
+    
+    // Save for debugging
+    save_raw_output("npm_eslint_verbose", eslint_verbose_output);
+}
+
+#[test]
+fn test_npm_parser_eslint_message_extraction() {
+    use analyzer::plugins::npm::parser::NpmParser;
+    use analyzer::core::OutputParser;
+    
+    // Test that rule names are correctly separated from messages
+    let eslint_output = r#"src/test.ts
+    1:1  warning  'foo' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    2:1  error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+"#;
+    
+    let parser = NpmParser::new();
+    let issues = parser.parse(eslint_output);
+    
+    assert_eq!(issues.len(), 2, "Should parse 2 issues");
+    
+    // Check that rule names are not included in the message
+    let first_msg = &issues[0].message;
+    assert!(first_msg.contains("'foo' is defined but never used"));
+    assert!(!first_msg.contains("@typescript-eslint"), "Rule name should be extracted from message");
+    
+    let second_msg = &issues[1].message;
+    assert!(second_msg.contains("Unexpected any"));
+    assert!(!second_msg.contains("@typescript-eslint"), "Rule name should be extracted from message");
+}
