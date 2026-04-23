@@ -451,6 +451,8 @@ pub struct AnalyzeOptions {
     pub filter_warnings: bool,
     pub filter_paths: Vec<String>,
     pub output_file: Option<String>,
+    /// Show all issues without truncation
+    pub verbose: bool,
     // C++ related options
     pub source_dir: Option<String>,
     pub build_dir: Option<String>,

@@ -1,6 +1,6 @@
 //! Markdown Report Generator
 
-use super::{Reporter, ReporterError};
+use super::{ReportOptions, Reporter, ReporterError};
 use crate::core::types::{AnalysisResult, IssueLevel, TestAnalysisResult, TestStatus};
 
 /// Markdown Report Generator
@@ -75,8 +75,13 @@ impl Default for MarkdownReporter {
     }
 }
 
-impl Reporter for MarkdownReporter {
-    fn generate(&self, result: &AnalysisResult) -> Result<String, ReporterError> {
+impl MarkdownReporter {
+    /// Internal method to generate report with optional truncation
+    fn generate_internal(
+        &self,
+        result: &AnalysisResult,
+        options: ReportOptions,
+    ) -> Result<String, ReporterError> {
         let mut report = String::new();
 
         // Detect the report type and set the appropriate title
@@ -85,12 +90,12 @@ impl Reporter for MarkdownReporter {
 
         // summaries
         report.push_str(&format!("## {}\n\n", summary_title));
-        
+
         if result.total_issues == 0 {
             report.push_str("✅ No issues found.\n\n");
             return Ok(report);
         }
-        
+
         report.push_str(&format!("- **Total**: {}\n", result.total_issues));
 
         // Statistics by level, sorted by severity
@@ -116,7 +121,9 @@ impl Reporter for MarkdownReporter {
             let mut types: Vec<_> = result.issues_by_type.iter().collect();
             types.sort_by(|a, b| b.1.cmp(a.1));
 
-            for (issue_type, count) in types.iter().take(20) {
+            // In verbose mode, show all types; otherwise limit to 20
+            let type_limit = if options.verbose { types.len() } else { 20 };
+            for (issue_type, count) in types.iter().take(type_limit) {
                 report.push_str(&format!("- **{}**: {} occurrence(s)\n", issue_type, count));
             }
             report.push('\n');
@@ -128,10 +135,14 @@ impl Reporter for MarkdownReporter {
             let mut files: Vec<_> = result.issues_by_file.iter().collect();
             files.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
 
-            for (file_path, issues) in files.iter().take(20) {
+            // In verbose mode, show all files; otherwise limit to 20
+            let file_limit = if options.verbose { files.len() } else { 20 };
+            for (file_path, issues) in files.iter().take(file_limit) {
                 report.push_str(&format!("### `{}` ({} item(s))\n\n", file_path, issues.len()));
 
-                for issue in issues.iter().take(10) {
+                // In verbose mode, show all issues; otherwise limit to 10
+                let issue_limit = if options.verbose { issues.len() } else { 10 };
+                for issue in issues.iter().take(issue_limit) {
                     let location = match (issue.location.line_number, issue.location.column_number) {
                         (Some(line), Some(col)) => format!("{}:{}", line, col),
                         (Some(line), None) => format!("{}", line),
@@ -152,15 +163,37 @@ impl Reporter for MarkdownReporter {
                     ));
                 }
 
-                if issues.len() > 10 {
+                if !options.verbose && issues.len() > 10 {
                     report.push_str(&format!("- ... and {} more\n", issues.len() - 10));
                 }
 
                 report.push('\n');
             }
+
+            // Show message if files were truncated
+            if !options.verbose && files.len() > 20 {
+                report.push_str(&format!(
+                    "*... and {} more files (use --verbose to see all)*\n\n",
+                    files.len() - 20
+                ));
+            }
         }
 
         Ok(report)
+    }
+}
+
+impl Reporter for MarkdownReporter {
+    fn generate(&self, result: &AnalysisResult) -> Result<String, ReporterError> {
+        self.generate_internal(result, ReportOptions::default())
+    }
+
+    fn generate_with_options(
+        &self,
+        result: &AnalysisResult,
+        options: ReportOptions,
+    ) -> Result<String, ReporterError> {
+        self.generate_internal(result, options)
     }
 
     fn generate_test_report(&self, result: &TestAnalysisResult) -> Result<String, ReporterError> {

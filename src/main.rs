@@ -92,6 +92,9 @@ fn parse_arguments(args: &[String], config: &Config) -> (TechStack, AnalyzeOptio
             "--filter-warnings" => {
                 options.filter_warnings = true;
             }
+            "--verbose" => {
+                options.verbose = true;
+            }
             "--filter-paths" => {
                 if i + 1 < args.len() {
                     options.filter_paths = args[i + 1]
@@ -154,6 +157,13 @@ fn parse_arguments(args: &[String], config: &Config) -> (TechStack, AnalyzeOptio
     (tech_stack, options)
 }
 
+/// Convert AnalyzeOptions to ReportOptions
+fn to_report_options(options: &AnalyzeOptions) -> core::reporter::ReportOptions {
+    core::reporter::ReportOptions {
+        verbose: options.verbose,
+    }
+}
+
 fn is_test_subcommand(subcommand: &Option<SubCommand>) -> bool {
     matches!(
         subcommand,
@@ -200,7 +210,8 @@ fn run_analysis(
 
             // Generating reports
             let reporter = ReporterFactory::create(ReportFormat::Markdown);
-            let report = match reporter.generate(&result) {
+            let report_options = to_report_options(options);
+            let report = match reporter.generate_with_options(&result, report_options) {
                 Ok(r) => r,
                 Err(e) => {
                     eprintln!("Failed to generate report: {}", e);
@@ -267,7 +278,8 @@ fn run_test_analysis(
 
             // Generate test report
             let reporter = ReporterFactory::create(ReportFormat::Markdown);
-            let report = match reporter.generate_test_report(&test_output.into()) {
+            let report_options = to_report_options(options);
+            let report = match reporter.generate_test_report_with_options(&test_output.into(), report_options) {
                 Ok(r) => r,
                 Err(e) => {
                     eprintln!("Failed to generate report: {}", e);
@@ -328,6 +340,7 @@ fn show_help() {
     println!("  -v, --version           Show version");
     println!("  --filter-warnings       Filter out warnings, show only errors");
     println!("  --filter-paths <paths>  Filter by file paths (comma-separated)");
+    println!("  --verbose               Show all issues without truncation");
     println!("  -o, --output <file>     Output file (default: analysis_report.md)");
     println!();
     println!("Examples:");
@@ -335,6 +348,7 @@ fn show_help() {
     println!("  analyzer cargo clippy-all");
     println!("  analyzer cargo test --filter-warnings");
     println!("  analyzer cargo check --filter-paths src/core,src/lib -o report.md");
+    println!("  analyzer cargo check --verbose");
     println!("  analyzer mypy check");
     println!("  analyzer mypy check-strict");
     println!("  analyzer npm lint");

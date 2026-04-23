@@ -83,6 +83,7 @@ analyzer cpp msvc compile
 | ------------------------ | ------------------------------------------------------ |
 | `--filter-warnings`      | Filter out all warnings, only show errors              |
 | `--filter-paths <paths>` | Filter errors by file paths (comma-separated)          |
+| `--verbose`              | Show all issues without truncation                     |
 | `--output <file>`        | Specify output file path (default: analysis_report.md) |
 
 ## Configuration

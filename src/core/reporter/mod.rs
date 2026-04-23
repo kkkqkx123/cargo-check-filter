@@ -34,15 +34,50 @@ impl From<std::io::Error> for ReporterError {
     }
 }
 
+/// Report generation options
+#[derive(Debug, Default, Clone, Copy)]
+pub struct ReportOptions {
+    /// Show all issues without truncation
+    pub verbose: bool,
+}
+
+impl ReportOptions {
+    /// Create new report options with verbose mode
+    pub fn verbose() -> Self {
+        Self { verbose: true }
+    }
+}
+
 /// Report generator trait
 pub trait Reporter: Send + Sync {
     /// Generate report content
     fn generate(&self, result: &AnalysisResult) -> Result<String, ReporterError>;
 
+    /// Generate report content with options
+    fn generate_with_options(
+        &self,
+        result: &AnalysisResult,
+        options: ReportOptions,
+    ) -> Result<String, ReporterError> {
+        // Default implementation ignores options for backward compatibility
+        let _ = options;
+        self.generate(result)
+    }
+
     /// Generate test report content
     fn generate_test_report(&self, result: &TestAnalysisResult) -> Result<String, ReporterError> {
         // Default implementation: call General Report Generation
         self.generate(&result.compile_result)
+    }
+
+    /// Generate test report content with options
+    fn generate_test_report_with_options(
+        &self,
+        result: &TestAnalysisResult,
+        options: ReportOptions,
+    ) -> Result<String, ReporterError> {
+        // Default implementation: call General Report Generation with options
+        self.generate_with_options(&result.compile_result, options)
     }
 
     /// Write report to file
