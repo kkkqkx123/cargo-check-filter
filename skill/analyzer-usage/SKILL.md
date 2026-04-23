@@ -86,6 +86,43 @@ analyzer cpp msvc compile
 | `--verbose`              | Show all issues without truncation                     |
 | `--output <file>`        | Specify output file path (default: analysis_report.md) |
 
+## Recommended Usage
+
+### Quick Overview
+
+Use without `--verbose` to get a quick overview of the project status:
+
+```bash
+analyzer cargo check
+```
+
+This shows top 20 files with most issues and up to 10 issues per file.
+
+### Deep Dive into Specific Areas
+
+Use `--verbose` with `--filter-paths` to fully analyze specific directories or files:
+
+```bash
+# Analyze all issues in a specific directory
+analyzer cargo check --verbose --filter-paths src/core
+
+# Analyze multiple specific directories
+analyzer cargo check --verbose --filter-paths src/core,src/utils
+
+# Analyze a specific file
+analyzer cargo check --verbose --filter-paths src/main.rs
+```
+
+### CI/CD Integration
+
+```bash
+# Generate JSON report for CI/CD pipelines
+analyzer cargo check --output report.json
+
+# Check only errors, filter out warnings
+analyzer cargo check --filter-warnings
+```
+
 ## Configuration
 
 Create `.analyzer.toml` in your project root:
