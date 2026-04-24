@@ -463,6 +463,44 @@ pub struct AnalyzeOptions {
     pub defines: Vec<String>,
     pub cpp_standard: Option<String>,
     pub json_output: bool,
+
+    // === Cargo Workspace Support ===
+    /// --workspace
+    pub workspace: bool,
+    /// --package <SPEC>
+    pub package: Vec<String>,
+    /// --exclude <SPEC>
+    pub exclude: Vec<String>,
+
+    // === Cargo Target Support ===
+    /// --lib
+    pub lib: bool,
+    /// --bin <NAME>
+    pub bin: Vec<String>,
+    /// --bins
+    pub bins: bool,
+    /// --test <NAME>
+    pub test: Vec<String>,
+    /// --tests
+    pub tests: bool,
+    /// --example <NAME>
+    pub example: Vec<String>,
+    /// --examples
+    pub examples: bool,
+    /// --bench <NAME>
+    pub bench: Vec<String>,
+    /// --benches
+    pub benches: bool,
+    /// --all-targets
+    pub all_targets: bool,
+
+    // === Cargo Feature Support ===
+    /// --features <FEATURES>
+    pub features: Vec<String>,
+    /// --all-features
+    pub all_features: bool,
+    /// --no-default-features
+    pub no_default_features: bool,
 }
 
 /// Report format

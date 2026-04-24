@@ -110,6 +110,78 @@ fn parse_arguments(args: &[String], config: &Config) -> (TechStack, AnalyzeOptio
                     i += 1;
                 }
             }
+            // === Cargo Workspace Options ===
+            "--workspace" => {
+                options.workspace = true;
+            }
+            "--package" | "-p" => {
+                if i + 1 < args.len() {
+                    options.package.push(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            "--exclude" => {
+                if i + 1 < args.len() {
+                    options.exclude.push(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            // === Cargo Target Options ===
+            "--lib" => {
+                options.lib = true;
+            }
+            "--bin" => {
+                if i + 1 < args.len() {
+                    options.bin.push(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            "--bins" => {
+                options.bins = true;
+            }
+            "--test" => {
+                if i + 1 < args.len() {
+                    options.test.push(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            "--tests" => {
+                options.tests = true;
+            }
+            "--example" => {
+                if i + 1 < args.len() {
+                    options.example.push(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            "--examples" => {
+                options.examples = true;
+            }
+            "--bench" => {
+                if i + 1 < args.len() {
+                    options.bench.push(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            "--benches" => {
+                options.benches = true;
+            }
+            "--all-targets" => {
+                options.all_targets = true;
+            }
+            // === Cargo Feature Options ===
+            "--features" => {
+                if i + 1 < args.len() {
+                    options.features.push(args[i + 1].clone());
+                    i += 1;
+                }
+            }
+            "--all-features" => {
+                options.all_features = true;
+            }
+            "--no-default-features" => {
+                options.no_default_features = true;
+            }
             arg => {
                 if !arg.starts_with('-') {
                     if tech_stack_str.is_empty() {
@@ -354,6 +426,37 @@ fn show_help() {
     println!("  analyzer npm lint");
     println!("  analyzer pnpm type-check");
     println!("  analyzer yarn audit");
+    println!();
+    println!("Cargo Workspace Options:");
+    println!("  --workspace             Analyze all workspace members");
+    println!("  -p, --package <SPEC>    Analyze specific package (can be used multiple times)");
+    println!("  --exclude <SPEC>        Exclude specific package from analysis");
+    println!();
+    println!("Cargo Target Options:");
+    println!("  --lib                   Analyze only the library target");
+    println!("  --bin <NAME>            Analyze specific binary target");
+    println!("  --bins                  Analyze all binary targets");
+    println!("  --test <NAME>           Analyze specific test target");
+    println!("  --tests                 Analyze all test targets");
+    println!("  --example <NAME>        Analyze specific example target");
+    println!("  --examples              Analyze all example targets");
+    println!("  --bench <NAME>          Analyze specific benchmark target");
+    println!("  --benches               Analyze all benchmark targets");
+    println!("  --all-targets           Analyze all targets");
+    println!();
+    println!("Cargo Feature Options:");
+    println!("  --features <FEATURES>   Space-separated list of features to enable");
+    println!("  --all-features          Enable all available features");
+    println!("  --no-default-features   Do not enable the default feature");
+    println!();
+    println!("Cargo Examples:");
+    println!("  analyzer cargo check --workspace");
+    println!("  analyzer cargo check --package my-crate");
+    println!("  analyzer cargo check --lib");
+    println!("  analyzer cargo check --bin my-app");
+    println!("  analyzer cargo check --tests --all-features");
+    println!("  analyzer cargo clippy --workspace --all-targets");
+    println!("  analyzer cargo check --package foo --features \"feat1 feat2\"");
 }
 
 fn print_summary(result: &AnalysisResult) {

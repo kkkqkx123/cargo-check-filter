@@ -48,17 +48,68 @@ impl CargoAnalyzer {
                 builder = builder.arg("clippy");
             }
             Some(SubCommand::ClippyAll) => {
-                builder = builder
-                    .arg("clippy")
-                    .arg("--all-targets")
-                    .arg("--all-features");
+                builder = builder.arg("clippy");
             }
             Some(SubCommand::CheckTest) => {
-                builder = builder.arg("check").arg("--tests");
+                builder = builder.arg("check");
             }
             _ => {
                 builder = builder.arg("check");
             }
+        }
+
+        // === Workspace Options ===
+        if options.workspace {
+            builder = builder.arg("--workspace");
+        }
+        for pkg in &options.package {
+            builder = builder.arg("--package").arg(pkg);
+        }
+        for pkg in &options.exclude {
+            builder = builder.arg("--exclude").arg(pkg);
+        }
+
+        // === Target Options ===
+        if options.lib {
+            builder = builder.arg("--lib");
+        }
+        for name in &options.bin {
+            builder = builder.arg("--bin").arg(name);
+        }
+        if options.bins {
+            builder = builder.arg("--bins");
+        }
+        for name in &options.test {
+            builder = builder.arg("--test").arg(name);
+        }
+        if options.tests {
+            builder = builder.arg("--tests");
+        }
+        for name in &options.example {
+            builder = builder.arg("--example").arg(name);
+        }
+        if options.examples {
+            builder = builder.arg("--examples");
+        }
+        for name in &options.bench {
+            builder = builder.arg("--bench").arg(name);
+        }
+        if options.benches {
+            builder = builder.arg("--benches");
+        }
+        if options.all_targets {
+            builder = builder.arg("--all-targets");
+        }
+
+        // === Feature Options ===
+        if !options.features.is_empty() {
+            builder = builder.arg("--features").arg(options.features.join(","));
+        }
+        if options.all_features {
+            builder = builder.arg("--all-features");
+        }
+        if options.no_default_features {
+            builder = builder.arg("--no-default-features");
         }
 
         builder.arg("--message-format=short")
